@@ -510,6 +510,15 @@ static void entry_task_switch(struct task_struct *next)
 	__this_cpu_write(__entry_task, next);
 }
 
+static void aarch32_thread_switch(struct task_struct *next)
+{
+	struct thread_info *ti = task_thread_info(next);
+
+	if (IS_ENABLED(CONFIG_ASYMMETRIC_AARCH32) && is_compat_thread(ti) &&
+	    !cpumask_test_cpu(smp_processor_id(), &aarch32_el0_mask))
+		set_ti_thread_flag(ti, TIF_CHECK_32BIT_AFFINITY);
+}
+
 /*
  * ARM erratum 1418040 handling, affecting the 32bit view of CNTVCT.
  * Assuming the virtual counter is enabled at the beginning of times:
@@ -559,6 +568,7 @@ __notrace_funcgraph struct task_struct *__switch_to(struct task_struct *prev,
 	uao_thread_switch(next);
 	ssbs_thread_switch(next);
 	erratum_1418040_thread_switch(prev, next);
+	aarch32_thread_switch(next);
 	/*
 	 *  vendor hook is needed before the dsb(),
 	 *  because MPAM is related to cache maintenance.
@@ -624,6 +634,13 @@ void arch_setup_new_exec(void)
 	current->mm->context.flags = is_compat_task() ? MMCF_AARCH32 : 0;
 
 	ptrauth_thread_init_user(current);
+
+	/*
+	 * If exec'ing a 32-bit task, force the asymmetric 32-bit feature
+	 * check as the task may not go through a switch_to() call.
+	 */
+	if (IS_ENABLED(CONFIG_ASYMMETRIC_AARCH32) && is_compat_task())
+		set_thread_flag(TIF_CHECK_32BIT_AFFINITY);
 }
 
 #ifdef CONFIG_ARM64_TAGGED_ADDR_ABI
