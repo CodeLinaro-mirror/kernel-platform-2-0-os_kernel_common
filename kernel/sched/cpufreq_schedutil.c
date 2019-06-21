@@ -242,7 +242,7 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 unsigned long schedutil_freq_util(int cpu, unsigned long util,
 				  unsigned long max, enum schedutil_type type)
 {
-	unsigned long dl_util, irq;
+	unsigned long dl_util, util, irq;
 	struct rq *rq = cpu_rq(cpu);
 
 	if (sched_feat(SUGOV_RT_MAX_FREQ) && type == FREQUENCY_UTIL &&
