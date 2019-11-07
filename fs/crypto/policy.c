@@ -67,9 +67,9 @@ static bool supported_iv_ino_lblk_64_policy(
  * fscrypt_supported_policy - check whether an encryption policy is supported
  *
  * Given an encryption policy, check whether all its encryption modes and other
- * settings are supported by this kernel.  (But we don't currently don't check
- * for crypto API support here, so attempting to use an algorithm not configured
- * into the crypto API will still fail later.)
+ * settings are supported by this kernel on the given inode.  (But we don't
+ * currently don't check for crypto API support here, so attempting to use an
+ * algorithm not configured into the crypto API will still fail later.)
  *
  * Return: %true if supported, else %false
  */
@@ -94,6 +94,11 @@ bool fscrypt_supported_policy(const union fscrypt_policy *policy_u,
 			fscrypt_warn(inode,
 				     "Unsupported encryption flags (0x%02x)",
 				     policy->flags);
+			return false;
+		}
+		if (IS_CASEFOLDED(inode)) {
+			fscrypt_warn(inode,
+				     "v1 policy does not support casefolded directories");
 			return false;
 		}
 
@@ -530,3 +535,24 @@ int fscrypt_inherit_context(struct inode *parent, struct inode *child,
 	return preload ? fscrypt_get_encryption_info(child): 0;
 }
 EXPORT_SYMBOL(fscrypt_inherit_context);
+
+bool fscrypt_can_set_casefolding(struct inode *inode)
+{
+	const struct fscrypt_info *ci;
+
+	ci = READ_ONCE(inode->i_crypt_info);
+	if (ci == NULL)
+		return false;
+
+	switch (ci->ci_policy.version) {
+	case FSCRYPT_CONTEXT_V1:
+		return false;
+		break;
+	case FSCRYPT_CONTEXT_V2:
+		return true;
+		break;
+	default:
+		return false;
+	}
+}
+EXPORT_SYMBOL(fscrypt_can_set_casefolding);

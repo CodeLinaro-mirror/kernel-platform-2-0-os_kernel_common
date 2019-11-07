@@ -128,6 +128,8 @@ extern int fscrypt_ioctl_get_policy_ex(struct file *, void __user *);
 extern int fscrypt_has_permitted_context(struct inode *, struct inode *);
 extern int fscrypt_inherit_context(struct inode *, struct inode *,
 					void *, bool);
+extern bool fscrypt_can_set_casefolding(struct inode *);
+
 /* keyring.c */
 extern void fscrypt_sb_free(struct super_block *sb);
 extern int fscrypt_ioctl_add_key(struct file *filp, void __user *arg);
@@ -361,6 +363,11 @@ static inline int fscrypt_inherit_context(struct inode *parent,
 					  void *fs_data, bool preload)
 {
 	return -EOPNOTSUPP;
+}
+
+static inline int fscrypt_can_set_casefolding(struct inode *parent)
+{
+	return 1;
 }
 
 /* keyring.c */
