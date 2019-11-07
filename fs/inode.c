@@ -20,6 +20,7 @@
 #include <linux/ratelimit.h>
 #include <linux/list_lru.h>
 #include <linux/iversion.h>
+#include <linux/fscrypt.h>
 #include <trace/events/writeback.h>
 #include "internal.h"
 
@@ -2244,6 +2245,10 @@ int vfs_ioc_setflags_prepare(struct inode *inode, unsigned int oldflags,
 	if ((flags ^ oldflags) & (FS_APPEND_FL | FS_IMMUTABLE_FL) &&
 	    !capable(CAP_LINUX_IMMUTABLE))
 		return -EPERM;
+
+	if (IS_ENCRYPTED(inode) && (flags & ~oldflags) & FS_CASEFOLD_FL &&
+	    !fscrypt_can_set_casefolding(inode))
+		return -EINVAL;
 
 	return 0;
 }
