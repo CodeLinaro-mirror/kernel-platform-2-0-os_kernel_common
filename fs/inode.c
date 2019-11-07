@@ -20,6 +20,7 @@
 #include <linux/ratelimit.h>
 #include <linux/list_lru.h>
 #include <linux/iversion.h>
+#include <linux/fscrypt.h>
 #include <trace/events/writeback.h>
 #include "internal.h"
 
@@ -2242,6 +2243,8 @@ EXPORT_SYMBOL(current_time);
 int vfs_ioc_setflags_prepare(struct inode *inode, unsigned int oldflags,
 			     unsigned int flags)
 {
+	int err;
+
 	/*
 	 * The IMMUTABLE and APPEND_ONLY flags can only be changed by
 	 * the relevant capability.
@@ -2251,6 +2254,10 @@ int vfs_ioc_setflags_prepare(struct inode *inode, unsigned int oldflags,
 	if ((flags ^ oldflags) & (FS_APPEND_FL | FS_IMMUTABLE_FL) &&
 	    !capable(CAP_LINUX_IMMUTABLE))
 		return -EPERM;
+
+	err = fscrypt_ioc_setflags_prepare(inode, oldflags, flags);
+	if (err)
+		return err;
 
 	return 0;
 }
