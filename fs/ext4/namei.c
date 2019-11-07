@@ -1397,8 +1397,22 @@ static inline bool ext4_match(struct inode *parent,
 				ext4fs_dirhash(parent, fname->cf_name.name,
 						fname_len(fname), &hinfo);
 				if (hinfo.hash != EXT4_DIRENT_HASH(de) ||
-						hinfo.minor_hash != EXT4_DIRENT_MINOR_HASH(de))
+						hinfo.minor_hash != EXT4_DIRENT_MINOR_HASH(de)) {
+					const struct fscrypt_str crypt_entry = FSTR_INIT(de->name, de->name_len);
+					struct fscrypt_str decrypted_entry;
+
+					decrypted_entry.name = NULL;
+					decrypted_entry.len = 0;
+					decrypted_entry.name = kmalloc(de->name_len, GFP_ATOMIC);
+					decrypted_entry.len = de->name_len;
+					if (!decrypted_entry.name)
+						return -ENOMEM;
+					fscrypt_fname_disk_to_usr(parent, 0, 0, &crypt_entry, &decrypted_entry);
+					pr_info("DROSEN: hash did not match. fname(%.*s,%x:%x) != de(%.*s,%x:%x)\n",
+							fname_len(fname), fname->cf_name.name, hinfo.hash, hinfo.minor_hash,
+							de->name_len, decrypted_entry.name, EXT4_DIRENT_HASH(de), EXT4_DIRENT_MINOR_HASH(de));
 					return 0;
+				}
 			}
 			return !ext4_ci_compare(parent, &cf, de->name, de->name_len, true);
 		} else {
