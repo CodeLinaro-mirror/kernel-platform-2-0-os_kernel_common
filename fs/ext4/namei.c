@@ -778,7 +778,8 @@ dx_probe(struct ext4_filename *fname, struct inode *dir,
 	if (hinfo->hash_version <= DX_HASH_TEA)
 		hinfo->hash_version += EXT4_SB(dir->i_sb)->s_hash_unsigned;
 	hinfo->seed = EXT4_SB(dir->i_sb)->s_hash_seed;
-	if (fname && fname_name(fname))
+	/* hash is already computed for encrypted casefolded directory */
+	if (fname && fname_name(fname) && !(IS_ENCRYPTED(dir) && IS_CASEFOLDED(dir)))
 		ext4fs_dirhash(dir, fname_name(fname), fname_len(fname), hinfo);
 	hash = hinfo->hash;
 
@@ -1337,19 +1338,21 @@ int ext4_ci_compare(struct inode *parent, const struct qstr *name,
 	return ret;
 }
 
-void ext4_fname_setup_ci_filename(struct inode *dir, const struct qstr *iname,
-				  struct fscrypt_str *cf_name)
+int ext4_fname_setup_ci_filename(struct inode *dir, const struct qstr *iname,
+				  struct ext4_filename *name)
 {
+	struct fscrypt_str *cf_name = &name->cf_name;
+	struct dx_hash_info *hinfo = &name->hinfo;
 	int len;
 
-	if (!IS_CASEFOLDED(dir) || !dir->i_sb->s_encoding) {
+	if (!needs_casefold(dir) || !dir->i_sb->s_encoding) {
 		cf_name->name = NULL;
-		return;
+		return 0;
 	}
 
 	cf_name->name = kmalloc(EXT4_NAME_LEN, GFP_NOFS);
 	if (!cf_name->name)
-		return;
+		return -ENOMEM;
 
 	len = utf8_casefold(dir->i_sb->s_encoding,
 			    iname, cf_name->name,
@@ -1357,10 +1360,18 @@ void ext4_fname_setup_ci_filename(struct inode *dir, const struct qstr *iname,
 	if (len <= 0) {
 		kfree(cf_name->name);
 		cf_name->name = NULL;
-		return;
 	}
 	cf_name->len = (unsigned) len;
+	if (!IS_ENCRYPTED(dir))
+		return 0;
 
+	hinfo->hash_version = DX_HASH_SIPHASH;
+	hinfo->seed = NULL;
+	if (cf_name->name)
+		ext4fs_dirhash(dir, cf_name->name, cf_name->len, hinfo);
+	else
+		ext4fs_dirhash(dir, iname->name, iname->len, hinfo);
+	return 0;
 }
 #endif
 
@@ -1390,27 +1401,8 @@ static inline bool ext4_match(struct inode *parent,
 			struct qstr cf = {.name = fname->cf_name.name,
 					  .len = fname->cf_name.len};
 			if (IS_ENCRYPTED(parent)) {
-				struct dx_hash_info hinfo;
-
-				hinfo.hash_version = DX_HASH_SIPHASH;
-				hinfo.seed = NULL;
-				ext4fs_dirhash(parent, fname->cf_name.name,
-						fname_len(fname), &hinfo);
-				if (hinfo.hash != EXT4_DIRENT_HASH(de) ||
-						hinfo.minor_hash != EXT4_DIRENT_MINOR_HASH(de)) {
-					const struct fscrypt_str crypt_entry = FSTR_INIT(de->name, de->name_len);
-					struct fscrypt_str decrypted_entry;
-
-					decrypted_entry.name = NULL;
-					decrypted_entry.len = 0;
-					decrypted_entry.name = kmalloc(de->name_len, GFP_ATOMIC);
-					decrypted_entry.len = de->name_len;
-					if (!decrypted_entry.name)
-						return -ENOMEM;
-					fscrypt_fname_disk_to_usr(parent, 0, 0, &crypt_entry, &decrypted_entry);
-					pr_info("DROSEN: hash did not match. fname(%.*s,%x:%x) != de(%.*s,%x:%x)\n",
-							fname_len(fname), fname->cf_name.name, hinfo.hash, hinfo.minor_hash,
-							de->name_len, decrypted_entry.name, EXT4_DIRENT_HASH(de), EXT4_DIRENT_MINOR_HASH(de));
+				if (fname->hinfo.hash != EXT4_DIRENT_HASH(de) ||
+						fname->hinfo.minor_hash != EXT4_DIRENT_MINOR_HASH(de)) {
 					return 0;
 				}
 			}
@@ -2035,13 +2027,10 @@ void ext4_insert_dentry(struct inode *dir,
 	de->name_len = fname_len(fname);
 	memcpy(de->name, fname_name(fname), fname_len(fname));
 	if (IS_CASEFOLDED(dir) && IS_ENCRYPTED(dir)) {
-		struct dx_hash_info hinfo;
+		struct dx_hash_info *hinfo = &fname->hinfo;
 
-		hinfo.hash_version = DX_HASH_SIPHASH;
-		hinfo.seed = NULL;
-		ext4fs_dirhash(dir, fname_usr_name(fname), fname_len(fname), &hinfo);
-		EXT4_EXTENDED_DIRENT(de)->hash = cpu_to_le32(hinfo.hash);
-		EXT4_EXTENDED_DIRENT(de)->minor_hash = cpu_to_le32(hinfo.minor_hash);
+		EXT4_EXTENDED_DIRENT(de)->hash = cpu_to_le32(hinfo->hash);
+		EXT4_EXTENDED_DIRENT(de)->minor_hash = cpu_to_le32(hinfo->minor_hash);
 	}
 }
 
@@ -2191,9 +2180,9 @@ static int make_indexed_dir(handle_t *handle, struct ext4_filename *fname,
 	if (fname->hinfo.hash_version <= DX_HASH_TEA)
 		fname->hinfo.hash_version += EXT4_SB(dir->i_sb)->s_hash_unsigned;
 	fname->hinfo.seed = EXT4_SB(dir->i_sb)->s_hash_seed;
-	if (IS_ENCRYPTED(dir) && IS_CASEFOLDED(dir))
-		ext4fs_dirhash(dir, fname_usr_name(fname), fname_len(fname), &fname->hinfo);
-	else
+
+	/* casefolded encrypted hashes are computed on fname setup */
+	if (!(IS_ENCRYPTED(dir) && IS_CASEFOLDED(dir)))
 		ext4fs_dirhash(dir, fname_name(fname), fname_len(fname), &fname->hinfo);
 
 
