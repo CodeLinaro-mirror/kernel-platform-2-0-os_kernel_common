@@ -12,6 +12,7 @@
  */
 
 #include <linux/scatterlist.h>
+#include <linux/siphash.h>
 #include <crypto/skcipher.h>
 #include "fscrypt_private.h"
 
@@ -400,3 +401,24 @@ errout:
 	return ret;
 }
 EXPORT_SYMBOL(fscrypt_setup_filename);
+
+/*
+ * fscrypt_fname_siphash() - Calculate the siphash for a file name
+ * @dir: the parent directory
+ * @name: the name of the file to get the siphash of
+ *
+ * Given a user-provided filename @name, this function calculates the siphash of
+ * that name using the hash key stored with the directory's policy.
+ *
+ *
+ * Return: 0 on success, -errno on failure
+ */
+u64 fscrypt_fname_siphash(const struct inode *dir, const struct qstr *name)
+{
+	struct fscrypt_info *ci = dir->i_crypt_info;
+
+	WARN_ON(!ci || (ci->ci_hash_key.key[0] | ci->ci_hash_key.key[1]) == 0);
+
+	return siphash(name->name, name->len, &ci->ci_hash_key);
+}
+EXPORT_SYMBOL(fscrypt_fname_siphash);
