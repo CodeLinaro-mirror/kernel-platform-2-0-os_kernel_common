@@ -282,7 +282,7 @@ static blk_status_t virtio_queue_rq(struct blk_mq_hw_ctx *hctx,
 	bool unmap = false;
 	u32 type;
 
-	BUG_ON(req->nr_phys_segments + 2 > vblk->sg_elems);
+	//BUG_ON(req->nr_phys_segments + 2 > vblk->sg_elems);
 
 	switch (req_op(req)) {
 	case REQ_OP_READ:
