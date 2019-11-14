@@ -158,6 +158,8 @@ extern int fscrypt_fname_alloc_buffer(const struct inode *, u32,
 extern void fscrypt_fname_free_buffer(struct fscrypt_str *);
 extern int fscrypt_fname_disk_to_usr(struct inode *, u32, u32,
 			const struct fscrypt_str *, struct fscrypt_str *);
+extern u64 fscrypt_fname_siphash(const struct inode *dir,
+				 const struct qstr *name);
 
 #define FSCRYPT_FNAME_MAX_UNDIGESTED_SIZE	32
 
@@ -459,6 +461,12 @@ static inline int fscrypt_fname_disk_to_usr(struct inode *inode,
 					    struct fscrypt_str *oname)
 {
 	return -EOPNOTSUPP;
+}
+
+static inline u64 fscrypt_fname_siphash(const struct inode *dir,
+					const struct qstr *name)
+{
+	return 0;
 }
 
 static inline bool fscrypt_match_name(const struct fscrypt_name *fname,
