@@ -12,6 +12,7 @@
  */
 
 #include <linux/scatterlist.h>
+#include <linux/siphash.h>
 #include <crypto/skcipher.h>
 #include "fscrypt_private.h"
 
@@ -400,3 +401,11 @@ errout:
 	return ret;
 }
 EXPORT_SYMBOL(fscrypt_setup_filename);
+
+u64 fscrypt_fname_siphash(const struct inode *inode, const struct qstr *name)
+{
+	struct fscrypt_info *ci = inode->i_crypt_info;
+
+	return siphash(name->name, name->len, &ci->ci_hash_key);
+}
+EXPORT_SYMBOL(fscrypt_fname_siphash);

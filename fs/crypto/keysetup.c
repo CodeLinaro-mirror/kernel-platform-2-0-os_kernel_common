@@ -224,6 +224,11 @@ static int fscrypt_setup_v2_file_key(struct fscrypt_info *ci,
 
 	err = fscrypt_set_derived_key(ci, derived_key);
 	memzero_explicit(derived_key, ci->ci_mode->keysize);
+
+	err = fscrypt_hkdf_expand(&mk->mk_secret.hkdf,
+			  HKDF_CONTEXT_FNAME_HASH_KEY,
+			  ci->ci_nonce, FS_KEY_DERIVATION_NONCE_SIZE,
+			  (u8 *)&ci->ci_hash_key, sizeof(ci->ci_hash_key));
 	return err;
 }
 
