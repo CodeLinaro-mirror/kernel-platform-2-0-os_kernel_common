@@ -94,15 +94,15 @@ int __ext4_check_dir_entry(const char *function, unsigned int line,
 	if (filp)
 		ext4_error_file(filp, function, line, bh->b_blocknr,
 				"bad entry in directory: %s - offset=%u, "
-				"inode=%u, rec_len=%d, name_len=%d, size=%d",
+				"inode=%u, rec_len=%d, hash=(%x:%x), name_len=%d, lblk=%d, size=%d",
 				error_msg, offset, le32_to_cpu(de->inode),
-				rlen, de->name_len, size);
+				rlen, EXT4_DIRENT_HASH(de), EXT4_DIRENT_MINOR_HASH(de),de->name_len, lblk, size);
 	else
 		ext4_error_inode(dir, function, line, bh->b_blocknr,
 				"bad entry in directory: %s - offset=%u, "
-				"inode=%u, rec_len=%d, name_len=%d, size=%d",
+				"inode=%u, rec_len=%d, hash=(%x:%x), name_len=%d, lblk=%d, size=%d",
 				 error_msg, offset, le32_to_cpu(de->inode),
-				 rlen, de->name_len, size);
+				 rlen, EXT4_DIRENT_HASH(de), EXT4_DIRENT_MINOR_HASH(de), de->name_len, lblk, size);
 
 	return 1;
 }

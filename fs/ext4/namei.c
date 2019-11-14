@@ -2031,6 +2031,7 @@ void ext4_insert_dentry(struct inode *dir,
 
 		EXT4_EXTENDED_DIRENT(de)->hash = cpu_to_le32(hinfo->hash);
 		EXT4_EXTENDED_DIRENT(de)->minor_hash = cpu_to_le32(hinfo->minor_hash);
+		pr_info("DROSEN: Values are inode: %d for %.*s (%x:%x) size: %d\n", le32_to_cpu(de->inode), fname->usr_fname->len, fname->usr_fname->name, EXT4_DIRENT_HASH(de), EXT4_DIRENT_MINOR_HASH(de), le16_to_cpu(de->rec_len));
 	}
 }
 
