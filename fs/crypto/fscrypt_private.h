@@ -280,7 +280,8 @@ extern int fname_encrypt(struct inode *inode, const struct qstr *iname,
 extern bool fscrypt_fname_encrypted_size(const struct inode *inode,
 					 u32 orig_len, u32 max_len,
 					 u32 *encrypted_len_ret);
-
+extern int fscrypt_do_sha256(unsigned char *result,
+				const u8 *data, unsigned int data_len);
 /* hkdf.c */
 
 struct fscrypt_hkdf {
