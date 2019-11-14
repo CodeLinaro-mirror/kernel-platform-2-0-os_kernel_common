@@ -163,46 +163,37 @@ extern int fscrypt_fname_disk_to_usr(struct inode *, u32, u32,
 extern u64 fscrypt_fname_siphash(const struct inode *dir,
 					const struct qstr *name);
 
-#define FSCRYPT_FNAME_MAX_UNDIGESTED_SIZE	32
-
-/* Extracts the second-to-last ciphertext block; see explanation below */
-#define FSCRYPT_FNAME_DIGEST(name, len)	\
-	((name) + round_down((len) - FS_CRYPTO_BLOCK_SIZE - 1, \
-			     FS_CRYPTO_BLOCK_SIZE))
-
-#define FSCRYPT_FNAME_DIGEST_SIZE	FS_CRYPTO_BLOCK_SIZE
-
 /**
- * fscrypt_digested_name - alternate identifier for an on-disk filename
+ * fscrypt_nokey_name - identifier for on-disk filenames when key is not present
  *
- * When userspace lists an encrypted directory without access to the key,
- * filenames whose ciphertext is longer than FSCRYPT_FNAME_MAX_UNDIGESTED_SIZE
- * bytes are shown in this abbreviated form (base64-encoded) rather than as the
- * full ciphertext (base64-encoded).  This is necessary to allow supporting
- * filenames up to NAME_MAX bytes, since base64 encoding expands the length.
+ * When userspace lists an encrypted directory without access to the key, we
+ * must present them with a unique identifier for the file. base64 encoding will
+ * expand the space, so we use this format to avoid most collisions.
  *
- * To make it possible for filesystems to still find the correct directory entry
- * despite not knowing the full on-disk name, we encode any filesystem-specific
- * 'hash' and/or 'minor_hash' which the filesystem may need for its lookups,
- * followed by the second-to-last ciphertext block of the filename.  Due to the
- * use of the CBC-CTS encryption mode, the second-to-last ciphertext block
- * depends on the full plaintext.  (Note that ciphertext stealing causes the
- * last two blocks to appear "flipped".)  This makes accidental collisions very
- * unlikely: just a 1 in 2^128 chance for two filenames to collide even if they
- * share the same filesystem-specific hashes.
+ * In the case of encryption with casefolding enabled, we are unable to generate
+ * hashes without the key present, so we must rely on the on disk hash. Due to
+ * this, we always include the hash in the base64 encoded name. After this, we
+ * include the first 149 characters of the cyphertext. If the on-disk name is
+ * longer than FSCRYPT_FNAME_UNDIGESTED_SIZE, we take the sha256 of the rest
+ * of the name and append that. When base64 encoded, this will result in a name
+ * that is of size FSCRYPT_FNAME_LONG_SIZE
  *
- * However, this scheme isn't immune to intentional collisions, which can be
- * created by anyone able to create arbitrary plaintext filenames and view them
- * without the key.  Making the "digest" be a real cryptographic hash like
- * SHA-256 over the full ciphertext would prevent this, although it would be
- * less efficient and harder to implement, especially since the filesystem would
- * need to calculate it for each directory entry examined during a search.
+ * Collisions are very unlikely in this scheme as it would require the first 149
+ * characters of the ciphertext to be identical, as well as the sha256 of the
+ * remaining 106 characters, along with the filesystem specific hash.
  */
-struct fscrypt_digested_name {
-	u32 hash;
-	u32 minor_hash;
-	u8 digest[FSCRYPT_FNAME_DIGEST_SIZE];
+
+#define FSCRYPT_FNAME_UNDIGESTED_SIZE 149
+#define FSCRYPT_FNAME_LONG_SIZE 252
+struct fscrypt_nokey_name {
+	u32 hash[2];
+	u8 bytes[FSCRYPT_FNAME_UNDIGESTED_SIZE];
+	u8 sha256[32];
+	u8 padding[3];
 };
+
+int fscrypt_do_sha256(unsigned char *result,
+	     const u8 *data1, unsigned int data1_len);
 
 /**
  * fscrypt_match_name() - test whether the given name matches a directory entry
@@ -222,14 +213,35 @@ static inline bool fscrypt_match_name(const struct fscrypt_name *fname,
 				      const u8 *de_name, u32 de_name_len)
 {
 	if (unlikely(!fname->disk_name.name)) {
-		const struct fscrypt_digested_name *n =
+		const struct fscrypt_nokey_name *n =
 			(const void *)fname->crypto_buf.name;
-		if (WARN_ON_ONCE(fname->usr_fname->name[0] != '_'))
+		u32 len;
+		bool check_hash = false;
+		u8 sha256[32];
+
+		if (fname->crypto_buf.len ==
+				offsetof(struct fscrypt_nokey_name, padding)) {
+			len = FSCRYPT_FNAME_UNDIGESTED_SIZE;
+			check_hash = true;
+		} else {
+			len = fname->crypto_buf.len -
+				offsetof(struct fscrypt_nokey_name, bytes);
+		}
+		if (!check_hash && de_name_len != len)
 			return false;
-		if (de_name_len <= FSCRYPT_FNAME_MAX_UNDIGESTED_SIZE)
+		if (check_hash && de_name_len <= len)
 			return false;
-		return !memcmp(FSCRYPT_FNAME_DIGEST(de_name, de_name_len),
-			       n->digest, FSCRYPT_FNAME_DIGEST_SIZE);
+		if (!!memcmp(de_name, n->bytes, len))
+			return false;
+		if (check_hash) {
+			fscrypt_do_sha256(sha256,
+				&de_name[FSCRYPT_FNAME_UNDIGESTED_SIZE],
+				de_name_len - FSCRYPT_FNAME_UNDIGESTED_SIZE);
+			if(!!memcmp(sha256, n->sha256, sizeof(sha256)))
+				return false;
+		}
+
+		return true;
 	}
 
 	if (de_name_len != fname->disk_name.len)
