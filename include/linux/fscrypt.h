@@ -197,10 +197,14 @@ extern u64 fscrypt_fname_siphash(const struct inode *, const struct qstr *);
  * less efficient and harder to implement, especially since the filesystem would
  * need to calculate it for each directory entry examined during a search.
  */
-struct fscrypt_digested_name {
-	u32 hash;
-	u32 minor_hash;
-	u8 digest[FSCRYPT_FNAME_DIGEST_SIZE];
+
+#define FSCRYPT_FNAME_UNDIGESTED_SIZE 149
+#define FSCRYPT_FNAME_LONG_SIZE 252
+struct fscrypt_nokey_name {
+	u32 hash[2];
+	u8 bytes[FSCRYPT_FNAME_UNDIGESTED_SIZE];
+	u8 sha256[32];
+	u8 padding[3];
 };
 
 /**
@@ -221,14 +225,37 @@ static inline bool fscrypt_match_name(const struct fscrypt_name *fname,
 				      const u8 *de_name, u32 de_name_len)
 {
 	if (unlikely(!fname->disk_name.name)) {
-		const struct fscrypt_digested_name *n =
+		const struct fscrypt_nokey_name *n =
 			(const void *)fname->crypto_buf.name;
-		if (WARN_ON_ONCE(fname->usr_fname->name[0] != '_'))
+		u32 len;
+		bool check_hash = 0;
+
+		if (fname->crypto_buf.len == offsetof(struct fscrypt_nokey_name, padding)) {
+			len = FSCRYPT_FNAME_UNDIGESTED_SIZE;
+			check_hash = 1;
+		} else {
+			len = fname->crypto_buf.len - offsetof(struct fscrypt_nokey_name, bytes);
+		}
+		if (!check_hash && de_name_len != len)
 			return false;
-		if (de_name_len <= FSCRYPT_FNAME_MAX_UNDIGESTED_SIZE)
+		if (check_hash && de_name_len <= len) {
+			pr_info("len mismatch: %d < %d", de_name_len, len);
 			return false;
-		return !memcmp(FSCRYPT_FNAME_DIGEST(de_name, de_name_len),
-			       n->digest, FSCRYPT_FNAME_DIGEST_SIZE);
+		}
+		if (!!memcmp(de_name, n->bytes, len)) {
+			//char tmp = n->bytes[len];
+			//n->bytes[len] = 0;
+			if (check_hash) {
+				pr_info("DR: %s != %s\n",de_name, n->bytes);
+			}
+			//n->bytes[len] = tmp;
+			return false;
+		}
+		if (check_hash) {
+			// check sha256
+		}
+
+		return true;
 	}
 
 	if (de_name_len != fname->disk_name.len)
