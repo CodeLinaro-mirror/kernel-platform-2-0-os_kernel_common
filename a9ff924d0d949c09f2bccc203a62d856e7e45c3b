@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "708a074c_02dc2716",
+        "filename": "block/Kconfig",
+        "patchSetId": 1
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1137063
+      },
+      "writtenOn": "2020-01-09T18:34:42Z",
+      "side": 1,
+      "message": "The Kconfig option CRYPTO_BLKCIPHER was renamed to CRYPTO_SKCIPHER in 5.5, so this needs to be CRYPTO_BLKCIPHER in everything older than 5.5.",
+      "range": {
+        "startLine": 191,
+        "startChar": 8,
+        "endLine": 191,
+        "endChar": 23
+      },
+      "revId": "a9ff924d0d949c09f2bccc203a62d856e7e45c3b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": true
+    }
+  ]
+}
