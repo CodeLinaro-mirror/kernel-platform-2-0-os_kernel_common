@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "6b273fba_97b9c93b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1137063
+      },
+      "writtenOn": "2020-01-09T18:44:08Z",
+      "side": 1,
+      "message": "Can you fix this date?  This date is for the v5 patch series, not v6; it\u0027s almost 2 months before v6 was sent out.\n\nThe android-mainline commit is dated Dec 17; it\u0027s just the android-5.4 and android-4.19 ones that have bad dates.  You can use:\n\n  git commit --amend --date\u003d\u0027Tue Dec 17 14:26:29 2019 -0800\u0027",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 3,
+        "endChar": 37
+      },
+      "revId": "a9ff924d0d949c09f2bccc203a62d856e7e45c3b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "708a074c_02dc2716",
         "filename": "block/Kconfig",
         "patchSetId": 1
