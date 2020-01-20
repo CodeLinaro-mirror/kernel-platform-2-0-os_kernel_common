@@ -97,6 +97,14 @@ bool fscrypt_supported_policy(const union fscrypt_policy *policy_u,
 			return false;
 		}
 
+		if (IS_CASEFOLDED(inode)) {
+			/* With v1, there's no way to derive dirhash keys. */
+			fscrypt_warn(inode,
+				     "v1 policies can't be used on casefolded directories");
+			return false;
+		}
+
+
 		return true;
 	}
 	case FSCRYPT_POLICY_V2: {
