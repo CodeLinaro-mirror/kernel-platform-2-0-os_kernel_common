@@ -1065,8 +1065,43 @@ const struct file_operations f2fs_dir_operations = {
 };
 
 #ifdef CONFIG_UNICODE
-const struct dentry_operations f2fs_dentry_ops = {
+static const struct dentry_operations f2fs_ci_dentry_ops = {
 	.d_hash = utf8_ci_d_hash,
 	.d_compare = utf8_ci_d_compare,
 };
 #endif
+
+#ifdef CONFIG_FS_ENCRYPTION
+static const struct dentry_operations f2fs_encrypted_dentry_ops = {
+	.d_revalidate = fscrypt_d_revalidate,
+};
+#endif
+
+#if IS_ENABLED(CONFIG_UNICODE) && IS_ENABLED(CONFIG_FS_ENCRYPTION)
+static const struct dentry_operations f2fs_encrypted_ci_dentry_ops = {
+	.d_hash = utf8_ci_d_hash,
+	.d_compare = utf8_ci_d_compare,
+	.d_revalidate = fscrypt_d_revalidate,
+};
+#endif
+
+void f2fs_set_d_ops(struct inode *dir, struct dentry *dentry) {
+#ifdef CONFIG_FS_ENCRYPTION
+	if (dentry->d_flags & DCACHE_ENCRYPTED_NAME) {
+#ifdef CONFIG_UNICODE
+		if (dir->i_sb->s_encoding) {
+			d_set_d_op(dentry, &f2fs_encrypted_ci_dentry_ops);
+			return;
+		}
+#endif
+		d_set_d_op(dentry, &f2fs_encrypted_dentry_ops);
+		return;
+	}
+#endif
+#ifdef CONFIG_UNICODE
+	if (dir->i_sb->s_encoding) {
+		d_set_d_op(dentry, &f2fs_ci_dentry_ops);
+		return;
+	}
+#endif
+}

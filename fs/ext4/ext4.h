@@ -2495,6 +2495,7 @@ static inline  unsigned char get_dtype(struct super_block *sb, int filetype)
 }
 extern int ext4_check_all_de(struct inode *dir, struct buffer_head *bh,
 			     void *buf, int buf_size);
+void ext4_set_d_ops(struct inode *dir, struct dentry *dentry);
 
 /* fsync.c */
 extern int ext4_sync_file(struct file *, loff_t, loff_t, int);

@@ -3020,6 +3020,7 @@ static inline int f2fs_add_link(struct dentry *dentry, struct inode *inode)
 	return f2fs_do_add_link(d_inode(dentry->d_parent), &dentry->d_name,
 				inode, inode->i_ino, inode->i_mode);
 }
+void f2fs_set_d_ops(struct inode *dir, struct dentry *dentry);
 
 /*
  * super.c
@@ -3484,9 +3485,6 @@ static inline void f2fs_destroy_root_stats(void) { }
 #endif
 
 extern const struct file_operations f2fs_dir_operations;
-#ifdef CONFIG_UNICODE
-extern const struct dentry_operations f2fs_dentry_ops;
-#endif
 extern const struct file_operations f2fs_file_operations;
 extern const struct inode_operations f2fs_file_inode_operations;
 extern const struct address_space_operations f2fs_dblock_aops;
