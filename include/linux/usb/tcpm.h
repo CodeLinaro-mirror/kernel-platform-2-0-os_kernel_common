@@ -110,6 +110,9 @@ enum tcpm_transmit_type {
  *		restart toggling after checking the connector for contaminant.
  *		This forces the TCPM state machine to tranistion to TOGGLING state
  *		without calling start_toggling callback.
+ * @set_pd_capable:
+ *		Optional; Called to notify that pd capable partner has been
+ *		detected.
  */
 struct tcpc_dev {
 	struct fwnode_handle *fwnode;
@@ -141,6 +144,7 @@ struct tcpc_dev {
 	int (*set_auto_vbus_discharge_threshold)(struct tcpc_dev *dev, enum typec_pwr_opmode mode,
 						 bool pps_active, u32 requested_vbus_voltage);
 	int (*check_contaminant)(struct tcpc_dev *dev);
+	void (*set_pd_capable)(struct tcpc_dev *dev, bool capable);
 };
 
 struct tcpm_port;
