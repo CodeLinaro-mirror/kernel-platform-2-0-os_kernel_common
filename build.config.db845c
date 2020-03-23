@@ -8,4 +8,5 @@ POST_DEFCONFIG_CMDS="rm ./common/arch/arm64/configs/${DEFCONFIG}"
 FILES="
 arch/arm64/boot/Image.gz
 arch/arm64/boot/dts/qcom/sdm845-db845c.dtb
+System.map
 "
