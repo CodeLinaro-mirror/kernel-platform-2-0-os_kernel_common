@@ -73,6 +73,7 @@ struct usb_ep;
  *	Note that for writes (IN transfers) some data bytes may still
  *	reside in a device-side FIFO when the request is reported as
  *	complete.
+ * @udc_priv: Vendor private data in usage by the UDC.
  *
  * These are allocated/freed through the endpoint they're used with.  The
  * hardware's driver can add extra per-request data to the memory it returns,
@@ -114,6 +115,7 @@ struct usb_request {
 
 	int			status;
 	unsigned		actual;
+	unsigned int		udc_priv;
 };
 
 /*-------------------------------------------------------------------------*/
@@ -144,6 +146,9 @@ struct usb_ep_ops {
 
 	int (*fifo_status) (struct usb_ep *ep);
 	void (*fifo_flush) (struct usb_ep *ep);
+	int (*gsi_ep_op) (struct usb_ep *ep, void *op_data,
+		enum gsi_ep_op op);
+
 };
 
 /**
@@ -263,6 +268,8 @@ int usb_ep_clear_halt(struct usb_ep *ep);
 int usb_ep_set_wedge(struct usb_ep *ep);
 int usb_ep_fifo_status(struct usb_ep *ep);
 void usb_ep_fifo_flush(struct usb_ep *ep);
+int usb_gsi_ep_op(struct usb_ep *ep,
+		struct usb_gsi_request *req, enum gsi_ep_op op);
 #else
 static inline void usb_ep_set_maxpacket_limit(struct usb_ep *ep,
 		unsigned maxpacket_limit)
@@ -292,6 +299,10 @@ static inline int usb_ep_fifo_status(struct usb_ep *ep)
 { return 0; }
 static inline void usb_ep_fifo_flush(struct usb_ep *ep)
 { }
+
+static int usb_gsi_ep_op(struct usb_ep *ep,
+		struct usb_gsi_request *req, enum gsi_ep_op op)
+{ return 0; }
 #endif /* USB_GADGET */
 
 /*-------------------------------------------------------------------------*/
@@ -329,6 +340,7 @@ struct usb_gadget_ops {
 	struct usb_ep *(*match_ep)(struct usb_gadget *,
 			struct usb_endpoint_descriptor *,
 			struct usb_ss_ep_comp_descriptor *);
+	int	(*restart)(struct usb_gadget *g);
 };
 
 /**
@@ -380,6 +392,8 @@ struct usb_gadget_ops {
  * @connected: True if gadget is connected.
  * @lpm_capable: If the gadget max_speed is FULL or HIGH, this flag
  *	indicates that it supports LPM as per the LPM ECN & errata.
+ * @remote_wakeup: Indicates if the host has enabled the remote_wakeup
+ * feature.
  *
  * Gadgets have a mostly-portable "gadget driver" implementing device
  * functions, handling all usb configurations and interfaces.  Gadget
@@ -434,6 +448,7 @@ struct usb_gadget {
 	unsigned			deactivated:1;
 	unsigned			connected:1;
 	unsigned			lpm_capable:1;
+	unsigned			remote_wakeup:1;
 };
 #define work_to_gadget(w)	(container_of((w), struct usb_gadget, work))
 
