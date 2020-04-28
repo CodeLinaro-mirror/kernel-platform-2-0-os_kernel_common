@@ -5491,6 +5491,8 @@ static void binder_deferred_func(struct work_struct *work)
 	int defer;
 
 	do {
+		int pid = 0;
+          
 		mutex_lock(&binder_deferred_lock);
 		if (!hlist_empty(&binder_deferred_list)) {
 			proc = hlist_entry(binder_deferred_list.first,
@@ -5506,8 +5508,10 @@ static void binder_deferred_func(struct work_struct *work)
 
 		files = NULL;
 		if (defer & BINDER_DEFERRED_PUT_FILES) {
+			printk(KERN_ERR "fuse_debug: %d (%s) binder_deferred_put_files()\n", proc->tsk->pid, proc->tsk->comm);
 			mutex_lock(&proc->files_lock);
 			files = proc->files;
+			pid = proc->tsk->pid;
 			if (files)
 				proc->files = NULL;
 			mutex_unlock(&proc->files_lock);
@@ -5519,8 +5523,10 @@ static void binder_deferred_func(struct work_struct *work)
 		if (defer & BINDER_DEFERRED_RELEASE)
 			binder_deferred_release(proc); /* frees proc */
 
-		if (files)
+		if (files) {
+			printk(KERN_ERR "fuse_debug: %d binder: put_files_struct\n", pid);
 			put_files_struct(files);
+		}
 	} while (proc);
 }
 static DECLARE_WORK(binder_deferred_work, binder_deferred_func);

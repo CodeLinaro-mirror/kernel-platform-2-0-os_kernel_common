@@ -2121,6 +2121,7 @@ void fuse_abort_conn(struct fuse_conn *fc, bool is_abort)
 {
 	struct fuse_iqueue *fiq = &fc->iq;
 
+	printk(KERN_ERR "fuse_debug: %d (%s) fuse_abort_conn()\n", current->pid, current->comm);
 	spin_lock(&fc->lock);
 	if (fc->connected) {
 		struct fuse_dev *fud;
