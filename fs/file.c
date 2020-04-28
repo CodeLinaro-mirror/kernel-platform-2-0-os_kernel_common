@@ -441,6 +441,7 @@ void exit_files(struct task_struct *tsk)
 	if (files) {
 		task_lock(tsk);
 		tsk->files = NULL;
+		printk(KERN_ERR "fuse_debug: %d:%d (%s) exit_files(), count %d", tsk->pid, tsk->tgid, tsk->comm, atomic_read(&files->count));
 		task_unlock(tsk);
 		put_files_struct(files);
 	}
