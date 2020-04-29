@@ -119,6 +119,10 @@ extern long calc_load_fold_active(struct rq *this_rq, long adjust);
  */
 #define DEFAULT_LATENCY_NICE	0
 
+#ifdef CONFIG_UCLAMP_TASK_GROUP
+#define UCLAMP_LS_TO_LAT_NICE(a) ((int)(a == 0 ? 0 : -1))
+#define LAT_NICE_TO_UCLAMP_LS(a) ((int)(a < 0 ? -1 : 0 ))
+#endif
 /*
  * Increase resolution of nice-level calculations for 64-bit architectures.
  * The extra resolution improves shares distribution and load balancing of
@@ -2413,24 +2417,10 @@ static inline bool uclamp_boosted(struct task_struct *p)
 }
 #endif /* CONFIG_UCLAMP_TASK */
 
-#ifdef CONFIG_UCLAMP_TASK_GROUP
 static inline bool task_latency_sensitive(struct task_struct *p)
 {
-	struct cgroup_subsys_state *css = task_css(p, cpu_cgrp_id);
-	struct task_group *tg;
-
-	if (!css)
-		return false;
-	tg = container_of(css, struct task_group, css);
-
-	return tg->latency_sensitive;
+	return (p->latency_nice < DEFAULT_LATENCY_NICE);
 }
-#else
-static inline bool task_latency_sensitive(struct task_struct *p)
-{
-	return false;
-}
-#endif /* CONFIG_UCLAMP_TASK_GROUP */
 
 #ifdef arch_scale_freq_capacity
 # ifndef arch_scale_freq_invariant

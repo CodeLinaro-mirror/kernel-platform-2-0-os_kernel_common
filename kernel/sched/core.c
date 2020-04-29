@@ -7019,6 +7019,10 @@ static void sched_change_group(struct task_struct *tsk, int type)
 	tg = autogroup_task_group(tsk, tg);
 	tsk->sched_task_group = tg;
 
+#ifdef CONFIG_UCLAMP_TASK_GROUP
+	tsk->latency_nice = UCLAMP_LS_TO_LAT_NICE(tg->latency_sensitive);
+#endif
+
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	if (tsk->sched_class->task_change_group)
 		tsk->sched_class->task_change_group(tsk, type);
@@ -7354,6 +7358,18 @@ static int cpu_uclamp_max_show(struct seq_file *sf, void *v)
 	return 0;
 }
 
+static void _set_latency_nice_tasks(struct cgroup_subsys_state *css, int latency_nice)
+{
+	struct css_task_iter it;
+	struct task_struct *task;
+
+	css_task_iter_start(css, 0, &it);
+	while ((task = css_task_iter_next(&it))) {
+		task->latency_nice = latency_nice;
+	}
+	css_task_iter_end(&it);
+}
+
 static int cpu_uclamp_ls_write_u64(struct cgroup_subsys_state *css,
 				   struct cftype *cftype, u64 ls)
 {
@@ -7363,6 +7379,7 @@ static int cpu_uclamp_ls_write_u64(struct cgroup_subsys_state *css,
 		return -EINVAL;
 	tg = css_tg(css);
 	tg->latency_sensitive = (unsigned int) ls;
+	_set_latency_nice_tasks(css, UCLAMP_LS_TO_LAT_NICE(ls));
 
 	return 0;
 }
