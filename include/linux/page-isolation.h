@@ -32,6 +32,7 @@ static inline bool is_migrate_isolate(int migratetype)
 
 #define SKIP_HWPOISON	0x1
 #define REPORT_FAILURE	0x2
+#define ALLOW_UNMOVABLE 0x4
 
 bool has_unmovable_pages(struct zone *zone, struct page *page, int count,
 			 int migratetype, int flags);

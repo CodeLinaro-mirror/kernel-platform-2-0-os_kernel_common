@@ -59,7 +59,8 @@ static int set_migratetype_isolate(struct page *page, int migratetype, int isol_
 	 * FIXME: Now, memory hotplug doesn't call shrink_slab() by itself.
 	 * We just check MOVABLE pages.
 	 */
-	if (!has_unmovable_pages(zone, page, arg.pages_found, migratetype,
+	if (isol_flags & ALLOW_UNMOVABLE ||
+	    !has_unmovable_pages(zone, page, arg.pages_found, migratetype,
 				 isol_flags))
 		ret = 0;
 
@@ -171,6 +172,8 @@ __first_valid_page(unsigned long pfn, unsigned long nr_pages)
  *			SKIP_HWPOISON - ignore hwpoison pages
  *			REPORT_FAILURE - report details about the failure to
  *			isolate the range
+ *			ALLOW_UNMOVABLE - allow unmovable pages in the
+ *			pageblock
  *
  * Making page-allocation-type to be MIGRATE_ISOLATE means free pages in
  * the range will never be allocated. Any free pages and pages freed in the
