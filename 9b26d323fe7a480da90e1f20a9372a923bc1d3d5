@@ -1,0 +1,25 @@
+{
+  "comments": [
+    {
+      "robotId": "ayeaye",
+      "robotRunId": "AR00000000000003210287",
+      "url": "https://android-build.googleplex.com/builds/treetop/android-review/1317500?revision\u003d4",
+      "fixSuggestions": [],
+      "key": {
+        "uuid": "0f9f9e7d_8de9cf3e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1550585
+      },
+      "writtenOn": "2020-06-01T15:16:53Z",
+      "side": 1,
+      "message": "Commit is not signed off by the author!\n\nMissing tag: Signed-off-by: Andrey Konovalov \u003candreyknvl@gmail.com\u003e",
+      "revId": "9b26d323fe7a480da90e1f20a9372a923bc1d3d5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
+    }
+  ]
+}
