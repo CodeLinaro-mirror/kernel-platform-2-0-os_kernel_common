@@ -10,6 +10,8 @@
 
 #include <trace/events/power.h>
 
+EXPORT_TRACEPOINT_SYMBOL_GPL(cpu_idle_rcuidle);
+
 /* Linker adds these: start and end of __cpuidle functions */
 extern char __cpuidle_text_start[], __cpuidle_text_end[];
 
