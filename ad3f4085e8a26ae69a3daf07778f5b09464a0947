@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "2881f0f6_81c0fdf4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1557540
+      },
+      "writtenOn": "2020-07-10T18:34:35Z",
+      "side": 1,
+      "message": "hmm the presubmit build doesn\u0027t have the right string. I\u0027m guessing it\u0027s because this change isn\u0027t merged. Any thoughts?\n\n$ strings vmlinux | grep \"Linux version\"\nLinux version %s (%s)\nLinux version 5.4.51-gd7070244b9c9-abP15608459 (android-build@prod40-0714) (Android (6443078 based on r383902) clang version 11.0.1 (https://android.googleso\nurce.com/toolchain/llvm-project b397f81060ce6d701042b782172ed13bee898b79), LLD 11.0.1 (/buildbot/tmp/tmp6_m7QH b397f81060ce6d701042b782172ed13bee898b79)) #2 \nSMP PREEMPT Fri Jul 10 17:48:56 UTC 2020\n",
+      "revId": "ad3f4085e8a26ae69a3daf07778f5b09464a0947",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b894b93b_71743587",
         "filename": "scripts/setlocalversion",
         "patchSetId": 2
