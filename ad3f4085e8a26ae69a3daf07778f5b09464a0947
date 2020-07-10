@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b894b93b_71743587",
+        "filename": "scripts/setlocalversion",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1557540
+      },
+      "writtenOn": "2020-07-10T17:45:48Z",
+      "side": 1,
+      "message": "I\u0027ll join this to be \n\nif [ \"$?\" -eq 0 ] \u0026\u0026 [ -n \"$android_release\" ]; then",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 0
+      },
+      "revId": "ad3f4085e8a26ae69a3daf07778f5b09464a0947",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": true
+    }
+  ]
+}
