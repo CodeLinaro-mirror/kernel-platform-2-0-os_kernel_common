@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "20cfa61c_e2d33db6",
+        "filename": "Makefile",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2020-07-10T18:47:39Z",
+      "side": 1,
+      "message": "KMI_VERSION?",
+      "revId": "ad3f4085e8a26ae69a3daf07778f5b09464a0947",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b894b93b_71743587",
         "filename": "scripts/setlocalversion",
         "patchSetId": 2
