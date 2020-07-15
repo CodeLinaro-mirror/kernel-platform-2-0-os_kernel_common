@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "2c0cd66d_957631c5",
+        "filename": "Makefile",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2020-07-15T02:37:20Z",
+      "side": 1,
+      "message": "I think the official term is \"KMI generation\" as per the doc",
+      "parentUuid": "20cfa61c_e2d33db6",
+      "revId": "ad3f4085e8a26ae69a3daf07778f5b09464a0947",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "63b7d4cb_aa78e224",
         "filename": "scripts/setlocalversion",
         "patchSetId": 2
