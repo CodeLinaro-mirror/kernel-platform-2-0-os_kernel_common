@@ -36,6 +36,52 @@
     },
     {
       "key": {
+        "uuid": "63b7d4cb_aa78e224",
+        "filename": "scripts/setlocalversion",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2020-07-15T02:36:16Z",
+      "side": 1,
+      "message": "The official term is \"KMI generation\" as per the doc.",
+      "range": {
+        "startLine": 14,
+        "startChar": 52,
+        "endLine": 14,
+        "endChar": 58
+      },
+      "revId": "ad3f4085e8a26ae69a3daf07778f5b09464a0947",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae64b300_5cb5269e",
+        "filename": "scripts/setlocalversion",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2020-07-15T02:36:16Z",
+      "side": 1,
+      "message": "nit: why no + here?",
+      "range": {
+        "startLine": 61,
+        "startChar": 21,
+        "endLine": 61,
+        "endChar": 26
+      },
+      "revId": "ad3f4085e8a26ae69a3daf07778f5b09464a0947",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b894b93b_71743587",
         "filename": "scripts/setlocalversion",
         "patchSetId": 2
