@@ -20,6 +20,27 @@
       "revId": "911024585840133852b4c5a659bdae9922e1533a",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
       "unresolved": false
+    },
+    {
+      "robotId": "ayeaye",
+      "robotRunId": "AR00000000000004373748",
+      "url": "https://android-build.googleplex.com/builds/treetop/android-review/1398600?revision\u003d1",
+      "fixSuggestions": [],
+      "key": {
+        "uuid": "706f8c94_de1cced6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1550585
+      },
+      "writtenOn": "2020-08-12T21:40:22Z",
+      "side": 1,
+      "message": "ANDROID: commits need to contain a Bug: or Fixes: line\n\nPlease refer to the contribution guidelines for details:\nhttps://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/README.md\nAyeAye - CL 326237257 android-build.ayeaye-python-dispatcher_20200812.05_p0",
+      "revId": "911024585840133852b4c5a659bdae9922e1533a",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
     }
   ]
 }
