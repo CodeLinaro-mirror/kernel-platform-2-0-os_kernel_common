@@ -2459,6 +2459,74 @@ static int memsize_rgn_cmp(const void *a, const void *b)
 	return 0;
 }
 
+/* assume that freeing region is NOT bigger than the previous region */
+static void __init_memblock memblock_memsize_free(phys_addr_t free_base,
+						  phys_addr_t free_size)
+{
+	int i;
+	struct memsize_rgn_struct *rgn;
+	phys_addr_t free_end, end;
+
+	free_end = free_base + free_size - 1;
+	memblock_dbg("%s %pa..%pa\n",
+		     __func__, &free_base, &free_end);
+
+	for (i = 0; i < memsize_rgn_count; i++) {
+		rgn = &memsize_rgn[i];
+
+		end = rgn->base + rgn->size;
+		if (free_base < rgn->base ||
+		    free_base >= end)
+			continue;
+
+		free_end = free_base + free_size;
+		if (free_base == rgn->base) {
+			rgn->size -= free_size;
+			if (rgn->size != 0)
+				rgn->base += free_size;
+		} else if (free_end == end) {
+			rgn->size -= free_size;
+		} else {
+			memblock_memsize_record(rgn->name, free_end,
+				end - free_end, rgn->nomap, rgn->reusable);
+			rgn->size = free_base - rgn->base;
+		}
+	}
+}
+
+/* assume that freed size is always 64 KB aligned */
+static inline void memblock_memsize_check_size(struct memsize_rgn_struct *rgn)
+{
+	phys_addr_t phy, end, freed = 0;
+	bool has_freed = false;
+	struct page *page;
+
+	if (rgn->reusable || rgn->nomap)
+		return;
+
+	/* check the first page of each 1 MB */
+	phy = rgn->base;
+	end = rgn->base + rgn->size;
+	while (phy < end) {
+		unsigned long pfn = __phys_to_pfn(phy);
+
+		if (!pfn_valid(pfn))
+			return;
+		page = pfn_to_page(pfn);
+		if (!has_freed && !PageReserved(page)) {
+			has_freed = true;
+			freed = phy;
+		} else if (has_freed && PageReserved(page)) {
+			has_freed = false;
+			memblock_memsize_free(freed, phy - freed);
+		}
+
+		if (has_freed && (phy + SZ_64K >= end))
+			memblock_memsize_free(freed, end - freed);
+		phy += SZ_64K;
+	}
+}
+
 static int memblock_memsize_show(struct seq_file *m, void *private)
 {
 	int i;
@@ -2472,6 +2540,7 @@ static int memblock_memsize_show(struct seq_file *m, void *private)
 		long size;
 
 		rgn = &memsize_rgn[i];
+		memblock_memsize_check_size(rgn);
 		base = rgn->base;
 		size = rgn->size;
 		end = base + size;
