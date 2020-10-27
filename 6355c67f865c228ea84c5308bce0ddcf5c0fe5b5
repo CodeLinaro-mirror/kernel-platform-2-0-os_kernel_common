@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d638bf10_415f1efa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2020-10-27T22:56:50Z",
+      "side": 1,
+      "message": "Restoring as a temporary solution until the upstream version is complete.",
+      "revId": "6355c67f865c228ea84c5308bce0ddcf5c0fe5b5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
