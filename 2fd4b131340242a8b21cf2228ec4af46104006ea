@@ -41,6 +41,30 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "86e196bf_2a5ee639",
+        "filename": "fs/notify/inotify/inotify_user.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 753,
+      "author": {
+        "id": 1409599
+      },
+      "writtenOn": "2020-10-27T19:14:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "907aef14_dc106641",
+      "range": {
+        "startLine": 753,
+        "startChar": 3,
+        "endLine": 753,
+        "endChar": 4
+      },
+      "revId": "2fd4b131340242a8b21cf2228ec4af46104006ea",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "13f614a1_406044c4",
@@ -54,6 +78,30 @@
       "writtenOn": "2020-10-27T17:53:03Z",
       "side": 1,
       "message": "you lost the pretty blank line 😞",
+      "range": {
+        "startLine": 154,
+        "startChar": 0,
+        "endLine": 154,
+        "endChar": 1
+      },
+      "revId": "2fd4b131340242a8b21cf2228ec4af46104006ea",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e222fe3_1762d2e6",
+        "filename": "include/linux/dcache.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1409599
+      },
+      "writtenOn": "2020-10-27T19:14:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13f614a1_406044c4",
       "range": {
         "startLine": 154,
         "startChar": 0,

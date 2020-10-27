@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a920188b_9989f95e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1409599
+      },
+      "writtenOn": "2020-10-27T19:14:55Z",
+      "side": 1,
+      "message": "Sorry about that.\n\nIt was just the revert of the revert with updated commit message.",
+      "revId": "36922ec26ff7e7ce1a238aadb2970fc5742a1662",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
