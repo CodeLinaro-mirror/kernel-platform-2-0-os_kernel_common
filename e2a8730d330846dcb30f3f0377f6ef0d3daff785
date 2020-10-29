@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf172919_f9109b1f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003247
+      },
+      "writtenOn": "2020-10-29T14:27:44Z",
+      "side": 1,
+      "message": "well, you know my opinion... I\u0027m against these vendor hooks",
+      "revId": "e2a8730d330846dcb30f3f0377f6ef0d3daff785",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
