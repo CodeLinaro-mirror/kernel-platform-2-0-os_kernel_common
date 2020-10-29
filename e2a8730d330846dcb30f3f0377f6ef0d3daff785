@@ -16,6 +16,24 @@
       "message": "well, you know my opinion... I\u0027m against these vendor hooks",
       "revId": "e2a8730d330846dcb30f3f0377f6ef0d3daff785",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd18f44f_dabedc29",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2020-10-29T16:46:54Z",
+      "side": 1,
+      "message": "Agreed, but see the bug for details, it could be much worse 😂",
+      "parentUuid": "bf172919_f9109b1f",
+      "revId": "e2a8730d330846dcb30f3f0377f6ef0d3daff785",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
