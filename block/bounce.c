@@ -295,6 +295,7 @@ static void __blk_queue_bounce(struct request_queue *q, struct bio **bio_orig,
 	bool bounce = false;
 	int sectors = 0;
 	bool passthrough = bio_is_passthrough(*bio_orig);
+	unsigned int bio_sectors_alignment;
 
 	bio_for_each_segment(from, *bio_orig, iter) {
 		if (i++ < BIO_MAX_PAGES)
@@ -304,6 +305,9 @@ static void __blk_queue_bounce(struct request_queue *q, struct bio **bio_orig,
 	}
 	if (!bounce)
 		return;
+
+	bio_sectors_alignment = blk_crypto_bio_sectors_alignment(bio);
+	sectors = round_down(sectors, bio_sectors_alignment);
 
 	if (!passthrough && sectors < bio_sectors(*bio_orig)) {
 		bio = bio_split(*bio_orig, sectors, GFP_NOIO, &bounce_bio_split);

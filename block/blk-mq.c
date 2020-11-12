@@ -1984,6 +1984,9 @@ static blk_qc_t blk_mq_make_request(struct request_queue *q, struct bio *bio)
 	blk_queue_bounce(q, &bio);
 	__blk_queue_split(q, &bio, &nr_segs);
 
+	if (bio->bi_status != BLK_STS_OK)
+		return BLK_QC_T_NONE;
+
 	if (!bio_integrity_prep(bio))
 		return BLK_QC_T_NONE;
 

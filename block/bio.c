@@ -1900,6 +1900,7 @@ struct bio *bio_split(struct bio *bio, int sectors,
 
 	BUG_ON(sectors <= 0);
 	BUG_ON(sectors >= bio_sectors(bio));
+	WARN_ON(!IS_ALIGNED(sectors, blk_crypto_bio_sectors_alignment(bio)));
 
 	split = bio_clone_fast(bio, gfp, bs);
 	if (!split)

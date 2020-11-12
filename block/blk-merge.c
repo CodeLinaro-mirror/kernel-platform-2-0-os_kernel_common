@@ -148,13 +148,15 @@ static inline unsigned get_max_io_size(struct request_queue *q,
 	unsigned pbs = queue_physical_block_size(q) >> SECTOR_SHIFT;
 	unsigned lbs = queue_logical_block_size(q) >> SECTOR_SHIFT;
 	unsigned start_offset = bio->bi_iter.bi_sector & (pbs - 1);
+	unsigned int bio_sectors_alignment =
+					blk_crypto_bio_sectors_alignment(bio);
 
 	max_sectors += start_offset;
 	max_sectors &= ~(pbs - 1);
-	if (max_sectors > start_offset)
-		return max_sectors - start_offset;
+	if (max_sectors - start_offset >= bio_sectors_alignment)
+		return round_down(max_sectors - start_offset, bio_sectors_alignment);
 
-	return sectors & ~(lbs - 1);
+	return round_down(sectors & ~(lbs - 1), bio_sectors_alignment);
 }
 
 static inline unsigned get_max_segment_size(const struct request_queue *q,
@@ -171,6 +173,41 @@ static inline unsigned get_max_segment_size(const struct request_queue *q,
 	 */
 	return min_not_zero(mask - offset + 1,
 			(unsigned long)queue_max_segment_size(q));
+}
+
+/**
+ * update_aligned_sectors_and_segs() - Ensures that *@aligned_sectors is aligned
+ *				       to @bio_sectors_alignment, and that
+ *				       *@aligned_segs is the value of nsegs
+ *				       when sectors reached/first exceeded that
+ *				       value of *@aligned_sectors.
+ *
+ * @nsegs: [in] The current number of segs
+ * @sectors: [in] The current number of sectors
+ * @aligned_segs: [in,out] The number of segments that make up @aligned_sectors
+ * @aligned_sectors: [in,out] The largest number of sectors <= @sectors that is
+ *		     aligned to @sectors
+ * @bio_sectors_alignment: [in] The alignment requirement for the number of
+ *			  sectors
+ *
+ * Updates *@aligned_sectors to the largest number <= @sectors that is also a
+ * multiple of @bio_sectors_alignment. This is done by updating *@aligned_sectors
+ * whenever @sectors is at least @bio_sectors_alignment more than
+ * *@aligned_sectors, since that means we can increment *@aligned_sectors while
+ * still keeping it aligned to @bio_sectors_alignment and also keeping it <=
+ * @sectors. *@aligned_segs is updated to the value of nsegs when @sectors first
+ * reaches/exceeds any value that causes *@aligned_sectors to be updated.
+ */
+static inline void update_aligned_sectors_and_segs(const unsigned int nsegs,
+						   const unsigned int sectors,
+						   unsigned int *aligned_segs,
+				unsigned int *aligned_sectors,
+				const unsigned int bio_sectors_alignment)
+{
+	if (sectors - *aligned_sectors < bio_sectors_alignment)
+		return;
+	*aligned_sectors = round_down(sectors, bio_sectors_alignment);
+	*aligned_segs = nsegs;
 }
 
 /**
@@ -194,9 +231,12 @@ static inline unsigned get_max_segment_size(const struct request_queue *q,
  * the block driver.
  */
 static bool bvec_split_segs(const struct request_queue *q,
-			    const struct bio_vec *bv, unsigned *nsegs,
-			    unsigned *sectors, unsigned max_segs,
-			    unsigned max_sectors)
+			    const struct bio_vec *bv, unsigned int *nsegs,
+			    unsigned int *sectors, unsigned int *aligned_segs,
+			    unsigned int *aligned_sectors,
+			    unsigned int bio_sectors_alignment,
+			    unsigned int max_segs,
+			    unsigned int max_sectors)
 {
 	unsigned max_len = (min(max_sectors, UINT_MAX >> 9) - *sectors) << 9;
 	unsigned len = min(bv->bv_len, max_len);
@@ -210,6 +250,11 @@ static bool bvec_split_segs(const struct request_queue *q,
 
 		(*nsegs)++;
 		total_len += seg_size;
+		update_aligned_sectors_and_segs(*nsegs,
+						*sectors + (total_len >> 9),
+						aligned_segs,
+						aligned_sectors,
+						bio_sectors_alignment);
 		len -= seg_size;
 
 		if ((bv->bv_offset + total_len) & queue_virt_boundary(q))
@@ -234,6 +279,8 @@ static bool bvec_split_segs(const struct request_queue *q,
  * following is guaranteed for the cloned bio:
  * - That it has at most get_max_io_size(@q, @bio) sectors.
  * - That it has at most queue_max_segments(@q) segments.
+ * - That the number of sectors in the returned bio is aligned to
+ *   blk_crypto_bio_sectors_alignment(@bio)
  *
  * Except for discard requests the cloned bio will point at the bi_io_vec of
  * the original bio. It is the responsibility of the caller to ensure that the
@@ -251,6 +298,9 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
 	unsigned nsegs = 0, sectors = 0;
 	const unsigned max_sectors = get_max_io_size(q, bio);
 	const unsigned max_segs = queue_max_segments(q);
+	const unsigned int bio_sectors_alignment =
+					blk_crypto_bio_sectors_alignment(bio);
+	unsigned int aligned_segs = 0, aligned_sectors = 0;
 
 	bio_for_each_bvec(bv, bio, iter) {
 		/*
@@ -265,8 +315,14 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
 		    bv.bv_offset + bv.bv_len <= PAGE_SIZE) {
 			nsegs++;
 			sectors += bv.bv_len >> 9;
-		} else if (bvec_split_segs(q, &bv, &nsegs, &sectors, max_segs,
-					 max_sectors)) {
+			update_aligned_sectors_and_segs(nsegs, sectors,
+							&aligned_segs,
+							&aligned_sectors,
+							bio_sectors_alignment);
+		} else if (bvec_split_segs(q, &bv, &nsegs, &sectors,
+					   &aligned_segs, &aligned_sectors,
+					   bio_sectors_alignment, max_segs,
+					   max_sectors)) {
 			goto split;
 		}
 
@@ -274,11 +330,24 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
 		bvprvp = &bvprv;
 	}
 
+	/*
+	 * The input bio's number of sectors is assumed to be aligned to
+	 * bio_sectors_alignment. If that's the case, then this function should
+	 * ensure that aligned_segs == nsegs and aligned_sectors == sectors if
+	 * the bio is not going to be split.
+	 */
+	WARN_ON(aligned_segs != nsegs || aligned_sectors != sectors);
 	*segs = nsegs;
 	return NULL;
 split:
-	*segs = nsegs;
-	return bio_split(bio, sectors, GFP_NOIO, bs);
+	*segs = aligned_segs;
+	if (WARN_ON(aligned_sectors == 0))
+		goto err;
+	return bio_split(bio, aligned_sectors, GFP_NOIO, bs);
+err:
+	bio->bi_status = BLK_STS_IOERR;
+	bio_endio(bio);
+	return bio;
 }
 
 /**
@@ -361,6 +430,9 @@ unsigned int blk_recalc_rq_segments(struct request *rq)
 {
 	unsigned int nr_phys_segs = 0;
 	unsigned int nr_sectors = 0;
+	unsigned int nr_aligned_phys_segs = 0;
+	unsigned int nr_aligned_sectors = 0;
+	unsigned int bio_sectors_alignment;
 	struct req_iterator iter;
 	struct bio_vec bv;
 
@@ -376,9 +448,11 @@ unsigned int blk_recalc_rq_segments(struct request *rq)
 		return 1;
 	}
 
+	bio_sectors_alignment = blk_crypto_bio_sectors_alignment(rq->bio);
 	rq_for_each_bvec(bv, rq, iter)
 		bvec_split_segs(rq->q, &bv, &nr_phys_segs, &nr_sectors,
-				UINT_MAX, UINT_MAX);
+				&nr_aligned_phys_segs, &nr_aligned_sectors,
+				bio_sectors_alignment, UINT_MAX, UINT_MAX);
 	return nr_phys_segs;
 }
 

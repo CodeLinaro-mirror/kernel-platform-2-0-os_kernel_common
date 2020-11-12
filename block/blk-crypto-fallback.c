@@ -211,20 +211,22 @@ static bool blk_crypto_alloc_cipher_req(struct blk_ksm_keyslot *slot,
 static bool blk_crypto_split_bio_if_needed(struct bio **bio_ptr)
 {
 	struct bio *bio = *bio_ptr;
+	struct bio_crypt_ctx *bc = bio->bi_crypt_context;
 	unsigned int i = 0;
-	unsigned int num_sectors = 0;
+	unsigned int len = 0;
 	struct bio_vec bv;
 	struct bvec_iter iter;
 
 	bio_for_each_segment(bv, bio, iter) {
-		num_sectors += bv.bv_len >> SECTOR_SHIFT;
+		len += bv.bv_len;
 		if (++i == BIO_MAX_PAGES)
 			break;
 	}
-	if (num_sectors < bio_sectors(bio)) {
+	if (len < bio->bi_iter.bi_size) {
 		struct bio *split_bio;
 
-		split_bio = bio_split(bio, num_sectors, GFP_NOIO, NULL);
+		len = round_down(len, bc->bc_key->crypto_cfg.data_unit_size);
+		split_bio = bio_split(bio, len >> SECTOR_SHIFT, GFP_NOIO, NULL);
 		if (!split_bio) {
 			bio->bi_status = BLK_STS_RESOURCE;
 			return false;
