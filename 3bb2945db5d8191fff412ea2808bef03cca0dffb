@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a744ba4_f0d5b65d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2020-11-23T07:56:25Z",
+      "side": 1,
+      "message": "Why isn\u0027t this sent upstream first?",
+      "revId": "3bb2945db5d8191fff412ea2808bef03cca0dffb",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
