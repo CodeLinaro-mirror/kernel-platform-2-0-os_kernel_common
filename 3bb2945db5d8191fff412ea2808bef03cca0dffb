@@ -16,6 +16,24 @@
       "message": "Why isn\u0027t this sent upstream first?",
       "revId": "3bb2945db5d8191fff412ea2808bef03cca0dffb",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f990f77_ca3a0093",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1569742
+      },
+      "writtenOn": "2020-11-23T09:20:26Z",
+      "side": 1,
+      "message": "+1, and I\u0027d be happy to support this patch on the mailing list :)",
+      "parentUuid": "3a744ba4_f0d5b65d",
+      "revId": "3bb2945db5d8191fff412ea2808bef03cca0dffb",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
