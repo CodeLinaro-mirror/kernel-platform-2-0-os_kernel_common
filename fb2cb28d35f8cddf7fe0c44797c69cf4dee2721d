@@ -34,6 +34,24 @@
       "parentUuid": "8d8f7d90_076660fe",
       "revId": "fb2cb28d35f8cddf7fe0c44797c69cf4dee2721d",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bee6c3b8_93731ed8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006514
+      },
+      "writtenOn": "2020-11-24T09:54:14Z",
+      "side": 1,
+      "message": "Right, there isn\u0027t really any issue as such. Just wanted to make sure data type is properly spelled out for the variable.",
+      "parentUuid": "02b8cfae_d26c34fb",
+      "revId": "fb2cb28d35f8cddf7fe0c44797c69cf4dee2721d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
