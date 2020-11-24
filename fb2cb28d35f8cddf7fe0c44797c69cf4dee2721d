@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d8f7d90_076660fe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006514
+      },
+      "writtenOn": "2020-11-24T09:19:19Z",
+      "side": 1,
+      "message": "Hello Avila/Quentin/Todd,\n\nCan you help review this change? \n\nBest,\nSatya",
+      "revId": "fb2cb28d35f8cddf7fe0c44797c69cf4dee2721d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
