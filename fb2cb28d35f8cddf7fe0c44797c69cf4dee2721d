@@ -16,6 +16,24 @@
       "message": "Hello Avila/Quentin/Todd,\n\nCan you help review this change? \n\nBest,\nSatya",
       "revId": "fb2cb28d35f8cddf7fe0c44797c69cf4dee2721d",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02b8cfae_d26c34fb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1569742
+      },
+      "writtenOn": "2020-11-24T09:22:27Z",
+      "side": 1,
+      "message": "\u0027unsigned\u0027 and \u0027unsigned int\u0027 are equivalent in C IIRC. What is the problem that you\u0027re seeing here?",
+      "parentUuid": "8d8f7d90_076660fe",
+      "revId": "fb2cb28d35f8cddf7fe0c44797c69cf4dee2721d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
