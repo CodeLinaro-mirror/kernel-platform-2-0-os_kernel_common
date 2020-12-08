@@ -51,6 +51,24 @@
       "message": "This now queued for 5.11 in Rafael\u0027s branch (thanks for posting it):\n\nhttps://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git/commit/?h\u003dbleeding-edge\u0026id\u003d1080399542075bb0e9d46ea80418d76784d1ece8\n\nCould you please re-submit this patch as FROMGIT now?",
       "revId": "3bb2945db5d8191fff412ea2808bef03cca0dffb",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1e73f2ac_6a87ab6c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1569742
+      },
+      "writtenOn": "2020-12-08T18:42:35Z",
+      "side": 1,
+      "message": "FWIW, these are the requirements for FROMGIT patches:\n\nhttps://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/README.md#requirements-for-other-backports",
+      "parentUuid": "0f85bcbc_38188b05",
+      "revId": "3bb2945db5d8191fff412ea2808bef03cca0dffb",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
