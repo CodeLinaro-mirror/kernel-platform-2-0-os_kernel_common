@@ -514,6 +514,7 @@ struct fuse_fs_context {
 	bool no_force_umount:1;
 	bool legacy_opts_show:1;
 	bool dax:1;
+	bool init_security:1;
 	unsigned int max_read;
 	unsigned int blksize;
 	const char *subtype;
