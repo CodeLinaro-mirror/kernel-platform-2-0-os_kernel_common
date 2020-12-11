@@ -22,6 +22,30 @@
       },
       "revId": "9a86c4acc7a8280f1f5a79f0efb867a08f48e1c7",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0bc4598_376f31d0",
+        "filename": "drivers/dma-buf/heaps/deferred-free-helper.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1010110
+      },
+      "writtenOn": "2020-12-11T06:32:29Z",
+      "side": 1,
+      "message": "Potentially. The tradeoff is simplicity and that having a single freelist enforces order for the actual freeing, but it does have the potential for contention. Though I\u0027m not sure if the heap usage is likely to be cpu-affined so I\u0027m not sure breaking it up into multiple per heap lists will really provide much additional parallelism?\n\nWe could do per-heap kthread/shrinkers, but it adds to what the users of the library have to track (initialization calls, and a per-heap structure to be passed to the deferred_free call).",
+      "parentUuid": "f9bb9d29_f4aba329",
+      "range": {
+        "startLine": 120,
+        "startChar": 11,
+        "endLine": 120,
+        "endChar": 33
+      },
+      "revId": "9a86c4acc7a8280f1f5a79f0efb867a08f48e1c7",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
