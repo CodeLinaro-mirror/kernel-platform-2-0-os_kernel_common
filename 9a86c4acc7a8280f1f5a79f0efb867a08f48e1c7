@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f9bb9d29_f4aba329",
+        "filename": "drivers/dma-buf/heaps/deferred-free-helper.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1120612
+      },
+      "writtenOn": "2020-12-11T06:19:05Z",
+      "side": 1,
+      "message": "Would only having a single deferred_free thread for every heap that uses deferred-free slow down the rate at which buffers get freed vs ION\u0027s implementation where there was one deferred-free thread per heap? I wonder if there would be any perf/system health implications due to that.",
+      "range": {
+        "startLine": 120,
+        "startChar": 11,
+        "endLine": 120,
+        "endChar": 33
+      },
+      "revId": "9a86c4acc7a8280f1f5a79f0efb867a08f48e1c7",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
