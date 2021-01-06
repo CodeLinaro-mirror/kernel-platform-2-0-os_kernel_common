@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39f552db_beeff212",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1010110
+      },
+      "writtenOn": "2021-01-06T03:30:29Z",
+      "side": 1,
+      "message": "Hey Todd, Alistair: Here\u0027s an initial pass for the hikey960 patches for android12-5.10\n\nMost of these are forward ported versions of what was in android12-5.4, though some have been reworked.\n\nEverything is hikey960 specific (with the exception of the adv7511 patch, which was also in android12-5.4) so there should be little risk to other platforms.\n\nI have to follow-on patches at the end that improve reliability of dwc3, I\u0027m still pushing those upstream and they aren\u0027t strictly necessary, but are helpful for my testing.\n\n\nIn addition to this we need a android12-5.10 branch for the hikey-modules project, which requires a few extra build fixes over the android12-5.4 branch of the same.\n",
+      "revId": "d341141fbcb3ad76d4a86b1cbe933b9fae0c8425",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
