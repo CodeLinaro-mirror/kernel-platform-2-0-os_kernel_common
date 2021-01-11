@@ -33,6 +33,24 @@
       "message": "oops, no, didn\u0027t apply upstream, please fix there first...",
       "revId": "1ffdb12a310e06a12d3838e2290e9cb5a3baabf2",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8d6fa79_9303ed86",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1030767
+      },
+      "writtenOn": "2021-01-11T21:58:08Z",
+      "side": 1,
+      "message": "Done. Fixed up, rebased and just sent v2 to linux-usb list. And I\u0027ll be happy to reupload this Gerrit as a \"FROMGIT\" after you take it in your usb-next as well. Thanks.",
+      "parentUuid": "d12db515_89c20687",
+      "revId": "1ffdb12a310e06a12d3838e2290e9cb5a3baabf2",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
