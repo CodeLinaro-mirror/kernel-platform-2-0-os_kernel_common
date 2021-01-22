@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3bb9d7bd_036a53eb",
+        "filename": "include/drm/drm_mipi_dsi.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2021-01-22T13:02:23Z",
+      "side": 0,
+      "message": "this line was not part of the original patch and should be reinstated.",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 72
+      },
+      "revId": "e976e0ae248f075a5e724015caf7d2a909da5f6f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
