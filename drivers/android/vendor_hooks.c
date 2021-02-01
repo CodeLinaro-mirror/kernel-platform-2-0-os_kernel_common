@@ -28,6 +28,8 @@
 #include <trace/hooks/mm.h>
 #include <trace/hooks/preemptirq.h>
 #include <trace/hooks/ftrace_dump.h>
+#include <trace/hooks/pstore.h>
+#include <trace/hooks/thermal.h>
 
 /*
  * Export tracepoints that act as a bare tracehook (ie: have no trace event
@@ -108,3 +110,7 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ftrace_oops_exit);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ftrace_size_check);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ftrace_format_check);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ftrace_dump_buffer);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_cpu_overutilized);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_pstore_console_mkfile);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_pstore_console_read);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_enable_thermal_genl_check);
