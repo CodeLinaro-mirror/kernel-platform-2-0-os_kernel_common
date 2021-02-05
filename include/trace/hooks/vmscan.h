@@ -33,6 +33,9 @@ enum scan_balance;
 DECLARE_HOOK(android_vh_tune_scan_type,
 	TP_PROTO(enum scan_balance *scan_type),
 	TP_ARGS(scan_type));
+DECLARE_HOOK(android_vh_kswapd_per_node,
+	TP_PROTO(int nid, bool *skip, bool run),
+	TP_ARGS(nid, skip, run));
 #endif /* _TRACE_HOOK_VMSCAN_H */
 /* This part must be outside protection */
 #include <trace/define_trace.h>
