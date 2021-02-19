@@ -144,6 +144,27 @@ DECLARE_HOOK(android_vh_em_cpu_energy,
 		unsigned long max_util, unsigned long sum_util,
 		unsigned long *energy),
 	TP_ARGS(pd, max_util, sum_util, energy));
+
+DECLARE_RESTRICTED_HOOK(android_rvh_sched_balance_rt,
+	TP_PROTO(struct rq *rq, struct task_struct *p, int *done),
+	TP_ARGS(rq, p, done), 1);
+
+DECLARE_RESTRICTED_HOOK(android_rvh_dequeue_task_idle,
+	TP_PROTO(struct task_struct *p),
+	TP_ARGS(p), 1);
+
+struct cfs_rq;
+DECLARE_RESTRICTED_HOOK(android_rvh_pick_next_entity,
+	TP_PROTO(struct cfs_rq *cfs_rq, struct sched_entity *curr,
+		 struct sched_entity **se),
+	TP_ARGS(cfs_rq, curr, se), 1);
+
+DECLARE_RESTRICTED_HOOK(android_rvh_check_preempt_wakeup,
+	TP_PROTO(struct rq *rq, struct task_struct *p, bool *preempt),
+	TP_ARGS(rq, p, preempt), 1);
+
+/* macro versions of hooks are no longer required */
+
 #endif /* _TRACE_HOOK_SCHED_H */
 /* This part must be outside protection */
 #include <trace/define_trace.h>
