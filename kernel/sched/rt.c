@@ -1382,7 +1382,9 @@ static inline bool should_honor_rt_sync(struct rq *rq, struct task_struct *p,
 	 * done. So, only honor RT sync wakeups from RT wakers.
 	 */
 	return sync && task_has_rt_policy(rq->curr) &&
+#if defined CONFIG_SMP
 		p->prio <= rq->rt.highest_prio.next &&
+#endif
 		rq->rt.rt_nr_running <= 2;
 }
 #else
