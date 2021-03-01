@@ -16,6 +16,24 @@
       "message": "How about dropping the CONFIG_RT_GROUP_SCHED instead? Do we have any cases that we need sync to be honored when !SMP \u0026\u0026 RT_GROUP_SCHED?",
       "revId": "1d93f85eeee6cc1f08485660c975bd3af4c111f1",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5186b25_db9af0af",
+        "filename": "kernel/sched/rt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1375,
+      "author": {
+        "id": 1688863
+      },
+      "writtenOn": "2021-03-01T17:11:21Z",
+      "side": 1,
+      "message": "As discussed offline, agreed+done.",
+      "parentUuid": "81757d25_a42e10f4",
+      "revId": "1d93f85eeee6cc1f08485660c975bd3af4c111f1",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
