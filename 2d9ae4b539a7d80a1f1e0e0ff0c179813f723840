@@ -18,6 +18,24 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f65e855_3cb9e6f7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1857736
+      },
+      "writtenOn": "2021-03-04T01:48:59Z",
+      "side": 1,
+      "message": "I updated the commit message.",
+      "parentUuid": "ab482598_16d7caa6",
+      "revId": "2d9ae4b539a7d80a1f1e0e0ff0c179813f723840",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "959fa18e_625de40f",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-03-04T00:57:56Z",
       "side": 1,
       "message": "Seems simpler to just handle the flag and avoid the conditional:\n\n  int wake_flags \u003d WF_SYNC;\n\n  if (unlikely(!wq_head))\n\t\treturn;\n\n  trace_android_vh_set_wake_flags(\u0026wake_flags, \u0026mode);\n  __wake_up_common_lock(wq_head, mode, 1, wake_flags, key);",
+      "range": {
+        "startLine": 188,
+        "startChar": 0,
+        "endLine": 199,
+        "endChar": 55
+      },
+      "revId": "2d9ae4b539a7d80a1f1e0e0ff0c179813f723840",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2a7c743_6b8ef216",
+        "filename": "kernel/sched/wait.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1857736
+      },
+      "writtenOn": "2021-03-04T01:48:59Z",
+      "side": 1,
+      "message": "fixed.",
+      "parentUuid": "959fa18e_625de40f",
       "range": {
         "startLine": 188,
         "startChar": 0,
@@ -58,6 +100,24 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "769db052_a45bacc6",
+        "filename": "net/core/sock.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2886,
+      "author": {
+        "id": 1857736
+      },
+      "writtenOn": "2021-03-04T01:48:59Z",
+      "side": 1,
+      "message": "fixed.",
+      "parentUuid": "b5b64e33_e92ac1ce",
+      "revId": "2d9ae4b539a7d80a1f1e0e0ff0c179813f723840",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc809f0d_10ba6179",
@@ -71,6 +131,24 @@
       "writtenOn": "2021-03-04T00:57:56Z",
       "side": 1,
       "message": "what does this change have to do with \"vendor specific wake flag to prevent cluster needless bouncing between clusters, not to prevent CPU bouncing.\"\n\nPlease add more to the commit message to explain how this change is relevant.",
+      "revId": "2d9ae4b539a7d80a1f1e0e0ff0c179813f723840",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "10d8b0a2_1fde4418",
+        "filename": "net/core/sock.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2892,
+      "author": {
+        "id": 1857736
+      },
+      "writtenOn": "2021-03-04T01:48:59Z",
+      "side": 1,
+      "message": "It is a vendor hook to modify the wake flag based on the mode value by directly calling __wake_up_sync_key.",
+      "parentUuid": "dc809f0d_10ba6179",
       "revId": "2d9ae4b539a7d80a1f1e0e0ff0c179813f723840",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
