@@ -2803,6 +2803,7 @@ void set_cpus_allowed_common(struct task_struct *p, struct affinity_context *ctx
 		return;
 	}
 
+<<<<<<< HEAD   (6e6c50 ANDROID: ABI: Update oplus symbol list)
 	cpumask_copy(&p->cpus_mask, ctx->new_mask);
 	p->nr_cpus_allowed = cpumask_weight(ctx->new_mask);
 
@@ -2811,6 +2812,11 @@ void set_cpus_allowed_common(struct task_struct *p, struct affinity_context *ctx
 	 */
 	if (ctx->flags & SCA_USER)
 		swap(p->user_cpus_ptr, ctx->user_mask);
+=======
+	cpumask_copy(&p->cpus_mask, new_mask);
+	p->nr_cpus_allowed = cpumask_weight(new_mask);
+	trace_android_rvh_set_cpus_allowed_comm(p, new_mask);
+>>>>>>> CHANGE (8979a0 ANDROID: sched: Add vendor hooks for cpu affinity.)
 }
 
 static void
@@ -8496,7 +8502,8 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 	struct affinity_context ac;
 	struct cpumask *user_mask;
 	struct task_struct *p;
-	int retval;
+	int retval = 0;
+	bool skip = false;
 
 	rcu_read_lock();
 
@@ -8525,6 +8532,9 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 		rcu_read_unlock();
 	}
 
+	trace_android_vh_sched_setaffinity_early(p, in_mask, &skip);
+	if (skip)
+		goto out_put_task;
 	retval = security_task_setscheduler(p);
 	if (retval)
 		goto out_put_task;

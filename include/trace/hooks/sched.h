@@ -355,6 +355,7 @@ DECLARE_RESTRICTED_HOOK(android_rvh_find_energy_efficient_cpu,
 	TP_PROTO(struct task_struct *p, int prev_cpu, int sync, int *new_cpu),
 	TP_ARGS(p, prev_cpu, sync, new_cpu), 1);
 
+<<<<<<< HEAD   (6e6c50 ANDROID: ABI: Update oplus symbol list)
 DECLARE_RESTRICTED_HOOK(android_rvh_cpu_util_cfs_boost,
 	TP_PROTO(int cpu, unsigned long *util),
 	TP_ARGS(cpu, util), 1);
@@ -362,6 +363,16 @@ DECLARE_RESTRICTED_HOOK(android_rvh_cpu_util_cfs_boost,
 DECLARE_HOOK(android_vh_account_process_tick_gran,
 	TP_PROTO(struct task_struct *p, struct rq *rq, int user_tick, int *ticks),
 	TP_ARGS(p, rq, user_tick, ticks));
+=======
+DECLARE_RESTRICTED_HOOK(android_rvh_set_cpus_allowed_comm,
+	TP_PROTO(struct task_struct *p, const struct cpumask *new_mask),
+	TP_ARGS(p, new_mask), 1);
+
+DECLARE_HOOK(android_vh_sched_setaffinity_early,
+	TP_PROTO(struct task_struct *p, const struct cpumask *new_mask, bool *retval),
+	TP_ARGS(p, new_mask, retval));
+
+>>>>>>> CHANGE (8979a0 ANDROID: sched: Add vendor hooks for cpu affinity.)
 /* macro versions of hooks are no longer required */
 
 #endif /* _TRACE_HOOK_SCHED_H */
