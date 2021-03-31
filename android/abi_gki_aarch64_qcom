@@ -99,8 +99,10 @@
   bus_find_device
   bus_for_each_dev
   bus_register
+  bus_register_notifier
   bus_set_iommu
   bus_unregister
+  bus_unregister_notifier
   call_rcu
   call_rcu_tasks
   call_rcu_tasks_trace
