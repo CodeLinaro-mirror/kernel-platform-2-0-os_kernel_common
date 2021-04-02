@@ -16,6 +16,24 @@
       "message": "As your offload code is already released, why not submit these hooks, and your offload code, upstream for review and acceptance there first?  The other xhci hooks were submitted upstream first, so it\u0027s only fair that these also follow the same path.",
       "revId": "922a2f31ee25bf0a199686563afe04034735f161",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f7a3d57_fd8559bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1475437
+      },
+      "writtenOn": "2021-04-02T04:11:09Z",
+      "side": 1,
+      "message": "I found out some symbols(xhci_ring_alloc, xhci_trb_virt_to_dma,.. etc) were already merged in latest AOSP but not in upstream. I just want to add additional symbols as same with the patch. \n\ncommit 6c997d153d7c1e11d51aeb1b7c46002d5daa760b\nAuthor: Jack Pham \u003cjackp@codeaurora.org\u003e\nDate:   Wed Mar 10 00:27:11 2021 -0800\n\n    ANDROID: usb: host: export additional xhci symbols for ring management\n\n    Export the following xhci symbols which will allow vendor modules\n    to perform their own ring management. These will be used to create\n    and manage additional secondary rings that are used to offload to a\n    separate coprocessor which interacts with the xHC controller.",
+      "parentUuid": "1fc75e5b_699cde55",
+      "revId": "922a2f31ee25bf0a199686563afe04034735f161",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
