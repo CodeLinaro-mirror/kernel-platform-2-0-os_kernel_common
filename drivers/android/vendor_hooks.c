@@ -50,6 +50,7 @@
 #include <trace/hooks/typec.h>
 #include <trace/hooks/gpiolib.h>
 #include <trace/hooks/signal.h>
+#include <trace/hooks/libaes.h>
 #include <trace/hooks/libsha256.h>
 
 /*
@@ -240,3 +241,6 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_post_init_entity_util_avg);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_typec_tcpm_get_timer);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_typec_tcpm_adj_current_limit);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sha256);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_aes_expandkey);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_aes_encrypt);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_aes_decrypt);
