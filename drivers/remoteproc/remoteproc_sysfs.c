@@ -15,7 +15,7 @@ static ssize_t recovery_show(struct device *dev,
 {
 	struct rproc *rproc = to_rproc(dev);
 
-	return sprintf(buf, "%s", rproc->recovery_disabled ? "disabled\n" : "enabled\n");
+	return sysfs_emit(buf, "%s", rproc->recovery_disabled ? "disabled\n" : "enabled\n");
 }
 
 /*
@@ -82,7 +82,7 @@ static ssize_t coredump_show(struct device *dev,
 {
 	struct rproc *rproc = to_rproc(dev);
 
-	return sprintf(buf, "%s\n", rproc_coredump_str[rproc->dump_conf]);
+	return sysfs_emit(buf, "%s\n", rproc_coredump_str[rproc->dump_conf]);
 }
 
 /*
@@ -145,7 +145,7 @@ static ssize_t firmware_show(struct device *dev, struct device_attribute *attr,
 	if (rproc->autonomous)
 		firmware = "unknown";
 
-	return sprintf(buf, "%s\n", firmware);
+	return sysfs_emit(buf, "%s\n", firmware);
 }
 
 /* Change firmware name via sysfs */
@@ -213,7 +213,7 @@ static ssize_t state_show(struct device *dev, struct device_attribute *attr,
 	unsigned int state;
 
 	state = rproc->state > RPROC_LAST ? RPROC_LAST : rproc->state;
-	return sprintf(buf, "%s\n", rproc_state_string[state]);
+	return sysfs_emit(buf, "%s\n", rproc_state_string[state]);
 }
 
 /* Change remote processor state via sysfs */
@@ -250,7 +250,7 @@ static ssize_t name_show(struct device *dev, struct device_attribute *attr,
 {
 	struct rproc *rproc = to_rproc(dev);
 
-	return sprintf(buf, "%s\n", rproc->name);
+	return sysfs_emit(buf, "%s\n", rproc->name);
 }
 static DEVICE_ATTR_RO(name);
 
