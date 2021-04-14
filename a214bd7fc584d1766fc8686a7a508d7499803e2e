@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9e18296_5c3080a6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1497372
+      },
+      "writtenOn": "2021-04-14T10:06:37Z",
+      "side": 1,
+      "message": "Hello Google friends,\nCould you take some time to review this patch?\nThanks",
+      "revId": "a214bd7fc584d1766fc8686a7a508d7499803e2e",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
