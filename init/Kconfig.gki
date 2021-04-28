@@ -210,12 +210,21 @@ config GKI_HIDDEN_MM_CONFIGS
 	  Dummy config option used to enable hidden MM configs,
 	  currently required for VIRTIO_BALLOON
 
+<<<<<<< HEAD   (1c2906 ANDROID: PCI: qcom: Remove unused PCIE_DEVICE_ID_QCOM_PCIE{2)
 config GKI_HIDDEN_ETHERNET_CONFIGS
 	bool "Hidden Ethernet configuration needed for GKI"
 	select PHYLINK
 	help
 	  Dummy config option used to enable the hidden Ethernet PHYLINK
 	  configs, required by various ethernet devices.
+=======
+config GKI_HIDDEN_DMA_CONFIGS
+	bool "Hidden DMA configuration needed for GKI"
+	select ASYNC_TX_ENABLE_CHANNEL_SWITCH
+	help
+	  Dummy config option used to enable the hidden DMA configs,
+	  required by various SoC platforms.
+>>>>>>> CHANGE (0dc97b ANDROID: GKI: enable hidden configs for DMA)
 
 # Atrocities needed for
 # a) building GKI modules in separate tree, or
@@ -246,7 +255,11 @@ config GKI_HACKS_TO_FIX
 	select GKI_HIDDEN_NET_CONFIGS
 	select GKI_HIDDEN_PHY_CONFIGS
 	select GKI_HIDDEN_MM_CONFIGS
+<<<<<<< HEAD   (1c2906 ANDROID: PCI: qcom: Remove unused PCIE_DEVICE_ID_QCOM_PCIE{2)
 	select GKI_HIDDEN_ETHERNET_CONFIGS
+=======
+	select GKI_HIDDEN_DMA_CONFIGS
+>>>>>>> CHANGE (0dc97b ANDROID: GKI: enable hidden configs for DMA)
 	help
 	  Dummy config option used to enable core functionality used by
 	  modules that may not be selectable in this config.
