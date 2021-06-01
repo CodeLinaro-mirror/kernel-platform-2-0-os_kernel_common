@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9e7848ed_5274135f",
+        "filename": "drivers/cpufreq/cpufreq_times.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1876667
+      },
+      "writtenOn": "2021-06-01T13:03:33Z",
+      "side": 1,
+      "message": "Hi sir, I have fixed the comments, please help me check again, thanks.",
+      "parentUuid": "3d00c113_266a06f2",
+      "range": {
+        "startLine": 151,
+        "startChar": 1,
+        "endLine": 151,
+        "endChar": 54
+      },
+      "revId": "b734c81b030df77aeca95f2e950d9ebbda256002",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3f023eb3_934c9b0b",
         "filename": "include/trace/hooks/cpufreq_times.h",
         "patchSetId": 4
@@ -49,6 +73,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8d78b726_56a670ac",
+        "filename": "include/trace/hooks/cpufreq_times.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1876667
+      },
+      "writtenOn": "2021-06-01T13:03:33Z",
+      "side": 1,
+      "message": "Hi sir, I have fixed the comments, please help me check again, thanks.",
+      "parentUuid": "3f023eb3_934c9b0b",
+      "range": {
+        "startLine": 16,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 29
+      },
+      "revId": "b734c81b030df77aeca95f2e950d9ebbda256002",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e9b864ef_91699ad6",
         "filename": "include/trace/hooks/cpufreq_times.h",
         "patchSetId": 4
@@ -60,6 +108,30 @@
       "writtenOn": "2021-06-01T08:40:36Z",
       "side": 1,
       "message": "This no longer needed.",
+      "range": {
+        "startLine": 19,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 6
+      },
+      "revId": "b734c81b030df77aeca95f2e950d9ebbda256002",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f9a29c78_09dda215",
+        "filename": "include/trace/hooks/cpufreq_times.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1876667
+      },
+      "writtenOn": "2021-06-01T13:03:33Z",
+      "side": 1,
+      "message": "Hi sir, I have fixed the comments, please help me check again, thanks.",
+      "parentUuid": "e9b864ef_91699ad6",
       "range": {
         "startLine": 19,
         "startChar": 0,
