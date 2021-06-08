@@ -6725,12 +6725,16 @@ static int ufshcd_eh_device_reset_handler(struct scsi_cmnd *cmd)
 	struct Scsi_Host *host;
 	struct ufs_hba *hba;
 	u32 pos;
-	int err;
+	int err = 0;
 	u8 resp = 0xF, lun;
 	unsigned long flags;
 
 	host = cmd->device->host;
 	hba = shost_priv(host);
+
+	trace_android_vh_ufs_prepare_device_reset(hba, &err);
+	if (err)
+		goto out;
 
 	lun = ufshcd_scsi_to_upiu_lun(cmd->device->lun);
 	err = ufshcd_issue_tm_cmd(hba, lun, 0, UFS_LOGICAL_RESET, &resp);
