@@ -59,6 +59,10 @@ DECLARE_HOOK(android_vh_ufs_interrupt,
 	TP_PROTO(struct ufs_hba *hba),
 	TP_ARGS(hba));
 
+DECLARE_HOOK(android_vh_ufs_prepare_host_reset,
+	TP_PROTO(struct ufs_hba *hba),
+	TP_ARGS(hba));
+
 #endif /* _TRACE_HOOK_UFSHCD_H */
 /* This part must be outside protection */
 #include <trace/define_trace.h>
