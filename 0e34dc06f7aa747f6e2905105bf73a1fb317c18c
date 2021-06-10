@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "59e10657_f40a3536",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2021-06-10T10:28:54Z",
+      "side": 1,
+      "message": "And again, why not in the device-specific controller driver?",
+      "revId": "0e34dc06f7aa747f6e2905105bf73a1fb317c18c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
