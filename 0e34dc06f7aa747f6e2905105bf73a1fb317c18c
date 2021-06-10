@@ -16,6 +16,23 @@
       "message": "And again, why not in the device-specific controller driver?",
       "revId": "0e34dc06f7aa747f6e2905105bf73a1fb317c18c",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ff99e3d_d8e74777",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1869780
+      },
+      "writtenOn": "2021-06-10T15:49:23Z",
+      "side": 1,
+      "message": "How is the guest provided access to the controller in the host? The problem mentioned in the patch description should not occur when using PCI-passthrough.",
+      "revId": "0e34dc06f7aa747f6e2905105bf73a1fb317c18c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
