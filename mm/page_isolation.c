@@ -403,6 +403,7 @@ static int isolate_single_pageblock(unsigned long boundary_pfn, int flags,
 			 * can be migrated. Otherwise, fail the isolation.
 			 */
 			if (PageHuge(page) || PageLRU(page) || __PageMovable(page)) {
+				struct acr_info dummy;
 				int order;
 				unsigned long outer_pfn;
 				int page_mt = get_pageblock_migratetype(page);
@@ -434,7 +435,7 @@ static int isolate_single_pageblock(unsigned long boundary_pfn, int flags,
 				}
 
 				ret = __alloc_contig_migrate_range(&cc, head_pfn,
-							head_pfn + nr_pages);
+							head_pfn + nr_pages, &dummy);
 
 				/*
 				 * restore the page's migratetype so that it can
