@@ -1159,6 +1159,7 @@ static int virtio_mem_fake_offline(unsigned long pfn, unsigned long nr_pages)
 {
 	const bool is_movable = is_zone_movable_page(pfn_to_page(pfn));
 	int rc, retry_count;
+	struct acr_info dummy;
 
 	/*
 	 * TODO: We want an alloc_contig_range() mode that tries to allocate
@@ -1169,7 +1170,7 @@ static int virtio_mem_fake_offline(unsigned long pfn, unsigned long nr_pages)
 	 */
 	for (retry_count = 0; retry_count < 5; retry_count++) {
 		rc = alloc_contig_range(pfn, pfn + nr_pages, MIGRATE_MOVABLE,
-					GFP_KERNEL);
+					GFP_KERNEL, &dummy);
 		if (rc == -ENOMEM)
 			/* whoops, out of memory */
 			return rc;
