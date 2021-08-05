@@ -19,6 +19,7 @@
 #include <linux/list.h>
 #include <linux/log2.h>
 #include <linux/memblock.h>
+#include <linux/mem_encrypt.h>
 #include <linux/mm.h>
 #include <linux/msi.h>
 #include <linux/of.h>
@@ -27,7 +28,6 @@
 #include <linux/of_pci.h>
 #include <linux/of_platform.h>
 #include <linux/percpu.h>
-#include <linux/set_memory.h>
 #include <linux/slab.h>
 #include <linux/syscore_ops.h>
 
