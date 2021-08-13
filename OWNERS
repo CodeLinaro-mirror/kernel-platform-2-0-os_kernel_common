@@ -14,16 +14,17 @@ gregkh@google.com
 hridya@google.com
 kaleshsingh@google.com
 maennich@google.com
-malchev@google.com
 mzyngier@google.com
-pantin@google.com
 paullawrence@google.com
 qperret@google.com
 saravanak@google.com
 smoreland@google.com
 smuckle@google.com
-sspatil@google.com
 surenb@google.com
 tkjos@google.com
 willdeacon@google.com
 willmcvicker@google.com
+
+malchev@google.com #{LAST_RESORT_SUGGESTION}
+pantin@google.com  #{LAST_RESORT_SUGGESTION}
+sspatil@google.com #{LAST_RESORT_SUGGESTION}
