@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "378df700_83efff0b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2021-08-27T07:24:23Z",
+      "side": 1,
+      "message": "The abi in this kernel is long frozen, it can not be changed, sorry.",
+      "revId": "8719d3c4572524243804473e79e449cc29b62e5c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
