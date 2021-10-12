@@ -16,6 +16,24 @@
       "message": "This looks like a bug fix. Can you add a \"Fixes\" tag that cites the patch that introduced the issue? (presumably the patch that added android_rvh_replace_next_task_fair)",
       "revId": "fa523ce7d4793410288537bc054f569c1c79aebd",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b1f9dde_6dd51b55",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1897551
+      },
+      "writtenOn": "2021-10-12T22:53:15Z",
+      "side": 1,
+      "message": "Please let me know if the format is correct now.",
+      "parentUuid": "c53bbe44_37b1d303",
+      "revId": "fa523ce7d4793410288537bc054f569c1c79aebd",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
