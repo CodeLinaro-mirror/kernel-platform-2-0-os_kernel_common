@@ -22,6 +22,30 @@
       },
       "revId": "d0d6347a8c2e18260c3f993ba9f5c076a1084ab0",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1081b97f_f53b8d09",
+        "filename": "Documentation/devicetree/bindings/iommu/google,s2mpu.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1059815
+      },
+      "writtenOn": "2021-11-03T15:06:58Z",
+      "side": 1,
+      "message": "good catch!",
+      "parentUuid": "5254bb63_ed3fd181",
+      "range": {
+        "startLine": 4,
+        "startChar": 39,
+        "endLine": 4,
+        "endChar": 42
+      },
+      "revId": "d0d6347a8c2e18260c3f993ba9f5c076a1084ab0",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
