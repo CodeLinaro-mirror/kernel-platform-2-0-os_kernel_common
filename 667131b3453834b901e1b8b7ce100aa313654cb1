@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93515d16_563a7073",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1059815
+      },
+      "writtenOn": "2021-11-03T13:44:52Z",
+      "side": 1,
+      "message": "Checkpatch wanted this as a separate patch",
+      "revId": "667131b3453834b901e1b8b7ce100aa313654cb1",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
