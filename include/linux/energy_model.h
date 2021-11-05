@@ -145,8 +145,29 @@ struct em_data_callback {
 	 */
 	int (*active_power)(unsigned long *power, unsigned long *freq,
 			    struct device *dev);
+
+	/**
+	 * update_power() - Provide new power at the given performance state of
+	 *		a device
+	 * @dev		: Device for which we do this operation (can be a CPU)
+	 * @freq	: Frequency at the performance state in kHz
+	 * @power	: New power value at the performance state
+	 *		(modified)
+	 * @priv	: Pointer to private data useful for tracking context
+	 *		during run-time modifications of EM.
+	 *
+	 * The update_power() is used by run-time modifiable EM. It aims to
+	 * provide updated power value for a given frequency, which is stored
+	 * in the performance state. The power value provided by this callback
+	 * should fit in the [0, EM_MAX_POWER] range.
+	 *
+	 * Return 0 on success, or appropriate error value in case of failure.
+	 */
+	int (*update_power)(struct device *dev, unsigned long freq,
+			    unsigned long *power, void *priv);
 };
 #define EM_DATA_CB(_active_power_cb) { .active_power = &_active_power_cb }
+#define EM_UPDATE_CB(_update_power_cb) { .update_power = &_update_power_cb }
 
 struct em_perf_domain *em_cpu_get(int cpu);
 struct em_perf_domain *em_pd_get(struct device *dev);
