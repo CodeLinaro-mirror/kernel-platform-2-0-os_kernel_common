@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c39d6451_77c1c06e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2021-11-16T21:08:52Z",
+      "side": 1,
+      "message": "This needs to be discussed upstream, but going ahead with the revert since it causes a significant regression.",
+      "revId": "d736cbf8d9ac2f39a42a1b784c384b0ad12c28d9",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
