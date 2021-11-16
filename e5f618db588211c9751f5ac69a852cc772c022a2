@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1a5af4b_e749d20b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2021-11-16T09:45:16Z",
+      "side": 1,
+      "message": "no reason for the revert of this upstream commit. Is upstream informed about this?",
+      "revId": "e5f618db588211c9751f5ac69a852cc772c022a2",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
