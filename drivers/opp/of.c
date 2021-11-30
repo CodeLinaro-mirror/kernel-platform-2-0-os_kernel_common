@@ -1407,8 +1407,9 @@ EXPORT_SYMBOL_GPL(dev_pm_opp_get_of_node);
  * Returns -EINVAL if the power calculation failed because of missing
  * parameters, 0 otherwise.
  */
-static int __maybe_unused _get_power(unsigned long *mW, unsigned long *kHz,
-				     struct device *dev)
+static int __maybe_unused
+_get_power(unsigned long *micro_watts, unsigned long *kHz,
+	   struct device *dev)
 {
 	struct dev_pm_opp *opp;
 	struct device_node *np;
@@ -1437,9 +1438,10 @@ static int __maybe_unused _get_power(unsigned long *mW, unsigned long *kHz,
 		return -EINVAL;
 
 	tmp = (u64)cap * mV * mV * (Hz / 1000000);
-	do_div(tmp, 1000000000);
+	/* Provide power in micro-Watts */
+	do_div(tmp, 1000000);
 
-	*mW = (unsigned long)tmp;
+	*micro_watts = (unsigned long)tmp;
 	*kHz = Hz / 1000;
 
 	return 0;

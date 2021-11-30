@@ -19,6 +19,7 @@
 #include <linux/slab.h>
 #include <linux/scmi_protocol.h>
 #include <linux/types.h>
+#include <linux/units.h>
 
 struct scmi_data {
 	int domain_id;
@@ -111,6 +112,9 @@ scmi_get_cpu_power(unsigned long *power, unsigned long *KHz,
 	ret = perf_ops->est_power_get(ph, domain, &Hz, power);
 	if (ret)
 		return ret;
+
+	/* Provide micro-Watts value to the Energy Model */
+	*power *= MICROWATT_PER_MILLIWATT;
 
 	/* The EM framework specifies the frequency in KHz. */
 	*KHz = Hz / 1000;

@@ -49,7 +49,7 @@ static const u16 cpufreq_mtk_offsets[REG_ARRAY_SIZE] = {
 };
 
 static int __maybe_unused
-mtk_cpufreq_get_cpu_power(unsigned long *mW,
+mtk_cpufreq_get_cpu_power(unsigned long *micro_watts,
 			  unsigned long *KHz, struct device *cpu_dev)
 {
 	struct mtk_cpufreq_data *data;
@@ -69,8 +69,9 @@ mtk_cpufreq_get_cpu_power(unsigned long *mW,
 	i--;
 
 	*KHz = data->table[i].frequency;
-	*mW = readl_relaxed(data->reg_bases[REG_EM_POWER_TBL] +
-			    i * LUT_ROW_SIZE) / 1000;
+	/* Provide micro-Watts value to the Energy Model */
+	*micro_watts = readl_relaxed(data->reg_bases[REG_EM_POWER_TBL] +
+				     i * LUT_ROW_SIZE);
 
 	return 0;
 }
