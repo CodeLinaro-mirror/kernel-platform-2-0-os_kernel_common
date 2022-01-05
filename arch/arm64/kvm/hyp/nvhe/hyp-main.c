@@ -430,8 +430,9 @@ static void sync_timer_state(struct kvm_vcpu *shadow_vcpu)
 	__vcpu_sys_reg(shadow_vcpu, CNTV_CTL_EL0) = read_sysreg_el0(SYS_CNTV_CTL);
 }
 
-static void flush_shadow_state(struct kvm_vcpu *shadow_vcpu)
+static void flush_shadow_state(struct pkvm_loaded_state *state)
 {
+	struct kvm_vcpu *shadow_vcpu = state->vcpu;
 	struct kvm_vcpu *host_vcpu = shadow_vcpu->arch.pkvm.host_vcpu;
 	u8 esr_ec;
 	shadow_entry_exit_handler_fn ec_handler;
@@ -462,8 +463,9 @@ static void flush_shadow_state(struct kvm_vcpu *shadow_vcpu)
 	shadow_vcpu->arch.pkvm.exit_code = 0;
 }
 
-static void sync_shadow_state(struct kvm_vcpu *shadow_vcpu, u32 exit_reason)
+static void sync_shadow_state(struct pkvm_loaded_state *state, u32 exit_reason)
 {
+	struct kvm_vcpu *shadow_vcpu = state->vcpu;
 	struct kvm_vcpu *host_vcpu = shadow_vcpu->arch.pkvm.host_vcpu;
 	u8 esr_ec;
 	shadow_entry_exit_handler_fn ec_handler;
@@ -579,11 +581,11 @@ static void handle___kvm_vcpu_run(struct kvm_cpu_context *host_ctxt)
 	if (unlikely(is_protected_kvm_enabled())) {
 		struct pkvm_loaded_state *state = this_cpu_ptr(&loaded_state);
 
-		flush_shadow_state(state->vcpu);
+		flush_shadow_state(state);
 
 		ret = __kvm_vcpu_run(state->vcpu);
 
-		sync_shadow_state(state->vcpu, ret);
+		sync_shadow_state(state, ret);
 
 		if (state->vcpu->arch.flags & KVM_ARM64_FP_ENABLED) {
 			/*
