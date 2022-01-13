@@ -88,6 +88,8 @@ const struct ffa_dev_ops *ffa_dev_ops_get(struct ffa_device *dev)
 #define ffa_unregister(driver) \
 	ffa_driver_unregister(driver)
 
+extern struct bus_type ffa_bus_type;
+
 /**
  * module_ffa_driver() - Helper macro for registering a psa_ffa driver
  * @__ffa_driver: ffa_driver structure
