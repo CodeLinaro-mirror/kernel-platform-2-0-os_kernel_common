@@ -20,12 +20,10 @@
 #include <linux/dma-mapping.h>
 
 #include "trusty-irq.h"
-#include "trusty-smc.h"
+#include "trusty-private.h"
 #include "trusty-trace.h"
 #include "trusty-sched-share-api.h"
 
-
-struct trusty_state;
 static struct platform_driver trusty_driver;
 static int trusty_cpuhp_slot = -1;
 
@@ -34,41 +32,6 @@ module_param(use_high_wq, bool, 0660);
 
 static int nop_nice_value = -20; /* default to highest */
 module_param(nop_nice_value, int, 0660);
-
-struct trusty_work {
-	struct trusty_state *s;
-	unsigned int cpu;
-	struct task_struct *nop_thread;
-	wait_queue_head_t nop_event_wait;
-	int signaled;
-};
-
-struct trusty_state {
-	struct mutex smc_lock;
-	struct atomic_notifier_head notifier;
-	struct completion cpu_idle_completion;
-	char *version_str;
-	u32 api_version;
-	bool trusty_panicked;
-	struct device *dev;
-	struct hlist_node cpuhp_node;
-	struct trusty_work __percpu *nop_works;
-	struct list_head nop_queue;
-	spinlock_t nop_lock; /* protects nop_queue */
-	struct device_dma_parameters dma_parms;
-	struct trusty_sched_share_state *trusty_sched_share_state;
-};
-
-static inline unsigned long smc(unsigned long r0, unsigned long r1,
-				unsigned long r2, unsigned long r3)
-{
-	unsigned long ret;
-
-	trace_trusty_smc(r0, r1, r2, r3);
-	ret = trusty_smc8(r0, r1, r2, r3, 0, 0, 0, 0).r0;
-	trace_trusty_smc_done(ret);
-	return ret;
-}
 
 s32 trusty_fast_call32(struct device *dev, u32 smcnr, u32 a0, u32 a1, u32 a2)
 {
@@ -81,7 +44,7 @@ s32 trusty_fast_call32(struct device *dev, u32 smcnr, u32 a0, u32 a1, u32 a2)
 	if (WARN_ON(SMC_IS_SMC64(smcnr)))
 		return SM_ERR_INVALID_PARAMETERS;
 
-	return smc(smcnr, a0, a1, a2);
+	return s->msg_ops->send_direct_msg(dev, smcnr, a0, a1, a2);
 }
 EXPORT_SYMBOL(trusty_fast_call32);
 
@@ -97,7 +60,7 @@ s64 trusty_fast_call64(struct device *dev, u64 smcnr, u64 a0, u64 a1, u64 a2)
 	if (WARN_ON(!SMC_IS_SMC64(smcnr)))
 		return SM_ERR_INVALID_PARAMETERS;
 
-	return smc(smcnr, a0, a1, a2);
+	return s->msg_ops->send_direct_msg(dev, smcnr, a0, a1, a2);
 }
 EXPORT_SYMBOL(trusty_fast_call64);
 #endif
@@ -109,13 +72,16 @@ static unsigned long trusty_std_call_inner(struct device *dev,
 {
 	unsigned long ret;
 	int retry = 5;
+	struct trusty_state *s = platform_get_drvdata(to_platform_device(dev));
 
 	dev_dbg(dev, "%s(0x%lx 0x%lx 0x%lx 0x%lx)\n",
 		__func__, smcnr, a0, a1, a2);
 	while (true) {
-		ret = smc(smcnr, a0, a1, a2);
+		ret = s->msg_ops->send_direct_msg(dev, smcnr, a0, a1, a2);
 		while ((s32)ret == SM_ERR_FIQ_INTERRUPTED)
-			ret = smc(SMC_SC_RESTART_FIQ, 0, 0, 0);
+			ret = s->msg_ops->send_direct_msg(dev,
+							  SMC_SC_RESTART_FIQ,
+							  0, 0, 0);
 		if ((int)ret != SM_ERR_BUSY || !retry)
 			break;
 
@@ -254,58 +220,24 @@ s32 trusty_std_call32(struct device *dev, u32 smcnr, u32 a0, u32 a1, u32 a2)
 }
 EXPORT_SYMBOL(trusty_std_call32);
 
-static int __trusty_share_memory(struct device *dev, u64 *id,
-				 struct scatterlist *sglist, unsigned int nents,
-				 pgprot_t pgprot, u64 tag, bool mem_share)
-{
-	struct trusty_state *s = platform_get_drvdata(to_platform_device(dev));
-	int ret;
-	struct ns_mem_page_info pg_inf;
-	struct scatterlist *sg;
-	size_t count;
-
-	if (WARN_ON(dev->driver != &trusty_driver.driver))
-		return -EINVAL;
-
-	if (WARN_ON(nents < 1))
-		return -EINVAL;
-
-	if (nents != 1 && s->api_version < TRUSTY_API_VERSION_MEM_OBJ) {
-		dev_err(s->dev, "%s: old trusty version does not support non-contiguous memory objects\n",
-			__func__);
-		return -EOPNOTSUPP;
-	}
-
-	if (mem_share == false && s->api_version < TRUSTY_API_VERSION_MEM_OBJ) {
-		dev_err(s->dev, "%s: old trusty version does not support lending memory objects\n",
-			__func__);
-		return -EOPNOTSUPP;
-	}
-
-	count = dma_map_sg(dev, sglist, nents, DMA_BIDIRECTIONAL);
-	if (count != nents) {
-		dev_err(s->dev, "failed to dma map sg_table\n");
-		return -EINVAL;
-	}
-
-	sg = sglist;
-	ret = trusty_encode_page_info(&pg_inf, phys_to_page(sg_dma_address(sg)),
-				      pgprot);
-	if (ret) {
-		dev_err(s->dev, "%s: trusty_encode_page_info failed\n",
-			__func__);
-		return ret;
-	}
-
-	*id = pg_inf.compat_attr;
-	return 0;
-}
-
 int trusty_share_memory(struct device *dev, u64 *id,
 			struct scatterlist *sglist, unsigned int nents,
 			pgprot_t pgprot, u64 tag)
 {
-	return __trusty_share_memory(dev, id, sglist, nents, pgprot, tag, true);
+	struct trusty_state *s = platform_get_drvdata(to_platform_device(dev));
+	int ret;
+
+	if (WARN_ON(dev->driver != &trusty_driver.driver))
+		return -EINVAL;
+
+	trace_trusty_share_memory(nents, false);
+
+	ret = s->mem_ops->trusty_share_memory(dev, id, sglist, nents, pgprot,
+					       tag);
+
+	trace_trusty_share_memory_done(nents, false, ret);
+
+	return ret;
 }
 EXPORT_SYMBOL(trusty_share_memory);
 
@@ -313,7 +245,20 @@ int trusty_lend_memory(struct device *dev, u64 *id,
 		       struct scatterlist *sglist, unsigned int nents,
 		       pgprot_t pgprot, u64 tag)
 {
-	return __trusty_share_memory(dev, id, sglist, nents, pgprot, tag, false);
+	struct trusty_state *s = platform_get_drvdata(to_platform_device(dev));
+	int ret;
+
+	if (WARN_ON(dev->driver != &trusty_driver.driver))
+		return -EINVAL;
+
+	trace_trusty_share_memory(nents, true);
+
+	ret = s->mem_ops->trusty_lend_memory(dev, id, sglist, nents, pgprot,
+					      tag);
+
+	trace_trusty_share_memory_done(nents, true, ret);
+
+	return ret;
 }
 EXPORT_SYMBOL(trusty_lend_memory);
 
@@ -344,26 +289,18 @@ int trusty_reclaim_memory(struct device *dev, u64 id,
 			  struct scatterlist *sglist, unsigned int nents)
 {
 	struct trusty_state *s = platform_get_drvdata(to_platform_device(dev));
+	int ret;
 
 	if (WARN_ON(dev->driver != &trusty_driver.driver))
 		return -EINVAL;
 
-	if (WARN_ON(nents < 1))
-		return -EINVAL;
+	trace_trusty_reclaim_memory(id);
 
-	if (s->api_version < TRUSTY_API_VERSION_MEM_OBJ) {
-		if (nents != 1) {
-			dev_err(s->dev, "%s: not supported\n", __func__);
-			return -EOPNOTSUPP;
-		}
+	ret = s->mem_ops->trusty_reclaim_memory(dev, id, sglist, nents);
 
-		dma_unmap_sg(dev, sglist, nents, DMA_BIDIRECTIONAL);
+	trace_trusty_reclaim_memory_done(id, ret);
 
-		dev_dbg(s->dev, "%s: done\n", __func__);
-		return 0;
-	}
-
-	return 0;
+	return ret;
 }
 EXPORT_SYMBOL(trusty_reclaim_memory);
 
@@ -414,7 +351,7 @@ const char *trusty_version_str_get(struct device *dev)
 }
 EXPORT_SYMBOL(trusty_version_str_get);
 
-static void trusty_init_version(struct trusty_state *s, struct device *dev)
+static void trusty_init_version_str(struct trusty_state *s, struct device *dev)
 {
 	int ret;
 	int i;
@@ -462,12 +399,17 @@ bool trusty_get_panic_status(struct device *dev)
 }
 EXPORT_SYMBOL(trusty_get_panic_status);
 
-static int trusty_init_api_version(struct trusty_state *s, struct device *dev)
+int trusty_init_api_version(struct trusty_state *s, struct device *dev,
+			    u32 (*send_direct_msg)(struct device *dev,
+						   unsigned long fid,
+						   unsigned long a0,
+						   unsigned long a1,
+						   unsigned long a2))
 {
 	u32 api_version;
 
-	api_version = trusty_fast_call32(dev, SMC_FC_API_VERSION,
-					 TRUSTY_API_VERSION_CURRENT, 0, 0);
+	api_version = send_direct_msg(dev, SMC_FC_API_VERSION,
+				      TRUSTY_API_VERSION_CURRENT, 0, 0);
 	if (api_version == SM_ERR_UNDEFINED_SMC)
 		api_version = 0;
 
@@ -797,11 +739,12 @@ static int trusty_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, s);
 
-	trusty_init_version(s, &pdev->dev);
+	/* Initialize SMC transport */
+	ret = trusty_smc_transport_setup(s->dev);
+	if (ret != 0 || s->msg_ops == NULL || s->mem_ops == NULL)
+		goto err_transport_setup;
 
-	ret = trusty_init_api_version(s, &pdev->dev);
-	if (ret < 0)
-		goto err_api_version;
+	trusty_init_version_str(s, &pdev->dev);
 
 	s->nop_works = alloc_percpu(struct trusty_work);
 	if (!s->nop_works) {
@@ -876,9 +819,10 @@ err_thread_create:
 	}
 	free_percpu(s->nop_works);
 err_alloc_works:
-err_api_version:
-	s->dev->dma_parms = NULL;
 	kfree(s->version_str);
+	trusty_smc_transport_cleanup(s->dev);
+err_transport_setup:
+	s->dev->dma_parms = NULL;
 	device_for_each_child(&pdev->dev, NULL, trusty_remove_child);
 	mutex_destroy(&s->smc_lock);
 	kfree(s);
@@ -906,6 +850,7 @@ static int trusty_remove(struct platform_device *pdev)
 
 	trusty_free_sched_share(s->trusty_sched_share_state);
 
+	trusty_smc_transport_cleanup(s->dev);
 	mutex_destroy(&s->smc_lock);
 	s->dev->dma_parms = NULL;
 	kfree(s->version_str);
