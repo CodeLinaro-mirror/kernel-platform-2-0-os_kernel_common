@@ -59,9 +59,6 @@ u32 trusty_get_api_version(struct device *dev);
 bool trusty_get_panic_status(struct device *dev);
 
 struct ns_mem_page_info {
-	u64 paddr;
-	u8 ffa_mem_attr;
-	u8 ffa_mem_perm;
 	u64 compat_attr;
 };
 
