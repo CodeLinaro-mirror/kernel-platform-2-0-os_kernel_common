@@ -118,40 +118,34 @@ DEFINE_TRUSTY_SMC_RETURN_EVENT(trusty_std_call32_done);
 DEFINE_TRUSTY_SMC_RETURN_EVENT(trusty_smc_done);
 
 TRACE_EVENT(trusty_share_memory,
-	TP_PROTO(size_t len, unsigned int nents, bool lend),
-	TP_ARGS(len, nents, lend),
+	TP_PROTO(unsigned int nents, bool lend),
+	TP_ARGS(nents, lend),
 	TP_STRUCT__entry(
-		__field(size_t, len)
 		__field(unsigned int, nents)
 		__field(bool, lend)
 	),
 	TP_fast_assign(
-		__entry->len = len;
 		__entry->nents = nents;
 		__entry->lend = lend;
 	),
-	TP_printk("len=%zu, nents=%u, lend=%u", __entry->len, __entry->nents, __entry->lend)
+	TP_printk("nents=%u, lend=%u", __entry->nents, __entry->lend)
 );
 
 TRACE_EVENT(trusty_share_memory_done,
-	TP_PROTO(size_t len, unsigned int nents, bool lend, u64 handle, int ret),
-	TP_ARGS(len, nents, lend, handle, ret),
+	TP_PROTO(unsigned int nents, bool lend, int ret),
+	TP_ARGS(nents, lend, ret),
 	TP_STRUCT__entry(
-		__field(size_t, len)
 		__field(unsigned int, nents)
 		__field(bool, lend)
-		__field(u64, handle)
 		__field(int, ret)
 	),
 	TP_fast_assign(
-		__entry->len = len;
 		__entry->nents = nents;
 		__entry->lend = lend;
-		__entry->handle = handle;
 		__entry->ret = ret;
 	),
-	TP_printk("len=%zu, nents=%u, lend=%u, ffa_handle=0x%llx, ret=%d", __entry->len,
-		__entry->nents, __entry->lend, __entry->handle, __entry->ret)
+	TP_printk("nents=%u, lend=%u, ret=%d",
+		__entry->nents, __entry->lend, __entry->ret)
 );
 
 TRACE_EVENT(trusty_enqueue_nop,
