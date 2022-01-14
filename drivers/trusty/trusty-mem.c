@@ -5,7 +5,6 @@
 
 #include <linux/types.h>
 #include <linux/printk.h>
-#include <linux/trusty/arm_ffa.h>
 #include <linux/trusty/trusty.h>
 #include <linux/trusty/smcall.h>
 
@@ -75,8 +74,6 @@ int trusty_encode_page_info(struct ns_mem_page_info *inf,
 {
 	int mem_attr;
 	u64 pte;
-	u8 ffa_mem_attr;
-	u8 ffa_mem_perm = 0;
 
 	if (!inf || !page)
 		return -EINVAL;
@@ -89,30 +86,6 @@ int trusty_encode_page_info(struct ns_mem_page_info *inf,
 	if (mem_attr < 0)
 		return mem_attr;
 
-	switch (mem_attr) {
-	case MEM_ATTR_STRONGLY_ORDERED:
-		ffa_mem_attr = FFA_MEM_ATTR_DEVICE_NGNRNE;
-		break;
-
-	case MEM_ATTR_DEVICE:
-		ffa_mem_attr = FFA_MEM_ATTR_DEVICE_NGNRE;
-		break;
-
-	case MEM_ATTR_NORMAL_NON_CACHEABLE:
-		ffa_mem_attr = FFA_MEM_ATTR_NORMAL_MEMORY_UNCACHED;
-		break;
-
-	case MEM_ATTR_NORMAL_WRITE_BACK_READ_ALLOCATE:
-	case MEM_ATTR_NORMAL_WRITE_BACK_WRITE_ALLOCATE:
-		ffa_mem_attr = FFA_MEM_ATTR_NORMAL_MEMORY_CACHED_WB;
-		break;
-
-	default:
-		return -EINVAL;
-	}
-
-	inf->paddr = pte;
-
 	/* add other attributes */
 #if defined(CONFIG_ARM64) || defined(CONFIG_ARM_LPAE)
 	pte |= pgprot_val(pgprot);
@@ -123,16 +96,6 @@ int trusty_encode_page_info(struct ns_mem_page_info *inf,
 		pte |= ATTR_INNER_SHAREABLE; /* inner sharable */
 #endif
 
-	if (!(pte & ATTR_RDONLY))
-		ffa_mem_perm |= FFA_MEM_PERM_RW;
-	else
-		ffa_mem_perm |= FFA_MEM_PERM_RO;
-
-	if ((pte & ATTR_INNER_SHAREABLE) == ATTR_INNER_SHAREABLE)
-		ffa_mem_attr |= FFA_MEM_ATTR_INNER_SHAREABLE;
-
-	inf->ffa_mem_attr = ffa_mem_attr;
-	inf->ffa_mem_perm = ffa_mem_perm;
 	inf->compat_attr = (pte & 0x0000FFFFFFFFFFFFull) |
 			   ((u64)mem_attr << 48);
 	return 0;
