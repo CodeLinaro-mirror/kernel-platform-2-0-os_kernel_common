@@ -254,18 +254,9 @@ s32 trusty_std_call32(struct device *dev, u32 smcnr, u32 a0, u32 a1, u32 a2)
 }
 EXPORT_SYMBOL(trusty_std_call32);
 
-int trusty_share_memory(struct device *dev, u64 *id,
-			struct scatterlist *sglist, unsigned int nents,
-			pgprot_t pgprot)
-{
-	return trusty_transfer_memory(dev, id, sglist, nents, pgprot, 0,
-				      false);
-}
-EXPORT_SYMBOL(trusty_share_memory);
-
-int trusty_transfer_memory(struct device *dev, u64 *id,
-			   struct scatterlist *sglist, unsigned int nents,
-			   pgprot_t pgprot, u64 tag, bool lend)
+static int __trusty_share_memory(struct device *dev, u64 *id,
+				 struct scatterlist *sglist, unsigned int nents,
+				 pgprot_t pgprot, u64 tag, bool mem_share)
 {
 	struct trusty_state *s = platform_get_drvdata(to_platform_device(dev));
 	int ret;
@@ -281,6 +272,12 @@ int trusty_transfer_memory(struct device *dev, u64 *id,
 
 	if (nents != 1 && s->api_version < TRUSTY_API_VERSION_MEM_OBJ) {
 		dev_err(s->dev, "%s: old trusty version does not support non-contiguous memory objects\n",
+			__func__);
+		return -EOPNOTSUPP;
+	}
+
+	if (mem_share == false && s->api_version < TRUSTY_API_VERSION_MEM_OBJ) {
+		dev_err(s->dev, "%s: old trusty version does not support lending memory objects\n",
 			__func__);
 		return -EOPNOTSUPP;
 	}
@@ -303,7 +300,22 @@ int trusty_transfer_memory(struct device *dev, u64 *id,
 	*id = pg_inf.compat_attr;
 	return 0;
 }
-EXPORT_SYMBOL(trusty_transfer_memory);
+
+int trusty_share_memory(struct device *dev, u64 *id,
+			struct scatterlist *sglist, unsigned int nents,
+			pgprot_t pgprot, u64 tag)
+{
+	return __trusty_share_memory(dev, id, sglist, nents, pgprot, tag, true);
+}
+EXPORT_SYMBOL(trusty_share_memory);
+
+int trusty_lend_memory(struct device *dev, u64 *id,
+		       struct scatterlist *sglist, unsigned int nents,
+		       pgprot_t pgprot, u64 tag)
+{
+	return __trusty_share_memory(dev, id, sglist, nents, pgprot, tag, false);
+}
+EXPORT_SYMBOL(trusty_lend_memory);
 
 /*
  * trusty_share_memory_compat - trusty_share_memory wrapper for old apis
@@ -319,7 +331,8 @@ int trusty_share_memory_compat(struct device *dev, u64 *id,
 	int ret;
 	struct trusty_state *s = platform_get_drvdata(to_platform_device(dev));
 
-	ret = trusty_share_memory(dev, id, sglist, nents, pgprot);
+	ret = trusty_share_memory(dev, id, sglist, nents, pgprot,
+				  TRUSTY_DEFAULT_MEM_OBJ_TAG);
 	if (!ret && s->api_version < TRUSTY_API_VERSION_PHYS_MEM_OBJ)
 		*id &= 0x0000FFFFFFFFF000ull;
 
