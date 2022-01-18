@@ -11,6 +11,7 @@
 #include <linux/device.h>
 #include <linux/pagemap.h>
 
+#define TRUSTY_DEFAULT_MEM_OBJ_TAG	(0)
 
 /*
  * map Trusty priorities to Linux nice values (see trusty-sched-share.h)
@@ -69,13 +70,13 @@ struct scatterlist;
 typedef u64 trusty_shared_mem_id_t;
 int trusty_share_memory(struct device *dev, trusty_shared_mem_id_t *id,
 			struct scatterlist *sglist, unsigned int nents,
-			pgprot_t pgprot);
+			pgprot_t pgprot, u64 tag);
 int trusty_share_memory_compat(struct device *dev, trusty_shared_mem_id_t *id,
 			       struct scatterlist *sglist, unsigned int nents,
 			       pgprot_t pgprot);
-int trusty_transfer_memory(struct device *dev, u64 *id,
-			   struct scatterlist *sglist, unsigned int nents,
-			   pgprot_t pgprot, u64 tag, bool lend);
+int trusty_lend_memory(struct device *dev, u64 *id,
+		       struct scatterlist *sglist, unsigned int nents,
+		       pgprot_t pgprot, u64 tag);
 int trusty_reclaim_memory(struct device *dev, trusty_shared_mem_id_t id,
 			  struct scatterlist *sglist, unsigned int nents);
 
@@ -85,7 +86,7 @@ u64 trusty_dma_buf_get_ffa_tag(struct dma_buf *dma_buf);
 #else
 static inline u64 trusty_dma_buf_get_ffa_tag(struct dma_buf *dma_buf)
 {
-	return 0;
+	return TRUSTY_DEFAULT_MEM_OBJ_TAG;
 }
 #endif
 
