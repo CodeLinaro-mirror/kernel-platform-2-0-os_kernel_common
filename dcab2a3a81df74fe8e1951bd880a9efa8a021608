@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2085c10b_b50acd43",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1293738
+      },
+      "writtenOn": "2022-01-22T14:49:18Z",
+      "side": 1,
+      "message": "Can this fragment be in common-modules/virtual-device like goldfish and cuttlefish?",
+      "revId": "dcab2a3a81df74fe8e1951bd880a9efa8a021608",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
