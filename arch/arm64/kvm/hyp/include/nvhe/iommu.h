@@ -7,6 +7,24 @@
 
 #include <nvhe/mem_protect.h>
 
+struct pkvm_iommu_ops {
+	/*
+	 * Global driver initialization called before any devices are registered.
+	 * Driver-specific arguments are passed in a buffer shared by the host.
+	 * The buffer memory has been pinned in EL2 but host retains R/W access.
+	 * Extra care must therefore be taken when reading from it.
+	 *
+	 * The driver is expected to set up any page-table bookkeeping and be
+	 * able to accept host stage-2 updates after this call.
+	 *
+	 * Driver initialization lock held at entry.
+	 */
+	int (*init)(void *data, size_t szdata);
+};
+
+int __pkvm_iommu_driver_init(enum pkvm_iommu_driver_id id, void *data,
+			     size_t szdata);
+
 struct kvm_iommu_ops {
 	int (*init)(void);
 	bool (*host_smc_handler)(struct kvm_cpu_context *host_ctxt);
