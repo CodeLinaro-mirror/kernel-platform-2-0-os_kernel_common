@@ -188,6 +188,21 @@ static struct pkvm_iommu *find_iommu_by_id(unsigned long id)
 	return res;
 }
 
+static struct pkvm_iommu *find_iommu_by_pa(phys_addr_t pa)
+{
+	struct pkvm_iommu *dev, *res = NULL;
+
+	hyp_spin_lock(&iommu_list_lock);
+	list_for_each_entry(dev, &iommu_list, list) {
+		if (dev->pa <= pa && pa < dev->pa + dev->size) {
+			res = dev;
+			break;
+		}
+	}
+	hyp_spin_unlock(&iommu_list_lock);
+	return res;
+}
+
 /*
  * Initialize EL2 IOMMU driver.
  *
@@ -378,5 +393,22 @@ int pkvm_iommu_host_stage2_adjust_range(phys_addr_t addr, phys_addr_t *start,
 		*start = new_start;
 		*end = new_end;
 	}
+	return ret;
+}
+
+bool pkvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt, u32 esr,
+				  phys_addr_t fault_pa)
+{
+	struct pkvm_iommu *dev;
+	bool ret;
+
+	dev = find_iommu_by_pa(fault_pa);
+	if (!dev || !dev->ops->host_dabt_handler)
+		return false;
+
+	hyp_spin_lock(&dev->lock);
+	ret = dev->powered && dev->ops->host_dabt_handler(dev, host_ctxt, esr,
+							  fault_pa - dev->pa);
+	hyp_spin_unlock(&dev->lock);
 	return ret;
 }
