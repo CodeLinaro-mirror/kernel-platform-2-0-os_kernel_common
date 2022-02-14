@@ -358,3 +358,21 @@ int pkvm_iommu_host_stage2_adjust_range(phys_addr_t addr, phys_addr_t *start,
 	*end = new_end;
 	return 0;
 }
+
+bool pkvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt, u32 esr,
+				  phys_addr_t pa)
+{
+	struct pkvm_iommu *dev;
+	bool ret = false;
+
+	host_lock_component();
+	list_for_each_entry(dev, &iommu_list, list) {
+		if (dev->powered && dev->pa <= pa && pa < dev->pa + dev->size) {
+			ret = dev->ops->host_dabt_handler(dev, host_ctxt, esr,
+							  pa - dev->pa);
+			break;
+		}
+	}
+	host_unlock_component();
+	return ret;
+}
