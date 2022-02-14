@@ -74,6 +74,11 @@ bool pkvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt, u32 esr,
 void pkvm_iommu_host_stage2_idmap(phys_addr_t start, phys_addr_t end,
 				  enum kvm_pgtable_prot prot);
 
+static inline void *iommu_drv_data(struct pkvm_iommu *dev)
+{
+	return (void *)dev + sizeof(*dev);
+}
+
 extern const struct pkvm_iommu_ops pkvm_s2mpu_ops;
 
 struct kvm_iommu_ops {
