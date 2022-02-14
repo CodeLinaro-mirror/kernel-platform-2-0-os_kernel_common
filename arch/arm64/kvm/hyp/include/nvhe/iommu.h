@@ -30,6 +30,14 @@ struct pkvm_iommu_ops {
 	int (*suspend)(struct pkvm_iommu *dev);
 	int (*resume)(struct pkvm_iommu *dev);
 
+	/*
+	 * Host data abort handler callback. Called with dev->lock held.
+	 * Returns true if the data abort has been handled.
+	 */
+	bool (*host_dabt_handler)(struct pkvm_iommu *dev,
+				  struct kvm_cpu_context *host_ctxt,
+				  u32 esr, size_t off);
+
 	/* Amount of memory allocated per-device for use by the driver. */
 	size_t dev_data_size;
 };
@@ -55,6 +63,8 @@ int __pkvm_iommu_pm_notify(unsigned long dev_id,
 			   enum pkvm_iommu_pm_event event);
 int pkvm_iommu_host_stage2_adjust_range(phys_addr_t addr, phys_addr_t *start,
 					phys_addr_t *end);
+bool pkvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt, u32 esr,
+				  phys_addr_t fault_pa);
 
 struct kvm_iommu_ops {
 	int (*init)(void);
