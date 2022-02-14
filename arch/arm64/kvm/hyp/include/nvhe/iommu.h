@@ -87,6 +87,8 @@ static inline void *iommu_drv_data(struct pkvm_iommu *dev)
 	return (void *)dev + sizeof(*dev);
 }
 
+extern const struct pkvm_iommu_ops pkvm_s2mpu_ops;
+
 struct kvm_iommu_ops {
 	int (*init)(void);
 	bool (*host_smc_handler)(struct kvm_cpu_context *host_ctxt);
