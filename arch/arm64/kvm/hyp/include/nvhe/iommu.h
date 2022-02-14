@@ -30,6 +30,12 @@ struct pkvm_iommu_ops {
 	 */
 	int (*validate)(phys_addr_t base, size_t size);
 
+	void (*host_stage2_idmap_prepare)(phys_addr_t start, phys_addr_t end,
+					  enum kvm_pgtable_prot prot);
+
+	void (*host_stage2_idmap_apply)(struct pkvm_iommu *dev,
+					phys_addr_t start, phys_addr_t end);
+
 	/* Power management callbacks. Called with dev->lock held. */
 	int (*suspend)(struct pkvm_iommu *dev);
 	int (*resume)(struct pkvm_iommu *dev);
@@ -69,6 +75,8 @@ int pkvm_iommu_host_stage2_adjust_range(phys_addr_t addr, phys_addr_t *start,
 					phys_addr_t *end);
 bool pkvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt, u32 esr,
 				  phys_addr_t fault_pa);
+void pkvm_iommu_host_stage2_idmap(phys_addr_t start, phys_addr_t end,
+				  enum kvm_pgtable_prot prot);
 
 struct kvm_iommu_ops {
 	int (*init)(void);
