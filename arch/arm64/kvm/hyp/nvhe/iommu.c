@@ -412,3 +412,37 @@ bool pkvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt, u32 esr,
 	hyp_spin_unlock(&dev->lock);
 	return ret;
 }
+
+void pkvm_iommu_host_stage2_idmap(phys_addr_t start, phys_addr_t end,
+				  enum kvm_pgtable_prot prot)
+{
+	struct pkvm_iommu_driver *drv;
+	struct pkvm_iommu *dev;
+	size_t i;
+
+	hyp_assert_lock_held(&host_kvm.lock);
+
+	for (i = 0; i < ARRAY_SIZE(iommu_drivers); i++) {
+		drv = get_driver(i);
+		if (!drv || !is_driver_ready(drv))
+			continue;
+
+		if (drv->ops->host_stage2_idmap_prepare)
+			drv->ops->host_stage2_idmap_prepare(start, end, prot);
+
+		if (!drv->ops->host_stage2_idmap_apply)
+			continue;
+
+		hyp_spin_lock(&iommu_list_lock);
+		list_for_each_entry(dev, &iommu_list, list) {
+			if (dev->ops != drv->ops)
+				continue;
+
+			hyp_spin_lock(&dev->lock);
+			if (dev->powered)
+				drv->ops->host_stage2_idmap_apply(dev, start, end);
+			hyp_spin_unlock(&dev->lock);
+		}
+		hyp_spin_unlock(&iommu_list_lock);
+	}
+}
