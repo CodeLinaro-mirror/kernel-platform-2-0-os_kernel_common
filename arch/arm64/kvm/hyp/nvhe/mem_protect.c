@@ -360,6 +360,20 @@ int __pkvm_prot_finalize(void)
 	return 0;
 }
 
+int host_stage2_unmap_dev_locked(phys_addr_t start, u64 size)
+{
+	int ret;
+
+	hyp_assert_lock_held(&host_kvm.lock);
+
+	ret = kvm_pgtable_stage2_unmap(&host_kvm.pgt, start, size);
+	if (ret)
+		return ret;
+
+	pkvm_iommu_host_stage2_idmap(start, start + size, 0);
+	return 0;
+}
+
 static int host_stage2_unmap_dev_all(void)
 {
 	struct kvm_pgtable *pgt = &host_kvm.pgt;
@@ -370,11 +384,11 @@ static int host_stage2_unmap_dev_all(void)
 	/* Unmap all non-memory regions to recycle the pages */
 	for (i = 0; i < hyp_memblock_nr; i++, addr = reg->base + reg->size) {
 		reg = &hyp_memory[i];
-		ret = kvm_pgtable_stage2_unmap(pgt, addr, reg->base - addr);
+		ret = host_stage2_unmap_dev_locked(addr, reg->base - addr);
 		if (ret)
 			return ret;
 	}
-	return kvm_pgtable_stage2_unmap(pgt, addr, BIT(pgt->ia_bits) - addr);
+	return host_stage2_unmap_dev_locked(addr, BIT(pgt->ia_bits) - addr);
 }
 
 struct kvm_mem_range {
@@ -571,6 +585,7 @@ static int host_stage2_idmap(u64 addr)
 
 	prot = is_memory ? PKVM_HOST_MEM_PROT : PKVM_HOST_MMIO_PROT;
 
+	host_lock_component();
 	/*
 	 * Adjust against IOMMU devices first. host_stage2_adjust_range() should
 	 * be called last for proper alignment.
@@ -582,7 +597,6 @@ static int host_stage2_idmap(u64 addr)
 			return ret;
 	}
 
-	host_lock_component();
 	ret = host_stage2_adjust_range(addr, &range);
 	if (ret)
 		goto unlock;
