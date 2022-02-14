@@ -571,6 +571,7 @@ static int host_stage2_idmap(u64 addr)
 
 	prot = is_memory ? PKVM_HOST_MEM_PROT : PKVM_HOST_MMIO_PROT;
 
+	host_lock_component();
 	/*
 	 * Adjust against IOMMU devices first. host_stage2_adjust_range() should
 	 * be called last for proper alignment.
@@ -582,7 +583,6 @@ static int host_stage2_idmap(u64 addr)
 			return ret;
 	}
 
-	host_lock_component();
 	ret = host_stage2_adjust_range(addr, &range);
 	if (ret)
 		goto unlock;
