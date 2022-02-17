@@ -11,5 +11,6 @@ int main(void)
 #ifdef CONFIG_TRACING
 	DEFINE(STRUCT_HYP_BUFFER_PAGE_SIZE,	sizeof(struct hyp_buffer_page));
 #endif
+	DEFINE(HYP_SPINLOCK_SIZE,       sizeof(hyp_spinlock_t));
 	return 0;
 }
