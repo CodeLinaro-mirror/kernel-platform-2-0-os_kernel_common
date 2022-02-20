@@ -37,36 +37,51 @@ static int __pkvm_create_mappings(unsigned long start, unsigned long size,
 	return err;
 }
 
+/**
+ * pkvm_alloc_private_va_range - Allocates a private VA range.
+ * @size:	The size of the VA range to reserve.
+ *
+ * The private VA range is allocated above __io_map_base.
+ */
+unsigned long pkvm_alloc_private_va_range(size_t size)
+{
+	unsigned long base, addr;
+
+	hyp_spin_lock(&pkvm_pgd_lock);
+
+	/* Align the allocation based on the order of its size */
+	addr = ALIGN(__io_map_base, PAGE_SIZE << get_order(size));
+
+	/* The allocated size is always a multiple of PAGE_SIZE */
+	base = addr + PAGE_ALIGN(size);
+
+	/* Are we overflowing on the vmemmap ? */
+	if (!addr || base > __hyp_vmemmap)
+		addr = (unsigned long)ERR_PTR(-ENOMEM);
+	else
+		__io_map_base = base;
+
+	hyp_spin_unlock(&pkvm_pgd_lock);
+
+	return addr;
+}
+
 unsigned long __pkvm_create_private_mapping(phys_addr_t phys, size_t size,
 					    enum kvm_pgtable_prot prot)
 {
 	unsigned long addr;
 	int err;
 
-	hyp_spin_lock(&pkvm_pgd_lock);
+	size += offset_in_page(phys);
+	addr = pkvm_alloc_private_va_range(size);
+	if (IS_ERR((void *)addr))
+		return addr;
 
-	size = PAGE_ALIGN(size + offset_in_page(phys));
-	addr = __io_map_base;
-	__io_map_base += size;
+	err = __pkvm_create_mappings(addr, size, phys, prot);
+	if (err)
+		return (unsigned long)ERR_PTR(err);
 
-	/* Are we overflowing on the vmemmap ? */
-	if (__io_map_base > __hyp_vmemmap) {
-		__io_map_base -= size;
-		addr = (unsigned long)ERR_PTR(-ENOMEM);
-		goto out;
-	}
-
-	err = kvm_pgtable_hyp_map(&pkvm_pgtable, addr, size, phys, prot);
-	if (err) {
-		addr = (unsigned long)ERR_PTR(err);
-		goto out;
-	}
-
-	addr = addr + offset_in_page(phys);
-out:
-	hyp_spin_unlock(&pkvm_pgd_lock);
-
-	return addr;
+	return addr + offset_in_page(phys);
 }
 
 int pkvm_create_mappings_locked(void *from, void *to, enum kvm_pgtable_prot prot)
@@ -155,7 +170,7 @@ int hyp_map_vectors(void)
 	bp_base = (void *)__pkvm_create_private_mapping(phys,
 							__BP_HARDEN_HYP_VECS_SZ,
 							PAGE_HYP_EXEC);
-	if (IS_ERR_OR_NULL(bp_base))
+	if (IS_ERR(bp_base))
 		return PTR_ERR(bp_base);
 
 	__hyp_bp_vect_base = bp_base;
