@@ -1,4 +1,21 @@
 {
-  "comments": [],
-  "submitRequirementResults": []
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d1476c51_391ea334",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1928416
+      },
+      "writtenOn": "2022-02-21T18:04:41Z",
+      "side": 1,
+      "message": "I\u0027ll create a new version after rebase.",
+      "revId": "bc5b6e946defcb53664d1a8627eafbedbdcc16d9",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
 }
