@@ -2303,3 +2303,19 @@ int host_stage2_get_leaf(phys_addr_t phys, kvm_pte_t *ptep, u32 *level)
 
 	return ret;
 }
+
+/* Map the MMIO region into the hypervisor and remove it from host */
+int pkvm_create_hyp_device_mapping(u64 base, u64 size, void __iomem *haddr)
+{
+	int ret;
+
+	ret = __pkvm_create_private_mapping(base, size, PAGE_HYP_DEVICE, haddr);
+	if (ret)
+		return ret;
+
+	host_lock_component();
+	ret = host_stage2_set_owner_locked(base, size, PKVM_ID_HYP);
+	host_unlock_component();
+
+	return ret;
+}
