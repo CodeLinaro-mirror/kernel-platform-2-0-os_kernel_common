@@ -1,5 +1,23 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb43bb84_316e4b76",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1899961
+      },
+      "writtenOn": "2022-03-11T18:48:42Z",
+      "side": 1,
+      "message": "This is a bit unfortunate. This change depends on the function umount_fs() added in https://android-review.googlesource.com/c/kernel/common/+/2021999, which should have been merged first.",
+      "revId": "758ca138da0999d820ea47a38c4c4e2bae4c55b1",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
