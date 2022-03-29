@@ -1912,6 +1912,7 @@
   __udelay
   udp4_hwcsum
   ufshcd_bkops_ctrl
+  ufshcd_freeze_scsi_devs
   ufshcd_hold
   ufshcd_pltfrm_init
   ufshcd_query_attr_retry
@@ -1922,6 +1923,7 @@
   ufshcd_shutdown
   ufshcd_system_resume
   ufshcd_system_suspend
+  ufshcd_unfreeze_scsi_devs
   unlock_page
   unmap_mapping_range
   unpin_user_page
