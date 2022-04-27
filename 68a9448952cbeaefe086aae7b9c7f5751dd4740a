@@ -16,6 +16,24 @@
       "message": "Since this is a bug-fix for \"ANDROID: sched/rt: Add support for rt sync wakeups\", can they be squashed into 1 patch?",
       "revId": "68a9448952cbeaefe086aae7b9c7f5751dd4740a",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "486622b2_9bc2e96a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1761165
+      },
+      "writtenOn": "2022-04-27T21:10:40Z",
+      "side": 1,
+      "message": "for maintenace and history, I would prefer to not squash these.  There are two changes in android12-5.10 and two coming in android13-5.15.  Squashing would cause the loss of a Change-Id, breaking the chain.",
+      "parentUuid": "69758097_163fa2a2",
+      "revId": "68a9448952cbeaefe086aae7b9c7f5751dd4740a",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
