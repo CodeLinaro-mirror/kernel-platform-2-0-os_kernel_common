@@ -34,6 +34,24 @@
       "parentUuid": "69758097_163fa2a2",
       "revId": "68a9448952cbeaefe086aae7b9c7f5751dd4740a",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7ffa376_731ebd6d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2022-04-27T22:38:14Z",
+      "side": 1,
+      "message": "This is android-mainline which is upstream of the other two. We should have the patches as cleaned-up as possible ready to submit to Linux mainline. You wouldn\u0027t submit these together to upstream, would you?\n\nKeeping this one separate doesn\u0027t add any value...I don\u0027t mind losing the Change-Id for this patch if we preserve the Change-Id for the other one.",
+      "parentUuid": "486622b2_9bc2e96a",
+      "revId": "68a9448952cbeaefe086aae7b9c7f5751dd4740a",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
