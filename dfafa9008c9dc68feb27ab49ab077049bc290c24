@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6c02333b_27d46e1d",
+        "filename": "mm/vmscan.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2398,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2022-04-27T17:50:09Z",
+      "side": 1,
+      "message": "Unfortunately android12-5.10 ABI is frozen, so existing hooks can\u0027t be modified. You would have to introduce a new one.",
+      "range": {
+        "startLine": 2398,
+        "startChar": 33,
+        "endLine": 2398,
+        "endChar": 39
+      },
+      "revId": "dfafa9008c9dc68feb27ab49ab077049bc290c24",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
