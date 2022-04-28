@@ -52,6 +52,41 @@
       "parentUuid": "486622b2_9bc2e96a",
       "revId": "68a9448952cbeaefe086aae7b9c7f5751dd4740a",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "efdfeb39_90693baa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1761165
+      },
+      "writtenOn": "2022-04-28T18:08:50Z",
+      "side": 1,
+      "message": "Thanks Todd, I appreciate it.\n\nLet\u0027s abandon this (the SMP change, 2nd of the two).  I\u0027m squashing and putting this in the previous change.",
+      "parentUuid": "f7ffa376_731ebd6d",
+      "revId": "68a9448952cbeaefe086aae7b9c7f5751dd4740a",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9987f0c_1c2a4de0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1761165
+      },
+      "writtenOn": "2022-04-28T18:08:50Z",
+      "side": 1,
+      "message": "abandon...",
+      "revId": "68a9448952cbeaefe086aae7b9c7f5751dd4740a",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
