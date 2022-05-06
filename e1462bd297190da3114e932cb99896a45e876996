@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "815c3ec9_c7005a57",
+        "filename": "mm/damon/dbgfs.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 883,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2022-05-06T23:18:07Z",
+      "side": 0,
+      "message": "ok, either this line should have been removed in https://android-review.googlesource.com/c/kernel/common/+/2074543 of the mutex_unlock() should have been left. Either way this needs to be fixed.",
+      "range": {
+        "startLine": 883,
+        "startChar": 1,
+        "endLine": 883,
+        "endChar": 31
+      },
+      "revId": "e1462bd297190da3114e932cb99896a45e876996",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
