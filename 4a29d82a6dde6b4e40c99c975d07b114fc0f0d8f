@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7252f9d_a4a81113",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1293738
+      },
+      "writtenOn": "2022-05-13T22:26:51Z",
+      "side": 1,
+      "message": "actually, I think we need this one, as it fixed a problem running pkvm on h2g nested transports",
+      "revId": "4a29d82a6dde6b4e40c99c975d07b114fc0f0d8f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
