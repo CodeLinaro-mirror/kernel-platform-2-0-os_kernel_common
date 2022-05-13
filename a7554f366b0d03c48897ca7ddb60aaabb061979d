@@ -87,6 +87,24 @@
       "parentUuid": "911d6041_c6cd432e",
       "revId": "a7554f366b0d03c48897ca7ddb60aaabb061979d",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3627284b_89b1c15f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2022-05-13T16:53:15Z",
+      "side": 1,
+      "message": "I don\u0027t see this upstream. Seems like a v2 upstream is needed that implements the suggestion on the first patch. Then this could be FROMLIST and cite the v2 submission.",
+      "parentUuid": "b0980a40_60e9d184",
+      "revId": "a7554f366b0d03c48897ca7ddb60aaabb061979d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
