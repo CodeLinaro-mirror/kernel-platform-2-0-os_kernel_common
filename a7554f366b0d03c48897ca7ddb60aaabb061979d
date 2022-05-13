@@ -33,6 +33,42 @@
       "message": "And this should be \"UPSTREAM\" by now, right?",
       "revId": "a7554f366b0d03c48897ca7ddb60aaabb061979d",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d0142e4_295906fd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1767641
+      },
+      "writtenOn": "2022-05-13T12:58:34Z",
+      "side": 1,
+      "message": "I think I need to send patch v2  to continue the thread",
+      "parentUuid": "4bebe139_0a12c69b",
+      "revId": "a7554f366b0d03c48897ca7ddb60aaabb061979d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "911d6041_c6cd432e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1767641
+      },
+      "writtenOn": "2022-05-13T12:58:34Z",
+      "side": 1,
+      "message": "I study the FROMLIST and UPSTREAM rules again,\n\n\u003e If the patch has been submitted to LKML, but not accepted into any maintainer tree\n\u003e tag the patch subject with FROMLIST:\n\u003e add a Link: tag with a link to the submittal on lore.kernel.org\n\u003e add a Bug: tag with the Android bug (required for patches not accepted into a maintainer tree)\n\u003e if changes were required, use BACKPORT: FROMLIST:\n\nI thought I should use FROMLIST?",
+      "parentUuid": "c314ebdb_84018bb4",
+      "revId": "a7554f366b0d03c48897ca7ddb60aaabb061979d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
