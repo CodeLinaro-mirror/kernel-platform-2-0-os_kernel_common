@@ -16,6 +16,24 @@
       "message": "actually, I think we need this one, as it fixed a problem running pkvm on h2g nested transports",
       "revId": "4a29d82a6dde6b4e40c99c975d07b114fc0f0d8f",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fdf390c0_1ec9d20e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2022-05-14T07:20:12Z",
+      "side": 1,
+      "message": "That\u0027s fine, you are the only \"user\" of this symbol.  If so, please revert it later on and update the .xml file.  But for now we have to keep this stable.",
+      "parentUuid": "e7252f9d_a4a81113",
+      "revId": "4a29d82a6dde6b4e40c99c975d07b114fc0f0d8f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
