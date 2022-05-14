@@ -34,6 +34,23 @@
       "parentUuid": "e7252f9d_a4a81113",
       "revId": "4a29d82a6dde6b4e40c99c975d07b114fc0f0d8f",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "392995ae_91774f3a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1132673
+      },
+      "writtenOn": "2022-05-14T09:42:43Z",
+      "side": 1,
+      "message": "Could you proceed with this revert and then cherry-pick https://android-review.googlesource.com/c/kernel/common/+/2038867 which is an KMI-preserving implementation? (Or is this self-service? Let me know.)",
+      "revId": "4a29d82a6dde6b4e40c99c975d07b114fc0f0d8f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
