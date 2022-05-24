@@ -1132,6 +1132,37 @@ int fuse_revalidate_finalize(struct bpf_fuse_args *fa, int *out, struct inode *d
 	return 0;
 }
 
+int fuse_canonical_path_initialize_in(struct bpf_fuse_args *fa,
+				      struct fuse_dummy_io *fdi,
+				      const struct path *path,
+				      struct path *canonical_path)
+{
+	fa->opcode = FUSE_CANONICAL_PATH;
+	return 0;
+}
+
+int fuse_canonical_path_initialize_out(struct bpf_fuse_args *fa,
+				       struct fuse_dummy_io *fdi,
+				       const struct path *path,
+				       struct path *canonical_path)
+{
+	return 0;
+}
+
+int fuse_canonical_path_backing(struct bpf_fuse_args *fa, int *out, const struct path *path,
+				struct path *canonical_path)
+{
+	get_fuse_backing_path(path->dentry, canonical_path);
+	return 0;
+}
+
+int fuse_canonical_path_finalize(struct bpf_fuse_args *fa, int *out,
+				   const struct path *path,
+				   struct path *canonical_path)
+{
+	return 0;
+}
+
 int fuse_mknod_initialize_in(struct bpf_fuse_args *fa, struct fuse_mknod_in *fmi,
 			     struct inode *dir, struct dentry *entry, umode_t mode, dev_t rdev)
 {
