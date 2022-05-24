@@ -1535,6 +1535,30 @@ int fuse_lseek_initialize_out(struct bpf_fuse_args *fa, struct fuse_lseek_io *fl
 int fuse_lseek_backing(struct bpf_fuse_args *fa, struct file *file, loff_t offset, int whence);
 void *fuse_lseek_finalize(struct bpf_fuse_args *fa, struct file *file, loff_t offset, int whence);
 
+struct fuse_copy_file_range_io {
+	struct fuse_copy_file_range_in fci;
+	struct fuse_write_out fwo;
+};
+
+int fuse_copy_file_range_initialize_in(struct bpf_fuse_args *fa,
+				       struct fuse_copy_file_range_io *fcf,
+				       struct file *file_in, loff_t pos_in,
+				       struct file *file_out, loff_t pos_out,
+				       size_t len, unsigned int flags);
+int fuse_copy_file_range_initialize_out(struct bpf_fuse_args *fa,
+					struct fuse_copy_file_range_io *fcf,
+					struct file *file_in, loff_t pos_in,
+					struct file *file_out, loff_t pos_out,
+					size_t len, unsigned int flags);
+int fuse_copy_file_range_backing(struct bpf_fuse_args *fa,
+				 struct file *file_in, loff_t pos_in,
+				 struct file *file_out, loff_t pos_out,
+				 size_t len, unsigned int flags);
+void *fuse_copy_file_range_finalize(struct bpf_fuse_args *fa,
+				    struct file *file_in, loff_t pos_in,
+				    struct file *file_out, loff_t pos_out,
+				    size_t len, unsigned int flags);
+
 int fuse_fsync_initialize_in(struct bpf_fuse_args *fa, struct fuse_fsync_in *ffi,
 			     struct file *file, loff_t start, loff_t end, int datasync);
 int fuse_fsync_initialize_out(struct bpf_fuse_args *fa, struct fuse_fsync_in *ffi,
