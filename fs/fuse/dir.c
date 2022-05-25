@@ -1082,6 +1082,19 @@ static int fuse_rename2(struct user_namespace *mnt_userns, struct inode *olddir,
 		return -EINVAL;
 
 	if (flags) {
+#ifdef CONFIG_FUSE_BPF
+		struct fuse_err_ret fer;
+
+		fer = fuse_bpf_backing(olddir, struct fuse_rename2_in,
+						fuse_rename2_initialize_in,
+						fuse_rename2_initialize_out, fuse_rename2_backing,
+						fuse_rename2_finalize,
+						olddir, oldent, newdir, newent, flags);
+		if (fer.ret)
+			return PTR_ERR(fer.result);
+#endif
+
+		/* TODO: how should this go with bpfs involved? */
 		if (fc->no_rename2 || fc->minor < 23)
 			return -EINVAL;
 
@@ -1093,6 +1106,18 @@ static int fuse_rename2(struct user_namespace *mnt_userns, struct inode *olddir,
 			err = -EINVAL;
 		}
 	} else {
+#ifdef CONFIG_FUSE_BPF
+		struct fuse_err_ret fer;
+
+		fer = fuse_bpf_backing(olddir, struct fuse_rename_in,
+						fuse_rename_initialize_in,
+						fuse_rename_initialize_out, fuse_rename_backing,
+						fuse_rename_finalize,
+						olddir, oldent, newdir, newent);
+		if (fer.ret)
+			return PTR_ERR(fer.result);
+#endif
+
 		err = fuse_rename_common(olddir, oldent, newdir, newent, 0,
 					 FUSE_RENAME,
 					 sizeof(struct fuse_rename_in));
