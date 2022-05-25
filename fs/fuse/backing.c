@@ -419,6 +419,48 @@ void *fuse_release_finalize(struct bpf_fuse_args *fa, struct inode *inode, struc
 	return NULL;
 }
 
+int fuse_flush_initialize_in(struct bpf_fuse_args *fa, struct fuse_flush_in *ffi,
+			     struct file *file, fl_owner_t id)
+{
+	struct fuse_file *fuse_file = file->private_data;
+
+	*ffi = (struct fuse_flush_in) {
+		.fh = fuse_file->fh,
+	};
+
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_node_id(file->f_inode),
+		.opcode = FUSE_FLUSH,
+		.in_numargs = 1,
+		.in_args[0].size = sizeof(*ffi),
+		.in_args[0].value = ffi,
+		.flags = FUSE_BPF_FORCE,
+	};
+
+	return 0;
+}
+
+int fuse_flush_initialize_out(struct bpf_fuse_args *fa, struct fuse_flush_in *ffi,
+			      struct file *file, fl_owner_t id)
+{
+	return 0;
+}
+
+int fuse_flush_backing(struct bpf_fuse_args *fa, struct file *file, fl_owner_t id)
+{
+	struct fuse_file *fuse_file = file->private_data;
+	struct file *backing_file = fuse_file->backing_file;
+
+	if (backing_file->f_op->flush)
+		return backing_file->f_op->flush(backing_file, id);
+	return 0;
+}
+
+void *fuse_flush_finalize(struct bpf_fuse_args *fa, struct file *file, fl_owner_t id)
+{
+	return NULL;
+}
+
 int fuse_lseek_initialize_in(struct bpf_fuse_args *fa, struct fuse_lseek_io *flio,
 			     struct file *file, loff_t offset, int whence)
 {
@@ -487,6 +529,79 @@ void *fuse_lseek_finalize(struct bpf_fuse_args *fa, struct file *file, loff_t of
 	if (!fa->error_in)
 		file->f_pos = flo->offset;
 	return ERR_PTR(flo->offset);
+}
+
+int fuse_fsync_initialize_in(struct bpf_fuse_args *fa, struct fuse_fsync_in *ffi,
+			     struct file *file, loff_t start, loff_t end, int datasync)
+{
+	struct fuse_file *fuse_file = file->private_data;
+
+	*ffi = (struct fuse_fsync_in) {
+		.fh = fuse_file->fh,
+		.fsync_flags = datasync ? FUSE_FSYNC_FDATASYNC : 0,
+	};
+
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_fuse_inode(file->f_inode)->nodeid,
+		.opcode = FUSE_FSYNC,
+		.in_numargs = 1,
+		.in_args[0].size = sizeof(*ffi),
+		.in_args[0].value = ffi,
+		.flags = FUSE_BPF_FORCE,
+	};
+
+	return 0;
+}
+
+int fuse_fsync_initialize_out(struct bpf_fuse_args *fa, struct fuse_fsync_in *ffi,
+			      struct file *file, loff_t start, loff_t end, int datasync)
+{
+	return 0;
+}
+
+int fuse_fsync_backing(struct bpf_fuse_args *fa,
+		       struct file *file, loff_t start, loff_t end, int datasync)
+{
+	struct fuse_file *fuse_file = file->private_data;
+	struct file *backing_file = fuse_file->backing_file;
+	const struct fuse_fsync_in *ffi = fa->in_args[0].value;
+	int new_datasync = (ffi->fsync_flags & FUSE_FSYNC_FDATASYNC) ? 1 : 0;
+
+	return vfs_fsync(backing_file, new_datasync);
+}
+
+void *fuse_fsync_finalize(struct bpf_fuse_args *fa,
+			  struct file *file, loff_t start, loff_t end, int datasync)
+{
+	return NULL;
+}
+
+int fuse_dir_fsync_initialize_in(struct bpf_fuse_args *fa, struct fuse_fsync_in *ffi,
+				 struct file *file, loff_t start, loff_t end, int datasync)
+{
+	struct fuse_file *fuse_file = file->private_data;
+
+	*ffi = (struct fuse_fsync_in) {
+		.fh = fuse_file->fh,
+		.fsync_flags = datasync ? FUSE_FSYNC_FDATASYNC : 0,
+	};
+
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_fuse_inode(file->f_inode)->nodeid,
+		.opcode = FUSE_FSYNCDIR,
+		.in_numargs = 1,
+		.in_args[0].size = sizeof(*ffi),
+		.in_args[0].value = ffi,
+		.flags = FUSE_BPF_FORCE,
+	};
+
+	return 0;
+}
+
+int fuse_dir_fsync_initialize_out(struct bpf_fuse_args *fa, struct fuse_fsync_in *ffi,
+				  struct file *file, loff_t start, loff_t end, int datasync)
+{
+	return 0;
 }
 
 static inline void fuse_bpf_aio_put(struct fuse_bpf_aio_req *aio_req)
