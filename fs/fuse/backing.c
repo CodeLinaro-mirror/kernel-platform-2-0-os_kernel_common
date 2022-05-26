@@ -734,6 +734,287 @@ void *fuse_revalidate_finalize(struct bpf_fuse_args *fa, struct inode *dir,
 	return 0;
 }
 
+int fuse_mknod_initialize_in(struct bpf_fuse_args *fa, struct fuse_mknod_in *fmi,
+			     struct inode *dir, struct dentry *entry, umode_t mode, dev_t rdev)
+{
+	*fmi = (struct fuse_mknod_in) {
+		.mode = mode,
+		.rdev = new_encode_dev(rdev),
+		.umask = current_umask(),
+	};
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_node_id(dir),
+		.opcode = FUSE_MKNOD,
+		.in_numargs = 2,
+		.in_args[0] = (struct bpf_fuse_arg) {
+			.size = sizeof(*fmi),
+			.value = fmi,
+		},
+		.in_args[1] = (struct bpf_fuse_arg) {
+			.size = entry->d_name.len + 1,
+			.max_size = NAME_MAX + 1,
+			.flags = BPF_FUSE_VARIABLE_SIZE | BPF_FUSE_MUST_ALLOCATE,
+			.value =  (void *) entry->d_name.name,
+		},
+	};
+
+	return 0;
+}
+
+int fuse_mknod_initialize_out(struct bpf_fuse_args *fa, struct fuse_mknod_in *fmi,
+			      struct inode *dir, struct dentry *entry, umode_t mode, dev_t rdev)
+{
+	return 0;
+}
+
+int fuse_mknod_backing(struct bpf_fuse_args *fa,
+		       struct inode *dir, struct dentry *entry, umode_t mode, dev_t rdev)
+{
+	int err = 0;
+	const struct fuse_mknod_in *fmi = fa->in_args[0].value;
+	struct inode *backing_inode = get_fuse_inode(dir)->backing_inode;
+	struct path backing_path;
+	struct inode *inode = NULL;
+
+	//TODO Actually deal with changing the backing entry in mknod
+	get_fuse_backing_path(entry, &backing_path);
+	if (!backing_path.dentry)
+		return -EBADF;
+
+	inode_lock_nested(backing_inode, I_MUTEX_PARENT);
+	mode = fmi->mode;
+	if (!IS_POSIXACL(backing_inode))
+		mode &= ~fmi->umask;
+	err = vfs_mknod(&init_user_ns, backing_inode, backing_path.dentry, mode,
+			new_decode_dev(fmi->rdev));
+	inode_unlock(backing_inode);
+	if (err)
+		goto out;
+	if (d_really_is_negative(backing_path.dentry) ||
+	    unlikely(d_unhashed(backing_path.dentry))) {
+		err = -EINVAL;
+		/**
+		 * TODO: overlayfs responds to this situation with a
+		 * lookupOneLen. Should we do that too?
+		 */
+		goto out;
+	}
+	inode = fuse_iget_backing(dir->i_sb, backing_inode);
+	if (IS_ERR(inode)) {
+		err = PTR_ERR(inode);
+		goto out;
+	}
+	d_instantiate(entry, inode);
+out:
+	path_put(&backing_path);
+	return err;
+}
+
+void *fuse_mknod_finalize(struct bpf_fuse_args *fa,
+			  struct inode *dir, struct dentry *entry, umode_t mode, dev_t rdev)
+{
+	return NULL;
+}
+
+int fuse_mkdir_initialize_in(struct bpf_fuse_args *fa, struct fuse_mkdir_in *fmi,
+			     struct inode *dir, struct dentry *entry, umode_t mode)
+{
+	*fmi = (struct fuse_mkdir_in) {
+		.mode = mode,
+		.umask = current_umask(),
+	};
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_node_id(dir),
+		.opcode = FUSE_MKDIR,
+		.in_numargs = 2,
+		.in_args[0] = (struct bpf_fuse_arg) {
+			.size = sizeof(*fmi),
+			.value = fmi,
+		},
+		.in_args[1] = (struct bpf_fuse_arg) {
+			.size = entry->d_name.len + 1,
+			.max_size = NAME_MAX + 1,
+			.flags = BPF_FUSE_VARIABLE_SIZE | BPF_FUSE_MUST_ALLOCATE,
+			.value =  (void *) entry->d_name.name,
+		},
+	};
+
+	return 0;
+}
+
+int fuse_mkdir_initialize_out(struct bpf_fuse_args *fa, struct fuse_mkdir_in *fmi,
+			      struct inode *dir, struct dentry *entry, umode_t mode)
+{
+	return 0;
+}
+
+int fuse_mkdir_backing(struct bpf_fuse_args *fa,
+		       struct inode *dir, struct dentry *entry, umode_t mode)
+{
+	int err = 0;
+	const struct fuse_mkdir_in *fmi = fa->in_args[0].value;
+	struct inode *backing_inode = get_fuse_inode(dir)->backing_inode;
+	struct path backing_path;
+	struct inode *inode = NULL;
+	struct dentry *d;
+
+	//TODO Actually deal with changing the backing entry in mkdir
+	get_fuse_backing_path(entry, &backing_path);
+	if (!backing_path.dentry)
+		return -EBADF;
+
+	inode_lock_nested(backing_inode, I_MUTEX_PARENT);
+	mode = fmi->mode;
+	if (!IS_POSIXACL(backing_inode))
+		mode &= ~fmi->umask;
+	err = vfs_mkdir(&init_user_ns, backing_inode, backing_path.dentry,
+			mode);
+	if (err)
+		goto out;
+	if (d_really_is_negative(backing_path.dentry) ||
+	    unlikely(d_unhashed(backing_path.dentry))) {
+		d = lookup_one_len(entry->d_name.name,
+				   backing_path.dentry->d_parent,
+				   entry->d_name.len);
+		if (IS_ERR(d)) {
+			err = PTR_ERR(d);
+			goto out;
+		}
+		dput(backing_path.dentry);
+		backing_path.dentry = d;
+	}
+	inode = fuse_iget_backing(dir->i_sb, backing_inode);
+	if (IS_ERR(inode)) {
+		err = PTR_ERR(inode);
+		goto out;
+	}
+	d_instantiate(entry, inode);
+out:
+	inode_unlock(backing_inode);
+	path_put(&backing_path);
+	return err;
+}
+
+void *fuse_mkdir_finalize(struct bpf_fuse_args *fa,
+			  struct inode *dir, struct dentry *entry, umode_t mode)
+{
+	return NULL;
+}
+
+int fuse_rmdir_initialize_in(struct bpf_fuse_args *fa, struct fuse_dummy_io *dummy,
+			     struct inode *dir, struct dentry *entry)
+{
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_node_id(dir),
+		.opcode = FUSE_RMDIR,
+		.in_numargs = 1,
+		.in_args[0] = (struct bpf_fuse_arg) {
+			.size = entry->d_name.len + 1,
+			.max_size = NAME_MAX + 1,
+			.flags = BPF_FUSE_VARIABLE_SIZE | BPF_FUSE_MUST_ALLOCATE,
+			.value =  (void *) entry->d_name.name,
+		},
+	};
+
+	return 0;
+}
+
+int fuse_rmdir_initialize_out(struct bpf_fuse_args *fa, struct fuse_dummy_io *dummy,
+			      struct inode *dir, struct dentry *entry)
+{
+	return 0;
+}
+
+int fuse_rmdir_backing(struct bpf_fuse_args *fa,
+		       struct inode *dir, struct dentry *entry)
+{
+	int err = 0;
+	struct path backing_path;
+	struct dentry *backing_parent_dentry;
+	struct inode *backing_inode;
+
+	/* TODO Actually deal with changing the backing entry in rmdir */
+	get_fuse_backing_path(entry, &backing_path);
+	if (!backing_path.dentry)
+		return -EBADF;
+
+	/* TODO Not sure if we should reverify like overlayfs, or get inode from d_parent */
+	backing_parent_dentry = dget_parent(backing_path.dentry);
+	backing_inode = d_inode(backing_parent_dentry);
+
+	inode_lock_nested(backing_inode, I_MUTEX_PARENT);
+	err = vfs_rmdir(&init_user_ns, backing_inode, backing_path.dentry);
+	inode_unlock(backing_inode);
+
+	dput(backing_parent_dentry);
+	if (!err)
+		d_drop(entry);
+	path_put(&backing_path);
+	return err;
+}
+
+void *fuse_rmdir_finalize(struct bpf_fuse_args *fa, struct inode *dir, struct dentry *entry)
+{
+	return NULL;
+}
+
+int fuse_unlink_initialize_in(struct bpf_fuse_args *fa, struct fuse_dummy_io *dummy,
+			      struct inode *dir, struct dentry *entry)
+{
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_node_id(dir),
+		.opcode = FUSE_UNLINK,
+		.in_numargs = 1,
+		.in_args[0] = (struct bpf_fuse_arg) {
+			.size = entry->d_name.len + 1,
+			.max_size = NAME_MAX + 1,
+			.flags = BPF_FUSE_VARIABLE_SIZE | BPF_FUSE_MUST_ALLOCATE,
+			.value =  (void *) entry->d_name.name,
+		},
+	};
+
+	return 0;
+}
+
+int fuse_unlink_initialize_out(struct bpf_fuse_args *fa, struct fuse_dummy_io *dummy,
+			       struct inode *dir, struct dentry *entry)
+{
+	return 0;
+}
+
+int fuse_unlink_backing(struct bpf_fuse_args *fa, struct inode *dir, struct dentry *entry)
+{
+	int err = 0;
+	struct path backing_path;
+	struct dentry *backing_parent_dentry;
+	struct inode *backing_inode;
+
+	/* TODO Actually deal with changing the backing entry in unlink */
+	get_fuse_backing_path(entry, &backing_path);
+	if (!backing_path.dentry)
+		return -EBADF;
+
+	/* TODO Not sure if we should reverify like overlayfs, or get inode from d_parent */
+	backing_parent_dentry = dget_parent(backing_path.dentry);
+	backing_inode = d_inode(backing_parent_dentry);
+
+	inode_lock_nested(backing_inode, I_MUTEX_PARENT);
+	err = vfs_unlink(&init_user_ns, backing_inode, backing_path.dentry,
+			 NULL);
+	inode_unlock(backing_inode);
+
+	dput(backing_parent_dentry);
+	if (!err)
+		d_drop(entry);
+	path_put(&backing_path);
+	return err;
+}
+
+void *fuse_unlink_finalize(struct bpf_fuse_args *fa, struct inode *dir, struct dentry *entry)
+{
+	return NULL;
+}
+
 int fuse_access_initialize_in(struct bpf_fuse_args *fa, struct fuse_access_in *fai,
 			      struct inode *inode, int mask)
 {
