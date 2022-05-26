@@ -825,6 +825,17 @@ static int fuse_mknod(struct user_namespace *mnt_userns, struct inode *dir,
 	struct fuse_mount *fm = get_fuse_mount(dir);
 	FUSE_ARGS(args);
 
+#ifdef CONFIG_FUSE_BPF
+	struct fuse_err_ret fer;
+
+	fer = fuse_bpf_backing(dir, struct fuse_mknod_in,
+			fuse_mknod_initialize_in, fuse_mknod_initialize_out,
+			fuse_mknod_backing, fuse_mknod_finalize,
+			dir, entry, mode, rdev);
+	if (fer.ret)
+		return PTR_ERR(fer.result);
+#endif
+
 	if (!fm->fc->dont_mask)
 		mode &= ~current_umask();
 
@@ -853,6 +864,17 @@ static int fuse_mkdir(struct user_namespace *mnt_userns, struct inode *dir,
 	struct fuse_mkdir_in inarg;
 	struct fuse_mount *fm = get_fuse_mount(dir);
 	FUSE_ARGS(args);
+
+#ifdef CONFIG_FUSE_BPF
+	struct fuse_err_ret fer;
+
+	fer = fuse_bpf_backing(dir, struct fuse_mkdir_in,
+			fuse_mkdir_initialize_in, fuse_mkdir_initialize_out,
+			fuse_mkdir_backing, fuse_mkdir_finalize,
+			dir, entry, mode);
+	if (fer.ret)
+		return PTR_ERR(fer.result);
+#endif
 
 	if (!fm->fc->dont_mask)
 		mode &= ~current_umask();
@@ -910,6 +932,19 @@ static int fuse_unlink(struct inode *dir, struct dentry *entry)
 	if (fuse_is_bad(dir))
 		return -EIO;
 
+#ifdef CONFIG_FUSE_BPF
+	{
+		struct fuse_err_ret fer;
+
+		fer = fuse_bpf_backing(dir, struct fuse_dummy_io,
+					fuse_unlink_initialize_in, fuse_unlink_initialize_out,
+					fuse_unlink_backing, fuse_unlink_finalize,
+					dir, entry);
+		if (fer.ret)
+			return PTR_ERR(fer.result);
+	}
+#endif
+
 	args.opcode = FUSE_UNLINK;
 	args.nodeid = get_node_id(dir);
 	args.in_numargs = 1;
@@ -948,6 +983,19 @@ static int fuse_rmdir(struct inode *dir, struct dentry *entry)
 
 	if (fuse_is_bad(dir))
 		return -EIO;
+
+#ifdef CONFIG_FUSE_BPF
+	{
+		struct fuse_err_ret fer;
+
+		fer = fuse_bpf_backing(dir, struct fuse_dummy_io,
+					fuse_rmdir_initialize_in, fuse_rmdir_initialize_out,
+					fuse_rmdir_backing, fuse_rmdir_finalize,
+					dir, entry);
+		if (fer.ret)
+			return PTR_ERR(fer.result);
+	}
+#endif
 
 	args.opcode = FUSE_RMDIR;
 	args.nodeid = get_node_id(dir);
