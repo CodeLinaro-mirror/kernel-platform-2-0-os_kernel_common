@@ -611,6 +611,21 @@ static int fuse_create_open(struct inode *dir, struct dentry *entry,
 	/* Userspace expects S_IFREG in create mode */
 	BUG_ON((mode & S_IFMT) != S_IFREG);
 
+#ifdef CONFIG_FUSE_BPF
+	{
+		struct fuse_err_ret fer;
+
+		fer = fuse_bpf_backing(dir, struct fuse_create_open_io,
+				       fuse_create_open_initialize_in,
+				       fuse_create_open_initialize_out,
+				       fuse_create_open_backing,
+				       fuse_create_open_finalize,
+				       dir, entry, file, flags, mode);
+		if (fer.ret)
+			return PTR_ERR(fer.result);
+	}
+#endif
+
 	forget = fuse_alloc_forget();
 	err = -ENOMEM;
 	if (!forget)
@@ -1509,6 +1524,16 @@ static int fuse_dir_open(struct inode *inode, struct file *file)
 
 static int fuse_dir_release(struct inode *inode, struct file *file)
 {
+#ifdef CONFIG_FUSE_BPF
+	struct fuse_err_ret fer;
+
+	fer = fuse_bpf_backing(inode, struct fuse_release_in,
+		       fuse_releasedir_initialize_in, fuse_releasedir_initialize_out,
+		       fuse_release_backing, fuse_release_finalize, inode, file);
+	if (fer.ret)
+		return PTR_ERR(fer.result);
+#endif
+
 	fuse_release_common(file, true);
 
 	return 0;
