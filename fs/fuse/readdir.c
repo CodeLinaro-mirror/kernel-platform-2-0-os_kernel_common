@@ -571,6 +571,25 @@ int fuse_readdir(struct file *file, struct dir_context *ctx)
 	struct inode *inode = file_inode(file);
 	int err;
 
+#ifdef CONFIG_FUSE_BPF
+	bool bpf_ret = false;
+	bool force_again, allow_force;
+	bool is_continued = false;
+
+again:
+	bpf_ret = fuse_bpf_backing(inode, struct fuse_read_io, err,
+			       fuse_readdir_initialize_in, fuse_readdir_initialize_out,
+			       fuse_readdir_backing, fuse_readdir_finalize,
+			       file, ctx, &force_again, &allow_force, is_continued);
+	if (force_again && err >= 0) {
+		is_continued = true;
+		goto again;
+	}
+
+	if (bpf_ret)
+		return err;
+#endif
+
 	if (fuse_is_bad(inode))
 		return -EIO;
 
