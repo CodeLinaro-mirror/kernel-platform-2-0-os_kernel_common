@@ -67,6 +67,328 @@ out:
 	return bpf_prog;
 }
 
+int fuse_open_initialize_in(struct bpf_fuse_args *fa, struct fuse_open_io *foio,
+			 struct inode *inode, struct file *file, bool isdir)
+{
+	foio->foi = (struct fuse_open_in) {
+		.flags = file->f_flags & ~(O_CREAT | O_EXCL | O_NOCTTY),
+	};
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_fuse_inode(inode)->nodeid,
+		.opcode = isdir ? FUSE_OPENDIR : FUSE_OPEN,
+		.in_numargs = 1,
+		.in_args[0] = (struct bpf_fuse_arg) {
+			.size = sizeof(foio->foi),
+			.value = &foio->foi,
+		},
+	};
+
+	return 0;
+}
+
+int fuse_open_initialize_out(struct bpf_fuse_args *fa, struct fuse_open_io *foio,
+			 struct inode *inode, struct file *file, bool isdir)
+{
+	foio->foo = (struct fuse_open_out) { 0 };
+
+	fa->out_numargs = 1;
+	fa->out_args[0] = (struct bpf_fuse_arg) {
+		.size = sizeof(foio->foo),
+		.value = &foio->foo,
+	};
+
+	return 0;
+}
+
+int fuse_open_backing(struct bpf_fuse_args *fa,
+		      struct inode *inode, struct file *file, bool isdir)
+{
+	struct fuse_mount *fm = get_fuse_mount(inode);
+	const struct fuse_open_in *foi = fa->in_args[0].value;
+	struct fuse_file *ff;
+	int retval;
+	int mask;
+	struct fuse_dentry *fd = get_fuse_dentry(file->f_path.dentry);
+	struct file *backing_file;
+
+	ff = fuse_file_alloc(fm);
+	if (!ff)
+		return -ENOMEM;
+	file->private_data = ff;
+
+	switch (foi->flags & O_ACCMODE) {
+	case O_RDONLY:
+		mask = MAY_READ;
+		break;
+
+	case O_WRONLY:
+		mask = MAY_WRITE;
+		break;
+
+	case O_RDWR:
+		mask = MAY_READ | MAY_WRITE;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	retval = inode_permission(&init_user_ns,
+				  get_fuse_inode(inode)->backing_inode, mask);
+	if (retval)
+		return retval;
+
+	backing_file =
+		dentry_open(&fd->backing_path, foi->flags, current_cred());
+
+	if (IS_ERR(backing_file)) {
+		fuse_file_free(ff);
+		file->private_data = NULL;
+		return PTR_ERR(backing_file);
+	}
+	ff->backing_file = backing_file;
+
+	return 0;
+}
+
+void *fuse_open_finalize(struct bpf_fuse_args *fa,
+		       struct inode *inode, struct file *file, bool isdir)
+{
+	struct fuse_file *ff = file->private_data;
+	struct fuse_open_out *foo = fa->out_args[0].value;
+
+	if (ff)
+		ff->fh = foo->fh;
+	return 0;
+}
+
+int fuse_create_open_initialize_in(struct bpf_fuse_args *fa, struct fuse_create_open_io *fcoio,
+				   struct inode *dir, struct dentry *entry,
+				   struct file *file, unsigned int flags, umode_t mode)
+{
+	fcoio->fci = (struct fuse_create_in) {
+		.flags = file->f_flags & ~(O_CREAT | O_EXCL | O_NOCTTY),
+		.mode = mode,
+	};
+
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_node_id(dir),
+		.opcode = FUSE_CREATE,
+		.in_numargs = 2,
+		.in_args[0] = (struct bpf_fuse_arg) {
+			.size = sizeof(fcoio->fci),
+			.value = &fcoio->fci,
+		},
+		.in_args[1] = (struct bpf_fuse_arg) {
+			.size = entry->d_name.len + 1,
+			.max_size = NAME_MAX + 1,
+			.flags = BPF_FUSE_VARIABLE_SIZE | BPF_FUSE_MUST_ALLOCATE,
+			.value =  (void *) entry->d_name.name,
+		},
+	};
+
+	return 0;
+}
+
+int fuse_create_open_initialize_out(struct bpf_fuse_args *fa, struct fuse_create_open_io *fcoio,
+				    struct inode *dir, struct dentry *entry,
+				    struct file *file, unsigned int flags, umode_t mode)
+{
+	fcoio->feo = (struct fuse_entry_out) { 0 };
+	fcoio->foo = (struct fuse_open_out) { 0 };
+
+	fa->out_numargs = 2;
+	fa->out_args[0] = (struct bpf_fuse_arg) {
+		.size = sizeof(fcoio->feo),
+		.value = &fcoio->feo,
+	};
+	fa->out_args[1] = (struct bpf_fuse_arg) {
+		.size = sizeof(fcoio->foo),
+		.value = &fcoio->foo,
+	};
+
+	return 0;
+}
+
+static int fuse_open_file_backing(struct inode *inode, struct file *file)
+{
+	struct fuse_mount *fm = get_fuse_mount(inode);
+	struct dentry *entry = file->f_path.dentry;
+	struct fuse_dentry *fuse_dentry = get_fuse_dentry(entry);
+	struct fuse_file *fuse_file;
+	struct file *backing_file;
+
+	fuse_file = fuse_file_alloc(fm);
+	if (!fuse_file)
+		return -ENOMEM;
+	file->private_data = fuse_file;
+
+	backing_file = dentry_open(&fuse_dentry->backing_path, file->f_flags,
+				   current_cred());
+	if (IS_ERR(backing_file)) {
+		fuse_file_free(fuse_file);
+		file->private_data = NULL;
+		return PTR_ERR(backing_file);
+	}
+	fuse_file->backing_file = backing_file;
+
+	return 0;
+}
+
+int fuse_create_open_backing(struct bpf_fuse_args *fa, struct inode *dir, struct dentry *entry,
+			     struct file *file, unsigned int flags, umode_t mode)
+{
+	struct fuse_inode *dir_fuse_inode = get_fuse_inode(dir);
+	struct fuse_dentry *dir_fuse_dentry = get_fuse_dentry(entry->d_parent);
+	struct dentry *backing_dentry = NULL;
+	struct inode *inode = NULL;
+	struct dentry *newent;
+	int err = 0;
+	const struct fuse_create_in *fci = fa->in_args[0].value;
+
+	if (!dir_fuse_inode || !dir_fuse_dentry)
+		return -EIO;
+
+	inode_lock_nested(dir_fuse_inode->backing_inode, I_MUTEX_PARENT);
+	backing_dentry = lookup_one_len(fa->in_args[1].value,
+					dir_fuse_dentry->backing_path.dentry,
+					strlen(fa->in_args[1].value));
+	inode_unlock(dir_fuse_inode->backing_inode);
+
+	if (IS_ERR(backing_dentry))
+		return PTR_ERR(backing_dentry);
+
+	if (d_really_is_positive(backing_dentry)) {
+		err = -EIO;
+		goto out;
+	}
+
+	err = vfs_create(&init_user_ns, dir_fuse_inode->backing_inode,
+			 backing_dentry, fci->mode, true);
+	if (err)
+		goto out;
+
+	if (get_fuse_dentry(entry)->backing_path.dentry)
+		path_put(&get_fuse_dentry(entry)->backing_path);
+	get_fuse_dentry(entry)->backing_path = (struct path) {
+		.mnt = dir_fuse_dentry->backing_path.mnt,
+		.dentry = backing_dentry,
+	};
+	path_get(&get_fuse_dentry(entry)->backing_path);
+
+	inode = fuse_iget_backing(dir->i_sb,
+				  get_fuse_dentry(entry)->backing_path.dentry->d_inode);
+	if (IS_ERR(inode)) {
+		err = PTR_ERR(inode);
+		goto out;
+	}
+
+	if (get_fuse_inode(inode)->bpf)
+		bpf_prog_put(get_fuse_inode(inode)->bpf);
+	get_fuse_inode(inode)->bpf = dir_fuse_inode->bpf;
+	if (get_fuse_inode(inode)->bpf)
+		bpf_prog_inc(dir_fuse_inode->bpf);
+
+	newent = d_splice_alias(inode, entry);
+	if (IS_ERR(newent)) {
+		err = PTR_ERR(newent);
+		goto out;
+	}
+
+	entry = newent ? newent : entry;
+	err = finish_open(file, entry, fuse_open_file_backing);
+
+out:
+	dput(backing_dentry);
+	return err;
+}
+
+void *fuse_create_open_finalize(struct bpf_fuse_args *fa, struct inode *dir, struct dentry *entry,
+				struct file *file, unsigned int flags, umode_t mode)
+{
+	struct fuse_file *ff = file->private_data;
+	struct fuse_inode *fi = get_fuse_inode(file->f_inode);
+	struct fuse_entry_out *feo = fa->out_args[0].value;
+	struct fuse_open_out *foo = fa->out_args[1].value;
+
+	if (fi)
+		fi->nodeid = feo->nodeid;
+	if (ff)
+		ff->fh = foo->fh;
+	return 0;
+}
+
+int fuse_release_initialize_in(struct bpf_fuse_args *fa, struct fuse_release_in *fri,
+			       struct inode *inode, struct file *file)
+{
+	struct fuse_file *fuse_file = file->private_data;
+
+	/* Always put backing file whatever bpf/userspace says */
+	fput(fuse_file->backing_file);
+
+	*fri = (struct fuse_release_in) {
+		.fh = ((struct fuse_file *)(file->private_data))->fh,
+	};
+
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_fuse_inode(inode)->nodeid,
+		.opcode = FUSE_RELEASE,
+		.in_numargs = 1,
+		.in_args[0].size = sizeof(*fri),
+		.in_args[0].value = fri,
+	};
+
+	return 0;
+}
+
+int fuse_release_initialize_out(struct bpf_fuse_args *fa, struct fuse_release_in *fri,
+				struct inode *inode, struct file *file)
+{
+	return 0;
+}
+
+int fuse_releasedir_initialize_in(struct bpf_fuse_args *fa,
+				  struct fuse_release_in *fri,
+				  struct inode *inode, struct file *file)
+{
+	struct fuse_file *fuse_file = file->private_data;
+
+	/* Always put backing file whatever bpf/userspace says */
+	fput(fuse_file->backing_file);
+
+	*fri = (struct fuse_release_in) {
+		.fh = ((struct fuse_file *)(file->private_data))->fh,
+	};
+
+	*fa = (struct bpf_fuse_args) {
+		.nodeid = get_fuse_inode(inode)->nodeid,
+		.opcode = FUSE_RELEASEDIR,
+		.in_numargs = 1,
+		.in_args[0].size = sizeof(*fri),
+		.in_args[0].value = fri,
+	};
+
+	return 0;
+}
+
+int fuse_releasedir_initialize_out(struct bpf_fuse_args *fa,
+				   struct fuse_release_in *fri,
+				   struct inode *inode, struct file *file)
+{
+	return 0;
+}
+
+int fuse_release_backing(struct bpf_fuse_args *fa, struct inode *inode, struct file *file)
+{
+	return 0;
+}
+
+void *fuse_release_finalize(struct bpf_fuse_args *fa, struct inode *inode, struct file *file)
+{
+	fuse_file_free(file->private_data);
+	return NULL;
+}
+
 int fuse_lseek_initialize_in(struct bpf_fuse_args *fa, struct fuse_lseek_io *flio,
 			     struct file *file, loff_t offset, int whence)
 {
