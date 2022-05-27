@@ -1402,6 +1402,8 @@ struct fuse_entry_bpf {
 	struct file *bpf_file;
 };
 
+ssize_t fuse_backing_mmap(struct file *file, struct vm_area_struct *vma);
+
 struct fuse_lookup_io {
 	struct fuse_entry_out feo;
 	struct fuse_entry_bpf feb;
