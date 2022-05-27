@@ -3647,6 +3647,8 @@
       <elf-symbol name='phy_modify_mmd' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x196bcf74'/>
       <elf-symbol name='phy_modify_paged' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xf4da5c4d'/>
       <elf-symbol name='phy_modify_paged_changed' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x2066d3c8'/>
+      <elf-symbol name='phy_pm_runtime_get_sync' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x1e563a66'/>
+      <elf-symbol name='phy_pm_runtime_put_sync' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xf3ec63d2'/>
       <elf-symbol name='phy_power_off' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x9631d9b5'/>
       <elf-symbol name='phy_power_on' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x4a2a8f1a'/>
       <elf-symbol name='phy_print_status' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x41125d08'/>
@@ -5186,6 +5188,7 @@
       <elf-symbol name='update_rq_clock' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xf94849d4'/>
       <elf-symbol name='usb_add_config' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xac1e597d'/>
       <elf-symbol name='usb_add_function' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x6bac48c0'/>
+      <elf-symbol name='usb_add_gadget' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x820b519'/>
       <elf-symbol name='usb_add_gadget_udc' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xbde90534'/>
       <elf-symbol name='usb_add_hcd' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x9a9d53cf'/>
       <elf-symbol name='usb_add_phy_dev' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x59ee3671'/>
@@ -5220,6 +5223,7 @@
       <elf-symbol name='usb_create_shared_hcd' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x24f7a235'/>
       <elf-symbol name='usb_decode_ctrl' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x4531624f'/>
       <elf-symbol name='usb_decode_interval' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xd4c500'/>
+      <elf-symbol name='usb_del_gadget' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x8fd4d74b'/>
       <elf-symbol name='usb_del_gadget_udc' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x41508c33'/>
       <elf-symbol name='usb_deregister' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xc3cdcfc1'/>
       <elf-symbol name='usb_disabled' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x19a304ba'/>
@@ -5265,6 +5269,7 @@
       <elf-symbol name='usb_get_function_instance' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x37433222'/>
       <elf-symbol name='usb_get_intf' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xcc60f93e'/>
       <elf-symbol name='usb_get_maximum_speed' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x8b4f8bf'/>
+      <elf-symbol name='usb_get_maximum_ssp_rate' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xfa2689fc'/>
       <elf-symbol name='usb_get_role_switch_default_mode' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x7fda8ee2'/>
       <elf-symbol name='usb_gstrings_attach' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x20dde5b7'/>
       <elf-symbol name='usb_hc_died' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x65ba762a'/>
@@ -5284,6 +5289,7 @@
       <elf-symbol name='usb_hcd_unmap_urb_for_dma' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xf88ac6ae'/>
       <elf-symbol name='usb_hub_find_child' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x7e158ed7'/>
       <elf-symbol name='usb_ifnum_to_if' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xca2cf955'/>
+      <elf-symbol name='usb_initialize_gadget' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x550cea70'/>
       <elf-symbol name='usb_interface_id' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x7723e734'/>
       <elf-symbol name='usb_interrupt_msg' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x19198dae'/>
       <elf-symbol name='usb_kill_anchored_urbs' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x962c8ae1'/>
@@ -133429,10 +133435,10 @@
         <parameter type-id='8bf55d78' name='pci' filepath='drivers/pci/controller/dwc/pcie-designware.c' line='530' column='1'/>
         <return type-id='95e97e5e'/>
       </function-decl>
-      <function-decl name='dw_pcie_own_conf_map_bus' mangled-name='dw_pcie_own_conf_map_bus' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='507' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='dw_pcie_own_conf_map_bus'>
-        <parameter type-id='d1feb554' name='bus' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='507' column='1'/>
-        <parameter type-id='f0981eeb' name='devfn' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='507' column='1'/>
-        <parameter type-id='95e97e5e' name='where' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='507' column='1'/>
+      <function-decl name='dw_pcie_own_conf_map_bus' mangled-name='dw_pcie_own_conf_map_bus' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='503' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='dw_pcie_own_conf_map_bus'>
+        <parameter type-id='d1feb554' name='bus' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='503' column='1'/>
+        <parameter type-id='f0981eeb' name='devfn' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='503' column='1'/>
+        <parameter type-id='95e97e5e' name='where' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='503' column='1'/>
         <return type-id='eaa32e2f'/>
       </function-decl>
       <function-decl name='dw_pcie_read' mangled-name='dw_pcie_read' filepath='drivers/pci/controller/dwc/pcie-designware.c' line='99' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='dw_pcie_read'>
@@ -133447,8 +133453,8 @@
         <parameter type-id='b59d7dce' name='size' filepath='drivers/pci/controller/dwc/pcie-designware.c' line='139' column='1'/>
         <return type-id='19c2251e'/>
       </function-decl>
-      <function-decl name='dw_pcie_setup_rc' mangled-name='dw_pcie_setup_rc' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='525' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='dw_pcie_setup_rc'>
-        <parameter type-id='d91dfd7a' name='pp' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='525' column='1'/>
+      <function-decl name='dw_pcie_setup_rc' mangled-name='dw_pcie_setup_rc' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='521' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='dw_pcie_setup_rc'>
+        <parameter type-id='d91dfd7a' name='pp' filepath='drivers/pci/controller/dwc/pcie-designware-host.c' line='521' column='1'/>
         <return type-id='48b5725f'/>
       </function-decl>
       <function-decl name='dw_pcie_wait_for_link' mangled-name='dw_pcie_wait_for_link' filepath='drivers/pci/controller/dwc/pcie-designware.c' line='511' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='dw_pcie_wait_for_link'>
@@ -141704,6 +141710,14 @@
         <parameter type-id='1dc6a898' name='set' filepath='drivers/net/phy/phy-core.c' line='901' column='1'/>
         <return type-id='95e97e5e'/>
       </function-decl>
+      <function-decl name='phy_pm_runtime_get_sync' mangled-name='phy_pm_runtime_get_sync' filepath='drivers/phy/phy-core.c' line='166' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='phy_pm_runtime_get_sync'>
+        <parameter type-id='503ff1ba' name='phy' filepath='drivers/phy/phy-core.c' line='166' column='1'/>
+        <return type-id='95e97e5e'/>
+      </function-decl>
+      <function-decl name='phy_pm_runtime_put_sync' mangled-name='phy_pm_runtime_put_sync' filepath='drivers/phy/phy-core.c' line='196' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='phy_pm_runtime_put_sync'>
+        <parameter type-id='503ff1ba' name='phy' filepath='drivers/phy/phy-core.c' line='196' column='1'/>
+        <return type-id='95e97e5e'/>
+      </function-decl>
       <function-decl name='phy_power_off' mangled-name='phy_power_off' filepath='drivers/phy/phy-core.c' line='332' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='phy_power_off'>
         <parameter type-id='503ff1ba' name='phy' filepath='drivers/phy/phy-core.c' line='332' column='1'/>
         <return type-id='95e97e5e'/>
@@ -149609,6 +149623,10 @@
         <parameter type-id='e5411c2c' name='function' filepath='drivers/usb/gadget/composite.c' line='302' column='1'/>
         <return type-id='95e97e5e'/>
       </function-decl>
+      <function-decl name='usb_add_gadget' mangled-name='usb_add_gadget' filepath='drivers/usb/gadget/udc/core.c' line='1290' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='usb_add_gadget'>
+        <parameter type-id='49a58c0c' name='gadget' filepath='drivers/usb/gadget/udc/core.c' line='1290' column='1'/>
+        <return type-id='95e97e5e'/>
+      </function-decl>
       <function-decl name='usb_add_gadget_udc' mangled-name='usb_add_gadget_udc' filepath='drivers/usb/gadget/udc/core.c' line='1416' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='usb_add_gadget_udc'>
         <parameter type-id='fa0b179b' name='parent' filepath='drivers/usb/gadget/udc/core.c' line='1416' column='1'/>
         <parameter type-id='49a58c0c' name='gadget' filepath='drivers/usb/gadget/udc/core.c' line='1416' column='1'/>
@@ -149801,6 +149819,10 @@
         <parameter type-id='428819c0' name='epd' filepath='drivers/usb/common/common.c' line='231' column='1'/>
         <parameter type-id='4e532009' name='speed' filepath='drivers/usb/common/common.c' line='232' column='1'/>
         <return type-id='f0981eeb'/>
+      </function-decl>
+      <function-decl name='usb_del_gadget' mangled-name='usb_del_gadget' filepath='drivers/usb/gadget/udc/core.c' line='1448' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='usb_del_gadget'>
+        <parameter type-id='49a58c0c' name='gadget' filepath='drivers/usb/gadget/udc/core.c' line='1448' column='1'/>
+        <return type-id='48b5725f'/>
       </function-decl>
       <function-decl name='usb_del_gadget_udc' mangled-name='usb_del_gadget_udc' filepath='drivers/usb/gadget/udc/core.c' line='1481' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='usb_del_gadget_udc'>
         <parameter type-id='49a58c0c' name='gadget' filepath='drivers/usb/gadget/udc/core.c' line='1481' column='1'/>
@@ -150009,6 +150031,10 @@
         <parameter type-id='fa0b179b' name='dev' filepath='drivers/usb/common/common.c' line='107' column='1'/>
         <return type-id='4e532009'/>
       </function-decl>
+      <function-decl name='usb_get_maximum_ssp_rate' mangled-name='usb_get_maximum_ssp_rate' filepath='drivers/usb/common/common.c' line='134' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='usb_get_maximum_ssp_rate'>
+        <parameter type-id='fa0b179b' name='dev' filepath='drivers/usb/common/common.c' line='134' column='1'/>
+        <return type-id='a9ea967a'/>
+      </function-decl>
       <function-decl name='usb_get_role_switch_default_mode' mangled-name='usb_get_role_switch_default_mode' filepath='drivers/usb/common/common.c' line='210' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='usb_get_role_switch_default_mode'>
         <parameter type-id='fa0b179b' name='dev' filepath='drivers/usb/common/common.c' line='210' column='1'/>
         <return type-id='d291aaf1'/>
@@ -150102,6 +150128,12 @@
         <parameter type-id='ca2b80c9' name='dev' filepath='drivers/usb/core/usb.c' line='271' column='1'/>
         <parameter type-id='f0981eeb' name='ifnum' filepath='drivers/usb/core/usb.c' line='272' column='1'/>
         <return type-id='8bf48c31'/>
+      </function-decl>
+      <function-decl name='usb_initialize_gadget' mangled-name='usb_initialize_gadget' filepath='drivers/usb/gadget/udc/core.c' line='1267' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='usb_initialize_gadget'>
+        <parameter type-id='fa0b179b' name='parent' filepath='drivers/usb/gadget/udc/core.c' line='1267' column='1'/>
+        <parameter type-id='49a58c0c' name='gadget' filepath='drivers/usb/gadget/udc/core.c' line='1267' column='1'/>
+        <parameter type-id='dd787f72' name='release' filepath='drivers/usb/gadget/udc/core.c' line='1268' column='1'/>
+        <return type-id='48b5725f'/>
       </function-decl>
       <function-decl name='usb_interface_id' mangled-name='usb_interface_id' filepath='drivers/usb/gadget/composite.c' line='466' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='usb_interface_id'>
         <parameter type-id='ee27b7c6' name='config' filepath='drivers/usb/gadget/composite.c' line='466' column='1'/>
