@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14df9094_8c05c703",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1945330
+      },
+      "writtenOn": "2022-06-01T07:25:24Z",
+      "side": 1,
+      "message": "Update the bug id to 234533625",
+      "revId": "547dee92e31a67bcb874b8eb9b2b7514cecd7b12",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
