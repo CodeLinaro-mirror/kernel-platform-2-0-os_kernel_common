@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2fbb3021_c2313a67",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1945330
+      },
+      "writtenOn": "2022-06-02T06:34:58Z",
+      "side": 1,
+      "message": "update this patch again, because merge conflict. Would you kindly please help review it soon? Or it will conflict again.",
+      "revId": "0b867f7c91d241af5bbb53f97c0161ea8729181e",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
