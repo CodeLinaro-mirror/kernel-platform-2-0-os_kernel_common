@@ -16,6 +16,23 @@
       "message": "This has duplicated Change-Id, please remove the second one.",
       "revId": "ab4c9ee65883d5cc2d17c6cf2722aeaa29a6a04b",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a50e13e_23cd2c66",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1869395
+      },
+      "writtenOn": "2022-06-15T15:19:57Z",
+      "side": 1,
+      "message": "oh I see that aosp/2113228 was a partial cherry-pick of original commit and this seems to restore the other portion? I suppose that\u0027s why we have a collision of Change-Ids.",
+      "revId": "ab4c9ee65883d5cc2d17c6cf2722aeaa29a6a04b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
