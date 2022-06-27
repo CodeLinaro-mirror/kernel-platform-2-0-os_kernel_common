@@ -33,6 +33,24 @@
       "message": "oh I see that aosp/2113228 was a partial cherry-pick of original commit and this seems to restore the other portion? I suppose that\u0027s why we have a collision of Change-Ids.",
       "revId": "ab4c9ee65883d5cc2d17c6cf2722aeaa29a6a04b",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "74d90a36_e241258e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1866058
+      },
+      "writtenOn": "2022-06-27T07:49:17Z",
+      "side": 1,
+      "message": "Can it be merged?",
+      "parentUuid": "8a50e13e_23cd2c66",
+      "revId": "ab4c9ee65883d5cc2d17c6cf2722aeaa29a6a04b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
