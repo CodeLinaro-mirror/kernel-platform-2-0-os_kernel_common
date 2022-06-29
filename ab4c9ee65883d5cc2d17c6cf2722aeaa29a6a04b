@@ -51,6 +51,24 @@
       "parentUuid": "8a50e13e_23cd2c66",
       "revId": "ab4c9ee65883d5cc2d17c6cf2722aeaa29a6a04b",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2232ce30_3deb7f5f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1866058
+      },
+      "writtenOn": "2022-06-29T03:12:34Z",
+      "side": 1,
+      "message": "Dear Llamas,\n  Please help review this commit cp from android12-5.10.Thanks!",
+      "parentUuid": "74d90a36_e241258e",
+      "revId": "ab4c9ee65883d5cc2d17c6cf2722aeaa29a6a04b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
