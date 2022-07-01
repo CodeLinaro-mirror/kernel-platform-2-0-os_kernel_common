@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "30e40a1f_a0938129",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1866058
+      },
+      "writtenOn": "2022-07-01T03:00:44Z",
+      "side": 1,
+      "message": "Dear Kroah-Hartman,\n  Please help review this commit cp from android12-5.10.Thanks!",
+      "revId": "2583bd8395e211024b2f879243c98c412f263c37",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
