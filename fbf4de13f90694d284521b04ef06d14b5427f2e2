@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "76d25e68_70591713",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1137063
+      },
+      "writtenOn": "2022-07-06T21:50:05Z",
+      "side": 1,
+      "message": "Had to upload as a non-merge commit due to a Gerrit bug.  Do not submit yet",
+      "revId": "fbf4de13f90694d284521b04ef06d14b5427f2e2",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
