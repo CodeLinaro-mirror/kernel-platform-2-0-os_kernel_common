@@ -34,6 +34,8 @@
 #define KVM_HC_SCHED_YIELD		11
 #define KVM_HC_MAP_GPA_RANGE		12
 
+#define KVM_HC_PKVM_OP			20
+
 enum kerncs_boost_type {
 	PVSCHED_KERNCS_BOOST_PREEMPT_DISABLED =	0x1,
 	PVSCHED_KERNCS_BOOST_IRQ =		0x2,
