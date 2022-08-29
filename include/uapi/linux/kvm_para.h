@@ -36,6 +36,14 @@
 
 #define KVM_HC_PKVM_OP			20
 
+/* PKVM provided hypercalls for guest use. */
+#define PKVM_GHC_NUM(x)	(x + KVM_HC_PKVM_OP)
+
+#define PKVM_GHC_SHARE_MEM		PKVM_GHC_NUM(1)
+#define PKVM_GHC_UNSHARE_MEM		PKVM_GHC_NUM(2)
+#define PKVM_GHC_IOREAD			PKVM_GHC_NUM(3)
+#define PKVM_GHC_IOWRITE		PKVM_GHC_NUM(4)
+
 enum kerncs_boost_type {
 	PVSCHED_KERNCS_BOOST_PREEMPT_DISABLED =	0x1,
 	PVSCHED_KERNCS_BOOST_IRQ =		0x2,
