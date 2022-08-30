@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22e1cdcf_e091e56e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2022-08-30T09:52:24Z",
+      "side": 1,
+      "message": "These symbols should never be used by any external driver, please do not export them, or use them.",
+      "revId": "5fbb66739cd8d7d8791953562ce33ac0b2b8fdf7",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
