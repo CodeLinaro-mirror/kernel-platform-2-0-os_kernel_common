@@ -16,6 +16,24 @@
       "message": "Prefer giving the full context here as this is the commit that comes up when blaming the code. The indirection to the prior commit is unnecessary.\n\nPerhaps just use the full commit message from the original change and mention further down that this effectively reinstates and earlier commit that got reverted.",
       "revId": "936be39f89a05019c6049ea670742918a8eda076",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49e216d3_c467cb2a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1961395
+      },
+      "writtenOn": "2022-09-06T18:38:19Z",
+      "side": 1,
+      "message": "I think this was an issue with Gerrit generating only a partial description, I manually fixed it. \n\nDone.",
+      "parentUuid": "f27fa461_8440c3c6",
+      "revId": "936be39f89a05019c6049ea670742918a8eda076",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
