@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fbdaae6b_dc63446c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1041813
+      },
+      "writtenOn": "2022-09-09T04:21:57Z",
+      "side": 1,
+      "message": "Hi, Ulises\n\nThis change cause the db845c build with the following command:\n```\nOUT_DIR\u003doutput DIST_DIR\u003ddist COMPRESS_MODULES\u003d1 BUILD_CONFIG\u003dcommon/build.config.db845c build/build.sh\n```\nfailed with the error like this:\n```\ndepmod: FATAL: could not load /oe/dist/System.map: No such file or directory\n```\n\nFor details, you could check the build log here:\nhttps://storage.tuxsuite.com/public/linaro/yongqin/oebuilds/2EPuDAVDd0iPN6AeKWmKZUd50pG/build.log\n\nCould you please help check and tell me how to build for the db845c build now?\n\nThanks,\nYongqin Liu",
+      "revId": "b856e6cf38e474cf6f4c45fad89ede14ba98567e",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
