@@ -34,6 +34,24 @@
       "parentUuid": "fbdaae6b_dc63446c",
       "revId": "b856e6cf38e474cf6f4c45fad89ede14ba98567e",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "caaa9f23_8435bced",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1041813
+      },
+      "writtenOn": "2022-09-09T04:42:25Z",
+      "side": 1,
+      "message": "Hi, Yifan\n\nDoes that mean that the db845c config is not supported by the build/build.sh method any more?",
+      "parentUuid": "0a907586_9b9c70fa",
+      "revId": "b856e6cf38e474cf6f4c45fad89ede14ba98567e",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
