@@ -52,6 +52,24 @@
       "parentUuid": "0a907586_9b9c70fa",
       "revId": "b856e6cf38e474cf6f4c45fad89ede14ba98567e",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "474bfa07_9c88a4fe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2022-09-09T05:04:52Z",
+      "side": 1,
+      "message": "Building db845c with build/build.sh on android14 and android-mainline branches are not supported any more.\n\nBuilding db845c with build/build.sh is still supported on android13 and below.",
+      "parentUuid": "caaa9f23_8435bced",
+      "revId": "b856e6cf38e474cf6f4c45fad89ede14ba98567e",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
