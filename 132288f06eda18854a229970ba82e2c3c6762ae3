@@ -16,6 +16,24 @@
       "message": "Could you share ETA for this?",
       "revId": "132288f06eda18854a229970ba82e2c3c6762ae3",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "195b39b4_f5643258",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2022-09-21T08:18:28Z",
+      "side": 1,
+      "message": "At this point in time, no idea.  There are DRM api changes that need to be fixed up in the out-of-tree code in order for this to land properly.  If you could help out with that (look at the build errors for the details), that would be wonderful, otherwise this is at the bottom of my TODO list at the moment.\n\nIs there anything specific in here (or later LTS releases) that you need now?",
+      "parentUuid": "bd0d220c_54152689",
+      "revId": "132288f06eda18854a229970ba82e2c3c6762ae3",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
