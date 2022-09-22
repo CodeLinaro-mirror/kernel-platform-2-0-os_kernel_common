@@ -34,6 +34,24 @@
       "parentUuid": "bd0d220c_54152689",
       "revId": "132288f06eda18854a229970ba82e2c3c6762ae3",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18a2ae35_0f58a48e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1386891
+      },
+      "writtenOn": "2022-09-22T15:41:05Z",
+      "side": 1,
+      "message": "I need mac80211_hwsim related patches for kernel panic issue in cuttlefish.\n\n        wifi: mac80211_hwsim: fix race condition in pending packet\n        wifi: mac80211_hwsim: add back erroneously removed cast\n        wifi: mac80211_hwsim: use 32-bit skb cookie\n        \nWith regard to DRM, let me check how to fix that.\n\nIf it is hard to be fixed by me, can I upload patches regarding mac80211_hwsim separately?",
+      "parentUuid": "195b39b4_f5643258",
+      "revId": "132288f06eda18854a229970ba82e2c3c6762ae3",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
