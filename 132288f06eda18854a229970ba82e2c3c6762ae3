@@ -52,6 +52,24 @@
       "parentUuid": "195b39b4_f5643258",
       "revId": "132288f06eda18854a229970ba82e2c3c6762ae3",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5927ad0_149b3c31",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1386891
+      },
+      "writtenOn": "2022-09-23T02:26:06Z",
+      "side": 1,
+      "message": "I think https://android-review.googlesource.com/q/topic:virtio-gpu-5.15.61 would fix the build error(tested locally), but I cannot set topic in this CL, so I cannot  invoke presubmit test for that. can you help this?",
+      "parentUuid": "18a2ae35_0f58a48e",
+      "revId": "132288f06eda18854a229970ba82e2c3c6762ae3",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
