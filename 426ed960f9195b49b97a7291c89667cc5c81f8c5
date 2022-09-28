@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "678002c1_fc8f3039",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2022-09-28T20:08:10Z",
+      "side": 1,
+      "message": "The original patch had also changes in lockdep.c and mutex.c. Any reason those changes were excluded in this backport?",
+      "revId": "426ed960f9195b49b97a7291c89667cc5c81f8c5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
