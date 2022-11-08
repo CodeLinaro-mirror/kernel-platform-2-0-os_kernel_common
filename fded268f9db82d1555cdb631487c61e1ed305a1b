@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a64deb1_25479fa1",
+        "filename": "kernel/trace/ring_buffer.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4451,
+      "author": {
+        "id": 1942270
+      },
+      "writtenOn": "2022-11-08T11:25:10Z",
+      "side": 1,
+      "message": "MAYBE: pass the `search_writer` argument in `read_footer` and keep only one method",
+      "revId": "fded268f9db82d1555cdb631487c61e1ed305a1b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
