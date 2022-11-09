@@ -16,6 +16,24 @@
       "message": "MAYBE: pass the `search_writer` argument in `read_footer` and keep only one method",
       "revId": "fded268f9db82d1555cdb631487c61e1ed305a1b",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f8e75079_7f38926b",
+        "filename": "kernel/trace/ring_buffer.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4451,
+      "author": {
+        "id": 1951687
+      },
+      "writtenOn": "2022-11-09T13:59:18Z",
+      "side": 1,
+      "message": "Hum, I created those functions to explicitly show \"writer\" and \"reader\". It\u0027s easier to grasp than a bool, so I\u0027m not sure about using a single function.\n\nNotice also this code isn\u0027t here to last (well hopefully :)) the new solution I\u0027m working on to send upstream will remove the need for those footers.",
+      "parentUuid": "7a64deb1_25479fa1",
+      "revId": "fded268f9db82d1555cdb631487c61e1ed305a1b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
