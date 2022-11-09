@@ -4,6 +4,7 @@
  */
 
 #include <linux/delay.h>
+#include <linux/kthread.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
@@ -21,6 +22,7 @@
 
 #include "trusty-smc.h"
 
+
 struct trusty_state;
 static struct platform_driver trusty_driver;
 
@@ -29,7 +31,8 @@ module_param(use_high_wq, bool, 0660);
 
 struct trusty_work {
 	struct trusty_state *ts;
-	struct work_struct work;
+	struct task_struct *nop_thread;
+	wait_queue_head_t nop_event_wait;
 };
 
 struct trusty_state {
@@ -40,7 +43,6 @@ struct trusty_state {
 	u32 api_version;
 	bool trusty_panicked;
 	struct device *dev;
-	struct workqueue_struct *nop_wq;
 	struct trusty_work __percpu *nop_works;
 	struct list_head nop_queue;
 	spinlock_t nop_lock; /* protects nop_queue */
@@ -734,10 +736,9 @@ static bool dequeue_nop(struct trusty_state *s, u32 *args)
 	return nop;
 }
 
-static void locked_nop_work_func(struct work_struct *work)
+static void locked_nop_work_func(struct trusty_work *tw)
 {
 	int ret;
-	struct trusty_work *tw = container_of(work, struct trusty_work, work);
 	struct trusty_state *s = tw->ts;
 
 	ret = trusty_std_call32(s->dev, SMC_SC_LOCKED_NOP, 0, 0, 0);
@@ -748,13 +749,12 @@ static void locked_nop_work_func(struct work_struct *work)
 	dev_dbg(s->dev, "%s: done\n", __func__);
 }
 
-static void nop_work_func(struct work_struct *work)
+static void nop_work_func(struct trusty_work *tw)
 {
 	int ret;
 	bool next;
 	u32 args[3];
 	u32 last_arg0;
-	struct trusty_work *tw = container_of(work, struct trusty_work, work);
 	struct trusty_state *s = tw->ts;
 	int old_nice = task_nice(current);
 	bool nice_changed = false;
@@ -823,7 +823,8 @@ void trusty_enqueue_nop(struct device *dev, struct trusty_nop *nop)
 			list_add_tail(&nop->node, &s->nop_queue);
 		spin_unlock_irqrestore(&s->nop_lock, flags);
 	}
-	queue_work(s->nop_wq, &tw->work);
+	if (tw->nop_thread)
+		wake_up_interruptible(&tw->nop_event_wait);
 	preempt_enable();
 }
 EXPORT_SYMBOL(trusty_enqueue_nop);
@@ -843,13 +844,46 @@ void trusty_dequeue_nop(struct device *dev, struct trusty_nop *nop)
 }
 EXPORT_SYMBOL(trusty_dequeue_nop);
 
+static int _trusty_nop_thread(void *context)
+{
+	struct trusty_work *tw = (struct trusty_work *)context;
+	struct trusty_state *s = tw->ts;
+	void (*work_func)(struct trusty_work *tw);
+	int ret = 0;
+
+	DEFINE_WAIT_FUNC(wait, woken_wake_function);
+
+	if (s->api_version < TRUSTY_API_VERSION_SMP)
+		work_func = locked_nop_work_func;
+	else
+		work_func = nop_work_func;
+
+	add_wait_queue(&tw->nop_event_wait, &wait);
+	for (;;) {
+		if (kthread_should_stop())
+			break;
+
+		if (!wait_woken(&wait, TASK_INTERRUPTIBLE, MAX_SCHEDULE_TIMEOUT)) {
+			ret = -ETIMEDOUT;
+			break;
+		}
+
+		/* process work */
+		work_func(context);
+	};
+	remove_wait_queue(&tw->nop_event_wait, &wait);
+
+	return ret;
+}
+
 static int trusty_probe(struct platform_device *pdev)
 {
 	int ret;
 	unsigned int cpu;
-	work_func_t work_func;
 	struct trusty_state *s;
 	struct device_node *node = pdev->dev.of_node;
+	const char *base_thread_name = "trusty-nop-X";
+	char thread_name[13];
 
 	if (!node) {
 		dev_err(&pdev->dev, "of_node required\n");
@@ -890,13 +924,6 @@ static int trusty_probe(struct platform_device *pdev)
 	if (ret < 0)
 		goto err_init_msg_buf;
 
-	s->nop_wq = alloc_workqueue("trusty-nop-wq", WQ_CPU_INTENSIVE, 0);
-	if (!s->nop_wq) {
-		ret = -ENODEV;
-		dev_err(&pdev->dev, "Failed create trusty-nop-wq\n");
-		goto err_create_nop_wq;
-	}
-
 	s->nop_works = alloc_percpu(struct trusty_work);
 	if (!s->nop_works) {
 		ret = -ENOMEM;
@@ -904,16 +931,26 @@ static int trusty_probe(struct platform_device *pdev)
 		goto err_alloc_works;
 	}
 
-	if (s->api_version < TRUSTY_API_VERSION_SMP)
-		work_func = locked_nop_work_func;
-	else
-		work_func = nop_work_func;
-
 	for_each_possible_cpu(cpu) {
 		struct trusty_work *tw = per_cpu_ptr(s->nop_works, cpu);
 
+		init_waitqueue_head(&tw->nop_event_wait);
+
 		tw->ts = s;
-		INIT_WORK(&tw->work, work_func);
+		memcpy(thread_name, base_thread_name, strlen(base_thread_name) + 1);
+		if (cpu >= 0 && cpu < 10)
+			thread_name[strlen(base_thread_name) - 1] = 0x30 + cpu;
+		tw->nop_thread = kthread_create(_trusty_nop_thread, tw, thread_name);
+		if (tw->nop_thread == ERR_PTR(-ENOMEM)) {
+			ret = -ENOMEM;
+			tw->nop_thread = NULL;
+			dev_err(s->dev, "%s: failed to create thread for cpu= %d (%d)\n",
+					__func__, cpu, tw->nop_thread);
+			goto err_add_children;
+		}
+
+		kthread_bind(tw->nop_thread, cpu);
+		wake_up_process(tw->nop_thread);
 	}
 
 	ret = of_platform_populate(pdev->dev.of_node, NULL, NULL, &pdev->dev);
@@ -928,12 +965,13 @@ err_add_children:
 	for_each_possible_cpu(cpu) {
 		struct trusty_work *tw = per_cpu_ptr(s->nop_works, cpu);
 
-		flush_work(&tw->work);
+		/* wake to flush and then stop */
+		wake_up_interruptible(&tw->nop_event_wait);
+		if (tw->nop_thread)
+			kthread_stop(tw->nop_thread);
 	}
 	free_percpu(s->nop_works);
 err_alloc_works:
-	destroy_workqueue(s->nop_wq);
-err_create_nop_wq:
 	trusty_free_msg_buf(s, &pdev->dev);
 err_init_msg_buf:
 err_api_version:
@@ -957,10 +995,12 @@ static int trusty_remove(struct platform_device *pdev)
 	for_each_possible_cpu(cpu) {
 		struct trusty_work *tw = per_cpu_ptr(s->nop_works, cpu);
 
-		flush_work(&tw->work);
+		/* wake to flush and then stop */
+		wake_up_interruptible(&tw->nop_event_wait);
+		if (tw->nop_thread)
+			kthread_stop(tw->nop_thread);
 	}
 	free_percpu(s->nop_works);
-	destroy_workqueue(s->nop_wq);
 
 	mutex_destroy(&s->share_memory_msg_lock);
 	mutex_destroy(&s->smc_lock);
