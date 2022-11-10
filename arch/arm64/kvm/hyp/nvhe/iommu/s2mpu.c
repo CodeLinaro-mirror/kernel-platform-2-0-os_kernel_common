@@ -585,6 +585,9 @@ static int s2mpu_validate(struct pkvm_iommu *dev)
 	return 0;
 }
 
+const struct pkvm_iommu_ops pkvm_s2mpu_ops;
+const struct pkvm_iommu_ops pkvm_sysmmu_sync_ops;
+
 static int s2mpu_validate_child(struct pkvm_iommu *dev, struct pkvm_iommu *child)
 {
 	if (child->ops != &pkvm_sysmmu_sync_ops)
@@ -619,4 +622,12 @@ const struct pkvm_iommu_ops pkvm_s2mpu_ops = (struct pkvm_iommu_ops){
 
 const struct pkvm_iommu_ops pkvm_sysmmu_sync_ops = (struct pkvm_iommu_ops){
 	.validate = sysmmu_sync_validate,
+};
+struct pkvm_iommu_driver pkvm_s2mpu_driver =  (struct pkvm_iommu_driver) {
+		.ops = &pkvm_s2mpu_ops,
+		.id = PKVM_IOMMU_DRIVER_S2MPU,
+};
+struct pkvm_iommu_driver pkvm_sysmmu_sync_driver  =  (struct pkvm_iommu_driver){
+		.ops = &pkvm_sysmmu_sync_ops,
+		.id = PKVM_IOMMU_DRIVER_SYSMMU_SYNC,
 };
