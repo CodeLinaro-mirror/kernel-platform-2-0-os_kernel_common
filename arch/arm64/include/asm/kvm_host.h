@@ -385,7 +385,6 @@ extern u64 kvm_nvhe_sym(hyp_cpu_logical_map)[NR_CPUS];
 enum pkvm_iommu_driver_id {
 	PKVM_IOMMU_DRIVER_S2MPU,
 	PKVM_IOMMU_DRIVER_SYSMMU_SYNC,
-	PKVM_IOMMU_NR_DRIVERS,
 };
 
 enum pkvm_iommu_pm_event {
@@ -393,12 +392,11 @@ enum pkvm_iommu_pm_event {
 	PKVM_IOMMU_PM_RESUME,
 };
 
-int pkvm_iommu_driver_init(enum pkvm_iommu_driver_id drv_id, void *data, size_t size);
-int pkvm_iommu_register(struct device *dev, enum pkvm_iommu_driver_id drv_id,
+int pkvm_iommu_driver_init(int drv_id, void *data, size_t size);
+int pkvm_iommu_register(struct device *dev, int drv_id,
 			phys_addr_t pa, size_t size, struct device *parent);
 int pkvm_iommu_suspend(struct device *dev);
 int pkvm_iommu_resume(struct device *dev);
-
 int pkvm_iommu_s2mpu_register(struct device *dev, phys_addr_t pa);
 int pkvm_iommu_sysmmu_sync_register(struct device *dev, phys_addr_t pa,
 				    struct device *parent);
