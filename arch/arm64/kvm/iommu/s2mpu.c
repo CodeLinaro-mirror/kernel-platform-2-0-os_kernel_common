@@ -6,6 +6,8 @@
 
 #include <linux/kvm_host.h>
 #include <asm/kvm_s2mpu.h>
+#include <asm/kvm_host.h>
+#include <asm/kvm_asm.h>
 
 static int init_s2mpu_driver(void)
 {
@@ -49,7 +51,8 @@ static int init_s2mpu_driver(void)
 		goto out_free;
 
 	/* Hypercall to initialize EL2 driver. */
-	ret = pkvm_iommu_driver_init(PKVM_IOMMU_DRIVER_S2MPU, mpt, sizeof(*mpt));
+	ret = pkvm_iommu_driver_init(kvm_ksym_ref(&kvm_nvhe_sym(pkvm_s2mpu_driver)),
+				     mpt, sizeof(*mpt));
 	if (ret)
 		goto out_unshare;
 
@@ -94,7 +97,8 @@ static int init_sysmmu_sync_driver(void)
 
 	mutex_lock(&lock);
 	if (!init_done) {
-		ret = pkvm_iommu_driver_init(PKVM_IOMMU_DRIVER_SYSMMU_SYNC, NULL, 0);
+		ret = pkvm_iommu_driver_init(kvm_ksym_ref(&kvm_nvhe_sym(pkvm_sysmmu_sync_driver)),
+					     NULL, 0);
 		init_done = !ret;
 	}
 	mutex_unlock(&lock);
