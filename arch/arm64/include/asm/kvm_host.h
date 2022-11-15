@@ -397,6 +397,7 @@ int pkvm_iommu_register(struct device *dev, int drv_id,
 			phys_addr_t pa, size_t size, struct device *parent);
 int pkvm_iommu_suspend(struct device *dev);
 int pkvm_iommu_resume(struct device *dev);
+int pkvm_iommu_s2mpu_init(u32 version);
 int pkvm_iommu_s2mpu_register(struct device *dev, phys_addr_t pa);
 int pkvm_iommu_sysmmu_sync_register(struct device *dev, phys_addr_t pa,
 				    struct device *parent);
