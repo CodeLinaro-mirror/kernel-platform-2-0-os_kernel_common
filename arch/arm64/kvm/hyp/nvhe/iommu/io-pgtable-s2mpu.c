@@ -228,7 +228,7 @@ static const struct s2mpu_pgtable_ops this_ops = {
 
 const struct s2mpu_pgtable_ops *s2mpu_alloc_pgtable_ops(struct s2mpu_pgtable_cfg cfg)
 {
-	if ((cfg.version == S2MPU_VERSION_8) || (cfg.version == S2MPU_VERSION_9))
+	if ((cfg.version == S2MPU_VERSION_1) || (cfg.version == S2MPU_VERSION_2))
 		return &this_ops;
 
 	return NULL;
