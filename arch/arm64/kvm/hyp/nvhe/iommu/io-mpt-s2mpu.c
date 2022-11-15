@@ -13,15 +13,27 @@
 #define SMPT_NUM_TO_BYTE(x)		((x) / SMPT_GRAN / SMPT_ELEMS_PER_BYTE(config_prot_bits))
 #define BYTE_TO_SMPT_INDEX(x)	((x) / SMPT_WORD_BYTE_RANGE(config_prot_bits))
 
+/*
+ * some functions/varaibles need to be extern to run selftest
+ * but it is not used outside of this file in hypervisor
+ * to avoid making these unnecessary extern we add a macro
+ * to make only extern if compiling for EL1
+ * selftests are disabled by default
+ */
+#ifdef __KVM_NVHE_HYPERVISOR__
+#define EL2_STATIC static
+#else
+#define EL2_STATIC
+#endif
 
 /*
  * MPT table ops can be configured only for one version at runtime,
  * these variables will hold version specific data set a run time init, to avoid
  * having duplicate code or unnessery check during operations.
  */
-static u32 config_prot_bits;
+EL2_STATIC u32 config_prot_bits;
 static u32 config_access_shift;
-static const u64 *config_lut_prot;
+EL2_STATIC const u64 *config_lut_prot;
 static u32 config_gran_mask;
 static u32 this_version;
 
@@ -63,7 +75,7 @@ static inline int prot_from_addr_smpt(u32 *smpt, u64 addr)
 }
 
 /* Set protection bits of SMPT in a given range without using memset. */
-static void __set_smpt_range_slow(u32 *smpt, size_t start_gb_byte,
+EL2_STATIC void __set_smpt_range_slow(u32 *smpt, size_t start_gb_byte,
 					 size_t end_gb_byte, enum mpt_prot prot)
 {
 	size_t i, start_word_byte, end_word_byte, word_idx, first_elem, last_elem;
@@ -96,7 +108,7 @@ static void __set_smpt_range_slow(u32 *smpt, size_t start_gb_byte,
 }
 
 /* Set protection bits of SMPT in a given range. */
-static void __set_smpt_range(u32 *smpt, size_t start_gb_byte,
+EL2_STATIC void __set_smpt_range(u32 *smpt, size_t start_gb_byte,
 				    size_t end_gb_byte, enum mpt_prot prot)
 {
 	size_t interlude_start, interlude_end, interlude_bytes, word_idx;
@@ -133,7 +145,7 @@ static void __set_smpt_range(u32 *smpt, size_t start_gb_byte,
 }
 
 /* Returns true if all SMPT protection bits match 'prot'. */
-static bool __is_smpt_uniform(u32 *smpt, enum mpt_prot prot)
+EL2_STATIC bool __is_smpt_uniform(u32 *smpt, enum mpt_prot prot)
 {
 	size_t i;
 	u64 *doublewords = (u64 *)smpt;
@@ -150,7 +162,7 @@ static bool __is_smpt_uniform(u32 *smpt, enum mpt_prot prot)
  * Returns flags specifying whether L1/L2 changes need to be made visible
  * to the device.
  */
-static void __set_fmpt_range(struct fmpt *fmpt, size_t start_gb_byte,
+EL2_STATIC void __set_fmpt_range(struct fmpt *fmpt, size_t start_gb_byte,
 				    size_t end_gb_byte, enum mpt_prot prot)
 {
 	if (start_gb_byte == 0 && end_gb_byte >= SZ_1G) {
@@ -297,10 +309,12 @@ static const struct s2mpu_mpt_ops this_ops = {
 
 const struct s2mpu_mpt_ops *s2mpu_get_mpt_ops(struct s2mpu_mpt_cfg cfg)
 {
-
+/* allow EL1 to register multiple versions at same runtime as this is used in self tests */
+#ifdef __KVM_NVHE_HYPERVISOR__
 	/* If called before with different version return NULL. */
 	if (WARN_ON(this_version && (this_version != cfg.version)))
 		return NULL;
+#endif
 	/* 2MB granularity not supported in V9 */
 	if ((cfg.version == S2MPU_VERSION_9) && (SMPT_GRAN_ATTR != L1ENTRY_ATTR_GRAN_2M)) {
 		config_prot_bits = V9_MPT_PROT_BITS;
