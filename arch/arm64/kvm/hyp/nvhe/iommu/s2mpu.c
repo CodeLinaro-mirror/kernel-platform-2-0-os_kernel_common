@@ -18,6 +18,7 @@
 #include <nvhe/mm.h>
 #include <nvhe/spinlock.h>
 #include <nvhe/trap_handler.h>
+#include <asm/io-pgtable-s2mpu.h>
 
 #define SMC_CMD_PREPARE_PD_ONOFF	0x82000410
 #define SMC_MODE_POWER_UP		1
@@ -40,6 +41,7 @@ struct s2mpu_drv_data {
 	u32 context_cfg_valid_vid;
 };
 
+static const struct  s2mpu_pgtable_ops *pgtable_ops;
 static struct mpt host_mpt;
 
 static inline enum mpt_prot prot_to_mpt(enum kvm_pgtable_prot prot)
@@ -261,48 +263,19 @@ static void __range_invalidation_init(struct pkvm_iommu *dev, phys_addr_t first_
 	__invalidation_barrier_init(dev);
 }
 
-static void __set_l1entry_attr_with_prot(struct pkvm_iommu *dev, unsigned int gb,
-					 unsigned int vid, enum mpt_prot prot)
-{
-	writel_relaxed(L1ENTRY_ATTR_1G(prot),
-		       dev->va + REG_NS_L1ENTRY_ATTR(vid, gb));
-}
-
-static void __set_l1entry_attr_with_fmpt(struct pkvm_iommu *dev, unsigned int gb,
-					 unsigned int vid, struct fmpt *fmpt)
-{
-	if (fmpt->gran_1g) {
-		__set_l1entry_attr_with_prot(dev, gb, vid, fmpt->prot);
-	} else {
-		/* Order against writes to the SMPT. */
-		writel(L1ENTRY_ATTR_L2(SMPT_GRAN_ATTR),
-		       dev->va + REG_NS_L1ENTRY_ATTR(vid, gb));
-	}
-}
-
-static void __set_l1entry_l2table_addr(struct pkvm_iommu *dev, unsigned int gb,
-				       unsigned int vid, phys_addr_t addr)
-{
-	/* Order against writes to the SMPT. */
-	writel(L1ENTRY_L2TABLE_ADDR(addr),
-	       dev->va + REG_NS_L1ENTRY_L2TABLE_ADDR(vid, gb));
-}
-
 /*
  * Initialize S2MPU device and set all GB regions to 1G granularity with
  * given protection bits.
  */
 static int initialize_with_prot(struct pkvm_iommu *dev, enum mpt_prot prot)
 {
-	unsigned int gb, vid;
 	int ret;
 
 	ret = __initialize(dev);
 	if (ret)
 		return ret;
 
-	for_each_gb_and_vid(gb, vid)
-		__set_l1entry_attr_with_prot(dev, gb, vid, prot);
+	pgtable_ops->init_with_prot(dev->va, prot);
 	__all_invalidation(dev);
 
 	/* Set control registers, enable the S2MPU. */
@@ -316,19 +289,13 @@ static int initialize_with_prot(struct pkvm_iommu *dev, enum mpt_prot prot)
  */
 static int initialize_with_mpt(struct pkvm_iommu *dev, struct mpt *mpt)
 {
-	unsigned int gb, vid;
-	struct fmpt *fmpt;
 	int ret;
 
 	ret = __initialize(dev);
 	if (ret)
 		return ret;
 
-	for_each_gb_and_vid(gb, vid) {
-		fmpt = &mpt->fmpt[gb];
-		__set_l1entry_l2table_addr(dev, gb, vid, __hyp_pa(fmpt->smpt));
-		__set_l1entry_attr_with_fmpt(dev, gb, vid, fmpt);
-	}
+	pgtable_ops->init_with_mpt(dev->va, mpt);
 	__all_invalidation(dev);
 
 	/* Set control registers, enable the S2MPU. */
@@ -358,22 +325,7 @@ static bool to_valid_range(phys_addr_t *start, phys_addr_t *end)
 static void __mpt_idmap_prepare(struct mpt *mpt, phys_addr_t first_byte,
 				phys_addr_t last_byte, enum mpt_prot prot)
 {
-	unsigned int first_gb = first_byte / SZ_1G;
-	unsigned int last_gb = last_byte / SZ_1G;
-	size_t start_gb_byte, end_gb_byte;
-	unsigned int gb;
-	struct fmpt *fmpt;
-
-	for_each_gb_in_range(gb, first_gb, last_gb) {
-		fmpt = &mpt->fmpt[gb];
-		start_gb_byte = (gb == first_gb) ? first_byte % SZ_1G : 0;
-		end_gb_byte = (gb == last_gb) ? (last_byte % SZ_1G) + 1 : SZ_1G;
-
-		__set_fmpt_range(fmpt, start_gb_byte, end_gb_byte, prot);
-
-		if (fmpt->flags & MPT_UPDATE_L2)
-			kvm_flush_dcache_to_poc(fmpt->smpt, SMPT_SIZE);
-	}
+	pgtable_ops->prepare_range(first_byte, last_byte, mpt, prot);
 }
 
 static void __mpt_idmap_apply(struct pkvm_iommu *dev, struct mpt *mpt,
@@ -381,17 +333,8 @@ static void __mpt_idmap_apply(struct pkvm_iommu *dev, struct mpt *mpt,
 {
 	unsigned int first_gb = first_byte / SZ_1G;
 	unsigned int last_gb = last_byte / SZ_1G;
-	unsigned int gb, vid;
-	struct fmpt *fmpt;
 
-	for_each_gb_in_range(gb, first_gb, last_gb) {
-		fmpt = &mpt->fmpt[gb];
-
-		if (fmpt->flags & MPT_UPDATE_L1) {
-			for_each_vid(vid)
-				__set_l1entry_attr_with_fmpt(dev, gb, vid, fmpt);
-		}
-	}
+	pgtable_ops->apply_range(dev->va, mpt, first_gb, last_gb);
 	/* Initiate invalidation, completed in __mdt_idmap_complete. */
 	__range_invalidation_init(dev, first_byte, last_byte);
 }
@@ -533,13 +476,23 @@ static int s2mpu_init(void *data, size_t size)
 	phys_addr_t pa;
 	unsigned int gb;
 	int ret = 0;
+	struct s2mpu_pgtable_cfg cfg;
 
 	if (size != sizeof(in_mpt))
 		return -EINVAL;
 
 	/* The host can concurrently modify 'data'. Copy it to avoid TOCTOU. */
 	memcpy(&in_mpt, data, sizeof(in_mpt));
-
+	/* Only v8/v9 are supported at this point so hardcode the version
+	 * as there is not way to get the version required from the kernel yet
+	 * v8/v9 are compatible so using any of them will work
+	 */
+	cfg.version = S2MPU_VERSION_8;
+	/* allocate page table operations for this version */
+	pgtable_ops = s2mpu_alloc_pgtable_ops(cfg);
+	/* if version is wrong return */
+	if (!pgtable_ops)
+		return -EINVAL;
 	/* Take ownership of all SMPT buffers. This will also map them in. */
 	for_each_gb(gb) {
 		smpt = kern_hyp_va(in_mpt.fmpt[gb].smpt);
