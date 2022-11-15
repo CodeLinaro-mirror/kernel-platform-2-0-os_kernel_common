@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+/*
+ * Copyright (C) 2022 - Google LLC
+ */
+
+#ifndef __IO_PGTABLE_S2MPU_H__
+#define __IO_PGTABLE_S2MPU_H__
+
+#include <linux/bitfield.h>
+#include <asm/kvm_mmu.h>
+#include <asm/kvm_s2mpu.h>
+
+struct s2mpu_pgtable_cfg {
+	enum s2mpu_version version;
+};
+
+struct s2mpu_pgtable_ops {
+	void (*init_with_prot)(void *dev_va, enum mpt_prot prot);
+	void (*init_with_mpt)(void *dev_va, struct mpt *mpt);
+	void (*apply_range)(void *dev_va, struct mpt *mpt, u32 first_gb, u32 last_gb);
+	void (*prepare_range)(phys_addr_t first_byte, phys_addr_t last_byte, struct mpt *mpt,
+						  enum mpt_prot prot);
+};
+
+const struct s2mpu_pgtable_ops *s2mpu_alloc_pgtable_ops(struct s2mpu_pgtable_cfg cfg);
+
+#endif /* __IO_PGTABLE_S2MPU_H__ */
