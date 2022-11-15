@@ -5,37 +5,18 @@
 
 #include <asm/io-pgtable-s2mpu.h>
 
-static void __set_l1entry_attr_with_prot(void *dev_va, unsigned int gb,
-					 unsigned int vid, enum mpt_prot prot)
+static inline void write_l1entry_attr_l2(bool l2_enable, u32 gran, enum mpt_prot prot,
+					 u32 vid, u32 gb, void *dev_va)
 {
-	writel_relaxed(L1ENTRY_ATTR_1G(prot),
-		       dev_va + REG_NS_L1ENTRY_ATTR(vid, gb));
+	writel((L1ENTRY_ATTR_L2TABLE_EN & l2_enable) |  L1ENTRY_ATTR_GRAN(SMPT_GRAN_ATTR) |
+		L1ENTRY_ATTR_1G(prot), dev_va + REG_NS_L1ENTRY_ATTR(vid, gb));
 }
-static void __set_l1entry_attr_with_fmpt(void *dev_va, unsigned int gb,
-					 unsigned int vid, struct fmpt *fmpt)
-{
-	if (fmpt->gran_1g) {
-		__set_l1entry_attr_with_prot(dev_va, gb, vid, fmpt->prot);
-	} else {
-		/* Order against writes to the SMPT. */
-		writel(L1ENTRY_ATTR_L2(SMPT_GRAN_ATTR),
-		       dev_va + REG_NS_L1ENTRY_ATTR(vid, gb));
-	}
-}
-static void __set_l1entry_l2table_addr(void *dev_va, unsigned int gb,
-				       unsigned int vid, phys_addr_t addr)
-{
-	/* Order against writes to the SMPT. */
-	writel(L1ENTRY_L2TABLE_ADDR(addr),
-	       dev_va + REG_NS_L1ENTRY_L2TABLE_ADDR(vid, gb));
-}
-
 static void init_with_prot(void *dev_va, enum mpt_prot prot)
 {
 	unsigned int gb, vid;
 
 	for_each_gb_and_vid(gb, vid)
-		__set_l1entry_attr_with_prot(dev_va, gb, vid, prot);
+		write_l1entry_attr_l2(0, 0, prot, vid, gb, dev_va);
 }
 
 static void init_with_mpt(void *dev_va, struct mpt *mpt)
@@ -45,8 +26,10 @@ static void init_with_mpt(void *dev_va, struct mpt *mpt)
 
 	for_each_gb_and_vid(gb, vid) {
 		fmpt = &mpt->fmpt[gb];
-		__set_l1entry_l2table_addr(dev_va, gb, vid, __hyp_pa(fmpt->smpt));
-		__set_l1entry_attr_with_fmpt(dev_va, gb, vid, fmpt);
+		writel(L1ENTRY_L2TABLE_ADDR(__hyp_pa(fmpt->smpt)),
+		       dev_va + REG_NS_L1ENTRY_L2TABLE_ADDR(vid, gb));
+		write_l1entry_attr_l2(!fmpt->gran_1g, SMPT_GRAN_ATTR, fmpt->prot,
+		vid, gb, dev_va);
 	}
 }
 
@@ -59,7 +42,8 @@ static void apply_range(void *dev_va, struct mpt *mpt, u32 first_gb, u32 last_gb
 		fmpt = &mpt->fmpt[gb];
 		if (fmpt->flags & MPT_UPDATE_L1) {
 			for_each_vid(vid)
-				__set_l1entry_attr_with_fmpt(dev_va, gb, vid, fmpt);
+				write_l1entry_attr_l2(!fmpt->gran_1g, SMPT_GRAN_ATTR, fmpt->prot,
+				vid, gb, dev_va);
 		}
 	}
 }
@@ -94,6 +78,5 @@ const struct s2mpu_pgtable_ops *s2mpu_alloc_pgtable_ops(struct s2mpu_pgtable_cfg
 {
 	if ((cfg.version == S2MPU_VERSION_8) || (cfg.version == S2MPU_VERSION_9))
 		return &this_ops;
-
 	return NULL;
 }
