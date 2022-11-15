@@ -16,6 +16,24 @@
       "message": "upstream first please for stuff that is core kernel code.",
       "revId": "3821b174758faca0f022eab18693c6e4338c595d",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "94c6c9ba_24b21f07",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1951687
+      },
+      "writtenOn": "2022-11-15T12:57:30Z",
+      "side": 1,
+      "message": "I presented this work during the last tracing summit and had a chance to talk IRL with Steve about it. We came up with an alternative upstream approach which I started working on (and shared a first draft with Steve no later than yesterday). \n\nMeanwhile, we need something for Android and this version has been heavily reviewed and tested.\n\nNotice that the entire userspace interface has been also presented and discussed, so no change is expected there.",
+      "parentUuid": "6f5eb032_f404c3b7",
+      "revId": "3821b174758faca0f022eab18693c6e4338c595d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
