@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ac34b23d_0b3779b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1952665
+      },
+      "writtenOn": "2022-11-16T23:23:41Z",
+      "side": 1,
+      "message": "Can drop this one since it\u0027s already been upstreamed in b/242358627",
+      "revId": "b106655205615796f67fd5a0353584ce87539b36",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
