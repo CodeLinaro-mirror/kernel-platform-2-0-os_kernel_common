@@ -255,9 +255,9 @@ struct msm_mmu *msm_iommu_pagetable_create(struct msm_mmu *parent)
 	/* The incoming cfg will have the TTBR1 quirk enabled */
 	ttbr0_cfg.quirks &= ~IO_PGTABLE_QUIRK_ARM_TTBR1;
 	ttbr0_cfg.tlb = &null_tlb_ops;
+	ttbr0_cfg.fmt = ARM_64_LPAE_S1;
 
-	pagetable->pgtbl_ops = alloc_io_pgtable_ops(ARM_64_LPAE_S1,
-		&ttbr0_cfg, iommu->domain);
+	pagetable->pgtbl_ops = alloc_io_pgtable_ops(&ttbr0_cfg, iommu->domain);
 
 	if (!pagetable->pgtbl_ops) {
 		kfree(pagetable);
