@@ -34,6 +34,24 @@
       "parentUuid": "7a64deb1_25479fa1",
       "revId": "fded268f9db82d1555cdb631487c61e1ed305a1b",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "59858376_22b75557",
+        "filename": "kernel/trace/ring_buffer.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4451,
+      "author": {
+        "id": 1951687
+      },
+      "writtenOn": "2022-11-22T18:00:58Z",
+      "side": 1,
+      "message": "answered",
+      "parentUuid": "f8e75079_7f38926b",
+      "revId": "fded268f9db82d1555cdb631487c61e1ed305a1b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
