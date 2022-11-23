@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "260663d4_a06375eb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2022-11-23T06:20:10Z",
+      "side": 1,
+      "message": "This needs to be cp\u0027ed to common-android13-X and common-android14-X, but let me merge it in mainline first.",
+      "revId": "8467b7ff38c51d3259e58473581896d842663f43",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
