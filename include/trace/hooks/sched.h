@@ -157,6 +157,10 @@ DECLARE_RESTRICTED_HOOK(android_rvh_tick_entry,
 	TP_PROTO(struct rq *rq),
 	TP_ARGS(rq), 1);
 
+DECLARE_RESTRICTED_HOOK(android_rvh_schedule,
+	TP_PROTO(struct task_struct *prev, struct task_struct *next, struct rq *rq),
+	TP_ARGS(prev, next, rq), 1);
+
 DECLARE_RESTRICTED_HOOK(android_rvh_build_perf_domains,
 	TP_PROTO(bool *eas_check),
 	TP_ARGS(eas_check), 1);
