@@ -4757,6 +4757,7 @@ static void __sched notrace __schedule(bool preempt)
 	clear_tsk_need_resched(prev);
 	clear_preempt_need_resched();
 
+	trace_android_rvh_schedule(prev, next, rq);
 	if (likely(prev != next)) {
 		rq->nr_switches++;
 		/*
