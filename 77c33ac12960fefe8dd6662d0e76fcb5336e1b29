@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aa5df4f7_648191f4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2022-11-23T07:23:17Z",
+      "side": 1,
+      "message": "if you have time to submit it here, you have time to submit it upstream as well.  Just use \u0027git send-email\u0027 please, we should not be accepting \"known wrong\" patches into the aosp trees.",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 33
+      },
+      "revId": "77c33ac12960fefe8dd6662d0e76fcb5336e1b29",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
