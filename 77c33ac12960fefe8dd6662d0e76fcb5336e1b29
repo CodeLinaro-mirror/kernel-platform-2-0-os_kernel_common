@@ -22,6 +22,30 @@
       },
       "revId": "77c33ac12960fefe8dd6662d0e76fcb5336e1b29",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26f3046d_95ada5f2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1951687
+      },
+      "writtenOn": "2022-11-23T08:30:47Z",
+      "side": 1,
+      "message": "A bit more details. When I presented this work to the tracingsummit, Steven told me he saw some overlapping with an idea he had to enable him to map the tracing buffers in userspace. We designed together a solution that would enable both features. Problem now, if I started working on this new approach already... it would nonetheless impose a revamp of this patchset. That\u0027s where meeting the Android-14 timeline is impossible.\n\nThere\u0027s (hopefully) nothing wrong technically with this patch (the modification to kernel/ring-buffer.c are guarded behind an option to the ring-buffer). However sending it to LKML wouldn\u0027t make sense, as I know already this isn\u0027t as \"reusable\" as the new version I\u0027ll be preparing.",
+      "parentUuid": "aa5df4f7_648191f4",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 33
+      },
+      "revId": "77c33ac12960fefe8dd6662d0e76fcb5336e1b29",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
