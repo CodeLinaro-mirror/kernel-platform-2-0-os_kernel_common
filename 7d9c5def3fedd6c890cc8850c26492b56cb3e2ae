@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5fc83bc_301a22ac",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1964575
+      },
+      "writtenOn": "2022-11-23T19:39:09Z",
+      "side": 1,
+      "message": "Thank you for reviewing before your time off. I have reworked the code to address the comments; the result is more concise.",
+      "revId": "7d9c5def3fedd6c890cc8850c26492b56cb3e2ae",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
