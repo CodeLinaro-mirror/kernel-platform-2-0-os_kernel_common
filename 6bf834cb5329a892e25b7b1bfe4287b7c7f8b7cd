@@ -46,6 +46,30 @@
       },
       "revId": "6bf834cb5329a892e25b7b1bfe4287b7c7f8b7cd",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd0ecd37_7b4176c9",
+        "filename": "BUILD.bazel",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2022-11-24T12:06:01Z",
+      "side": 0,
+      "message": "SPDX line goes first.",
+      "parentUuid": "77a2df0f_ee74203f",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 52
+      },
+      "revId": "6bf834cb5329a892e25b7b1bfe4287b7c7f8b7cd",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
