@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e7423906_85860a43",
+        "filename": "kernel/sched/core.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 4760,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2022-11-29T13:03:40Z",
+      "side": 1,
+      "message": "why not use `trace_sched_switch()` hook below this?",
+      "range": {
+        "startLine": 4760,
+        "startChar": 0,
+        "endLine": 4760,
+        "endChar": 44
+      },
+      "revId": "353059140bbb7f91b7aadaff8f87bf5ce69d62ae",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
