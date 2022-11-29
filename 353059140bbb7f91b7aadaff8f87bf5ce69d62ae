@@ -22,6 +22,30 @@
       },
       "revId": "353059140bbb7f91b7aadaff8f87bf5ce69d62ae",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2998a666_f5db110a",
+        "filename": "kernel/sched/core.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 4760,
+      "author": {
+        "id": 1971857
+      },
+      "writtenOn": "2022-11-29T13:18:33Z",
+      "side": 1,
+      "message": "Important functions of Samsung scheduler such as group scheduling, core spacing, task rotation, etc. operate at the time of __schedule, so we need this VH at this place",
+      "parentUuid": "e7423906_85860a43",
+      "range": {
+        "startLine": 4760,
+        "startChar": 0,
+        "endLine": 4760,
+        "endChar": 44
+      },
+      "revId": "353059140bbb7f91b7aadaff8f87bf5ce69d62ae",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
