@@ -70,6 +70,30 @@
       },
       "revId": "6bf834cb5329a892e25b7b1bfe4287b7c7f8b7cd",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a53ffb5e_85e5dba9",
+        "filename": "BUILD.bazel",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2022-11-29T02:51:52Z",
+      "side": 0,
+      "message": "Okay!",
+      "parentUuid": "bd0ecd37_7b4176c9",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 52
+      },
+      "revId": "6bf834cb5329a892e25b7b1bfe4287b7c7f8b7cd",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
