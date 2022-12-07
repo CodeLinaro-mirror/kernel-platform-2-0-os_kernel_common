@@ -63,6 +63,7 @@
 #include <trace/hooks/user.h>
 #include <trace/hooks/signal.h>
 #include <trace/hooks/psi.h>
+#include <trace/hooks/bl_hib.h>
 
 /*
  * Export tracepoints that act as a bare tracehook (ie: have no trace event
@@ -265,3 +266,11 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_exit_signal);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_shrink_node_memcgs);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_modify_thermal_request_freq);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_modify_thermal_target_freq);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_check_hibernation_swap);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_save_cpu_resume);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_save_hib_resume_bdev);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_gic_v2_resume);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_encrypt_page);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_init_aes_encrypt);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_skip_swap_map_write);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_post_image_save);
