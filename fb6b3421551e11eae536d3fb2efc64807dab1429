@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48dfa20a_de663eab",
+        "filename": "mm/vmscan.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 3593,
+      "author": {
+        "id": 1743590
+      },
+      "writtenOn": "2022-12-08T06:44:03Z",
+      "side": 1,
+      "message": "these should be deleted.",
+      "range": {
+        "startLine": 3592,
+        "startChar": 0,
+        "endLine": 3593,
+        "endChar": 15
+      },
+      "revId": "fb6b3421551e11eae536d3fb2efc64807dab1429",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
