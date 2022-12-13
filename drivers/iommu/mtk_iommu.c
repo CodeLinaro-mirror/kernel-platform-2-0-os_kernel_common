@@ -279,7 +279,7 @@ struct mtk_iommu_data {
 
 struct mtk_iommu_domain {
 	struct io_pgtable_cfg		cfg;
-	struct io_pgtable_ops		*iop;
+	struct io_pgtable		iop;
 
 	struct mtk_iommu_bank_data	*bank;
 	struct iommu_domain		domain;
@@ -642,6 +642,7 @@ static int mtk_iommu_domain_finalise(struct mtk_iommu_domain *dom,
 {
 	struct mtk_iommu_domain	*share_dom = data->share_dom;
 	const struct mtk_iommu_iova_region *region;
+	int ret;
 
 	/* Share pgtable when 2 MM IOMMU share the pgtable or one IOMMU use multiple iova ranges */
 	if (share_dom) {
@@ -669,8 +670,8 @@ static int mtk_iommu_domain_finalise(struct mtk_iommu_domain *dom,
 	else
 		dom->cfg.oas = 35;
 
-	dom->iop = alloc_io_pgtable_ops(&dom->cfg, data);
-	if (!dom->iop) {
+	ret = alloc_io_pgtable_ops(&dom->iop, &dom->cfg, data);
+	if (ret) {
 		dev_err(data->dev, "Failed to alloc io pgtable\n");
 		return -ENOMEM;
 	}
@@ -788,7 +789,7 @@ static int mtk_iommu_map(struct iommu_domain *domain, unsigned long iova,
 		paddr |= BIT_ULL(32);
 
 	/* Synchronize with the tlb_lock */
-	return dom->iop->map_pages(dom->iop, iova, paddr, pgsize, pgcount, prot, gfp, mapped);
+	return iopt_map_pages(&dom->iop, iova, paddr, pgsize, pgcount, prot, gfp, mapped);
 }
 
 static size_t mtk_iommu_unmap(struct iommu_domain *domain,
@@ -798,7 +799,7 @@ static size_t mtk_iommu_unmap(struct iommu_domain *domain,
 	struct mtk_iommu_domain *dom = to_mtk_domain(domain);
 
 	iommu_iotlb_gather_add_range(gather, iova, pgsize * pgcount);
-	return dom->iop->unmap_pages(dom->iop, iova, pgsize, pgcount, gather);
+	return iopt_unmap_pages(&dom->iop, iova, pgsize, pgcount, gather);
 }
 
 static void mtk_iommu_flush_iotlb_all(struct iommu_domain *domain)
@@ -832,7 +833,7 @@ static phys_addr_t mtk_iommu_iova_to_phys(struct iommu_domain *domain,
 	struct mtk_iommu_domain *dom = to_mtk_domain(domain);
 	phys_addr_t pa;
 
-	pa = dom->iop->iova_to_phys(dom->iop, iova);
+	pa = iopt_iova_to_phys(&dom->iop, iova);
 	if (IS_ENABLED(CONFIG_PHYS_ADDR_T_64BIT) &&
 	    dom->bank->parent_data->enable_4GB &&
 	    pa >= MTK_IOMMU_4GB_MODE_REMAP_BASE)
