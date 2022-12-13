@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7e3d1763_b0d99ef2",
+        "filename": "mm/cma.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 548,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2022-12-13T17:41:40Z",
+      "side": 1,
+      "message": "gfp_mask is undefined in this function.",
+      "range": {
+        "startLine": 548,
+        "startChar": 14,
+        "endLine": 548,
+        "endChar": 22
+      },
+      "revId": "bd37a9aee918aab58e67d3359cb0a8dcdeb0145d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
