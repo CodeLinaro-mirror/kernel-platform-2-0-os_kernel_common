@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f00d5b89_a9c807e7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1275554
+      },
+      "writtenOn": "2022-12-15T17:04:12Z",
+      "side": 1,
+      "message": "Richar,\n\nThis patch is dependent on the other patch so they should be merged earlier.\nThat\u0027s why I suggested to migrate patches by date.",
+      "revId": "bd37a9aee918aab58e67d3359cb0a8dcdeb0145d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7e3d1763_b0d99ef2",
