@@ -62,15 +62,40 @@ handle_to_domain(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id)
 	domain_id = array_index_nospec(domain_id, iommu->nr_domains);
 
 	idx = domain_id >> KVM_IOMMU_DOMAIN_ID_SPLIT;
-	domains = iommu->domains[idx];
+	domains = READ_ONCE(iommu->domains[idx]);
 	if (!domains) {
 		domains = kvm_iommu_donate_page();
 		if (!domains)
 			return NULL;
-		iommu->domains[idx] = domains;
+
+		/*
+		 * handle_to_domain() does not have to be called under a lock,
+		 * but even though we allocate a leaf in all cases, it's only
+		 * really a valid thing to do under alloc_domain(), which uses a
+		 * lock. Races are therefore a host bug and we don't need to be
+		 * delicate about it.
+		 */
+		if (WARN_ON(cmpxchg64_relaxed(&iommu->domains[idx], 0, domains) != 0))
+			return NULL;
 	}
 
 	return &domains[domain_id & KVM_IOMMU_DOMAIN_ID_LEAF_MASK];
+}
+
+static int domain_get(struct kvm_hyp_iommu_domain *domain)
+{
+	int old = atomic_fetch_inc_acquire(&domain->refs);
+
+	if (WARN_ON(!old))
+		return -EINVAL;
+	else if (old < 0 || old + 1 < 0)
+		return -EOVERFLOW;
+	return 0;
+}
+
+static void domain_put(struct kvm_hyp_iommu_domain *domain)
+{
+	BUG_ON(!atomic_dec_return_release(&domain->refs));
 }
 
 int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
@@ -90,7 +115,7 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (!domain)
 		goto out_unlock;
 
-	if (domain->refs)
+	if (atomic_read(&domain->refs))
 		goto out_unlock;
 
 	iopt = domain_to_iopt(iommu, domain, domain_id);
@@ -98,8 +123,8 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (ret)
 		goto out_unlock;
 
-	domain->refs = 1;
 	domain->pgd = iopt.pgd;
+	atomic_set_release(&domain->refs, 1);
 out_unlock:
 	hyp_spin_unlock(&iommu->lock);
 	return ret;
@@ -121,16 +146,23 @@ int kvm_iommu_free_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id)
 	if (!domain)
 		goto out_unlock;
 
-	if (domain->refs != 1)
+	if (WARN_ON(atomic_cmpxchg_release(&domain->refs, 1, 0) != 1))
 		goto out_unlock;
 
 	iopt = domain_to_iopt(iommu, domain, domain_id);
-	ret = kvm_iommu_ops.free_iopt(&iopt);
-
+	/*
+	 * iop points to the iommu, the pgd and the domain_id but not the
+	 * domain, so it's safe to free the domain now and the pgtables outside
+	 * the lock. (cannot be done under the lock because it calls the tlb
+	 * invalidate functions).
+	 */
 	memset(domain, 0, sizeof(*domain));
 
+	ret = 0;
 out_unlock:
 	hyp_spin_unlock(&iommu->lock);
+	if (!ret)
+		ret = kvm_iommu_ops.free_iopt(&iopt);
 	return ret;
 }
 
@@ -147,16 +179,18 @@ int kvm_iommu_attach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 
 	hyp_spin_lock(&iommu->lock);
 	domain = handle_to_domain(iommu, domain_id);
-	if (!domain || !domain->refs || domain->refs == UINT_MAX)
+	if (!domain || domain_get(domain))
 		goto out_unlock;
 
 	ret = kvm_iommu_ops.attach_dev(iommu, domain_id, domain, endpoint_id);
 	if (ret)
-		goto out_unlock;
+		goto err_put_domain;
 
-	domain->refs++;
 out_unlock:
 	hyp_spin_unlock(&iommu->lock);
+	return ret;
+err_put_domain:
+	domain_put(domain);
 	return ret;
 }
 
@@ -173,14 +207,14 @@ int kvm_iommu_detach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 
 	hyp_spin_lock(&iommu->lock);
 	domain = handle_to_domain(iommu, domain_id);
-	if (!domain || domain->refs <= 1)
+	if (!domain || atomic_read(&domain->refs) <= 1)
 		goto out_unlock;
 
 	ret = kvm_iommu_ops.detach_dev(iommu, domain_id, domain, endpoint_id);
 	if (ret)
 		goto out_unlock;
 
-	domain->refs--;
+	domain_put(domain);
 out_unlock:
 	hyp_spin_unlock(&iommu->lock);
 	return ret;
@@ -196,7 +230,7 @@ size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	size_t size;
 	size_t mapped;
 	size_t granule;
-	int ret = -EINVAL;
+	int ret;
 	struct io_pgtable iopt;
 	size_t total_mapped = 0;
 	struct kvm_hyp_iommu *iommu;
@@ -213,18 +247,26 @@ size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (!iommu)
 		return 0;
 
-	hyp_spin_lock(&iommu->lock);
+	/*
+	 * TODO: check whether it is safe here to call io-pgtable without a
+	 * lock. Does the driver make assumptions that don't hold for the
+	 * hypervisor, for example that device drivers don't call map/unmap
+	 * concurrently on the same page?
+	 *
+	 * Command queue and iommu->power_is_off are also protected by the
+	 * iommu_lock, taken by the TLB invalidation callbacks.
+	 */
 	domain = handle_to_domain(iommu, domain_id);
-	if (!domain)
-		goto err_unlock;
+	if (!domain || domain_get(domain))
+		return 0;
 
 	granule = 1 << __ffs(iommu->pgtable->cfg.pgsize_bitmap);
 	if (!IS_ALIGNED(iova | paddr | pgsize, granule))
-		goto err_unlock;
+		goto out_put_domain;
 
 	ret = __pkvm_host_share_dma(paddr, size, !(prot & IOMMU_MMIO));
 	if (ret)
-		goto err_unlock;
+		goto out_put_domain;
 
 	iopt = domain_to_iopt(iommu, domain, domain_id);
 	while (pgcount && !ret) {
@@ -247,8 +289,8 @@ size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	 */
 	if (pgcount)
 		__pkvm_host_unshare_dma(paddr, pgcount * pgsize);
-err_unlock:
-	hyp_spin_unlock(&iommu->lock);
+out_put_domain:
+	domain_put(domain);
 	return total_mapped;
 }
 
@@ -276,14 +318,13 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (!iommu)
 		return 0;
 
-	hyp_spin_lock(&iommu->lock);
 	domain = handle_to_domain(iommu, domain_id);
-	if (!domain)
-		goto out_unlock;
+	if (!domain || domain_get(domain))
+		return 0;
 
 	granule = 1 << __ffs(iommu->pgtable->cfg.pgsize_bitmap);
 	if (!IS_ALIGNED(iova | pgsize, granule))
-		goto out_unlock;
+		goto out_put_domain;
 
 	iopt = domain_to_iopt(iommu, domain, domain_id);
 
@@ -295,18 +336,18 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 		 */
 		unmapped = iopt_unmap_leaf(&iopt, iova, pgsize, &paddr);
 		if (!unmapped || !paddr)
-			goto out_unlock;
+			goto out_put_domain;
 
 		ret = __pkvm_host_unshare_dma(paddr, unmapped);
 		if (WARN_ON(ret))
-			goto out_unlock;
+			goto out_put_domain;
 
 		iova += unmapped;
 		total_unmapped += unmapped;
 	}
 
-out_unlock:
-	hyp_spin_unlock(&iommu->lock);
+out_put_domain:
+	domain_put(domain);
 	return total_unmapped;
 }
 
@@ -322,14 +363,15 @@ phys_addr_t kvm_iommu_iova_to_phys(pkvm_handle_t iommu_id,
 	if (!iommu)
 		return 0;
 
-	hyp_spin_lock(&iommu->lock);
 	domain = handle_to_domain(iommu, domain_id);
-	if (domain) {
-		iopt = domain_to_iopt(iommu, domain, domain_id);
+	if (!domain || domain_get(domain))
+		return 0;
 
-		phys = iopt_iova_to_phys(&iopt, iova);
-	}
-	hyp_spin_unlock(&iommu->lock);
+	iopt = domain_to_iopt(iommu, domain, domain_id);
+	phys = iopt_iova_to_phys(&iopt, iova);
+
+	domain_put(domain);
+
 	return phys;
 }
 
