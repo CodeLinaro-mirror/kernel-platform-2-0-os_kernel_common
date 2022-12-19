@@ -16,6 +16,23 @@
       "message": "Respin Bug: b/262955408",
       "revId": "4dd63a490353dcbcb39533bcc1afe8461dd4c88e",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "51fdd3b6_a0fd9830",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2022-12-19T17:56:59Z",
+      "side": 1,
+      "message": "This patch is not in `android13-5.15`. It must be merged there before this release branch.\n\nPlease cherry-pick this to `android13-5.15`",
+      "revId": "4dd63a490353dcbcb39533bcc1afe8461dd4c88e",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
