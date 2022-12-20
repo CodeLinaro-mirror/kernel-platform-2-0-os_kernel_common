@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "970e2b7f_296a7fc8",
+        "filename": "drivers/trusty/trusty.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 883,
+      "author": {
+        "id": 1000205
+      },
+      "writtenOn": "2022-12-20T19:49:36Z",
+      "side": 1,
+      "message": "I don\u0027t see any other callers that use wait_woken with MAX_SCHEDULE_TIMEOUT and also check if it timed out. It should be safe to leave that out here as well. Silently breaking out of the loop here does not seem helpful anyway.",
+      "revId": "ffa6d4281ee13464f15cf849ed8d18e9d01eb4bd",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
