@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b8b3b95_2a1454b0",
+        "filename": "drivers/trusty/trusty.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 965,
+      "author": {
+        "id": 1000205
+      },
+      "writtenOn": "2022-12-20T02:11:33Z",
+      "side": 1,
+      "message": "I would use a different label for this even if it goes to the same spot. err_add_children means of_platform_populate failed",
+      "revId": "2af1bb63b550c64f874ff10ec88864c34eb8d3b4",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af8cf213_0b25519d",
+        "filename": "drivers/trusty/trusty.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1016,
+      "author": {
+        "id": 1000205
+      },
+      "writtenOn": "2022-12-20T02:11:33Z",
+      "side": 1,
+      "message": "I don\u0027t think IS_ERR is needed here as we can\u0027t let trusty_probe succeed if we failed to create all the threads",
+      "revId": "2af1bb63b550c64f874ff10ec88864c34eb8d3b4",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
