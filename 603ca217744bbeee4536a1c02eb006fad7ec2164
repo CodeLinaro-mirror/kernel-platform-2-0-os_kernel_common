@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea43b129_306c3ba1",
+        "filename": "android/abi_gki_aarch64_sunxi",
+        "patchSetId": 4
+      },
+      "lineNbr": 910,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2022-12-20T12:04:42Z",
+      "side": 1,
+      "message": "should not be used, please fix the Mali driver.",
+      "revId": "603ca217744bbeee4536a1c02eb006fad7ec2164",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
