@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "29fa56ea_b0cb0d73",
+        "filename": "drivers/trusty/trusty.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 963,
+      "author": {
+        "id": 1856745
+      },
+      "writtenOn": "2022-12-20T15:57:02Z",
+      "side": 1,
+      "message": "compile error on device kernel workspace: use `cpu\u003d %d (%p)` or remove the pointer print.",
+      "revId": "2af1bb63b550c64f874ff10ec88864c34eb8d3b4",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2b8b3b95_2a1454b0",
         "filename": "drivers/trusty/trusty.c",
         "patchSetId": 7
