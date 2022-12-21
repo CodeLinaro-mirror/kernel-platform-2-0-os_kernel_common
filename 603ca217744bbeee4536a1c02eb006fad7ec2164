@@ -52,6 +52,24 @@
       "parentUuid": "3e72b5dc_6950f531",
       "revId": "603ca217744bbeee4536a1c02eb006fad7ec2164",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3701392_090e47d3",
+        "filename": "android/abi_gki_aarch64_sunxi",
+        "patchSetId": 4
+      },
+      "lineNbr": 910,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2022-12-21T17:03:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "830441d7_6d7f43aa",
+      "revId": "603ca217744bbeee4536a1c02eb006fad7ec2164",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
