@@ -446,6 +446,28 @@ static bool cgroup_reclaim(struct scan_control *sc)
 	return sc->target_mem_cgroup;
 }
 
+static bool global_reclaim(struct scan_control *sc)
+{
+	return !sc->target_mem_cgroup || mem_cgroup_is_root(sc->target_mem_cgroup);
+}
+
+static bool multiple_mem_cgroups(void)
+{
+	struct mem_cgroup *memcg;
+	int nr_memcgs = 0;
+
+	for (memcg = mem_cgroup_iter(NULL, NULL, NULL);
+			memcg != NULL;
+			memcg = mem_cgroup_iter(NULL, memcg, NULL), nr_memcgs++) {
+		if (nr_memcgs > 1)	{
+			mem_cgroup_iter_break(NULL, memcg);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /**
  * writeback_throttling_sane - is the usual dirty throttling mechanism available?
  * @sc: scan_control in question
@@ -492,6 +514,16 @@ static long add_nr_deferred_memcg(long nr, int nid, struct shrinker *shrinker,
 }
 
 static bool cgroup_reclaim(struct scan_control *sc)
+{
+	return false;
+}
+
+static bool global_reclaim(struct scan_control *sc)
+{
+	return true;
+}
+
+static bool multiple_mem_cgroups(void)
 {
 	return false;
 }
@@ -4776,6 +4808,7 @@ static int evict_pages(struct lruvec *lruvec, struct scan_control *sc, int swapp
 	bool skip_retry = false;
 	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
 	struct pglist_data *pgdat = lruvec_pgdat(lruvec);
+	bool multiple_memcgs = multiple_mem_cgroups();
 
 	spin_lock_irq(&lruvec->lru_lock);
 
@@ -4850,7 +4883,7 @@ retry:
 		goto retry;
 	}
 
-	if (need_swapping && type == LRU_GEN_ANON)
+	if (multiple_memcgs && need_swapping && type == LRU_GEN_ANON)
 		*need_swapping = true;
 
 	return scanned;
@@ -4944,6 +4977,19 @@ static bool should_abort_scan(struct lruvec *lruvec, unsigned long seq,
 	return true;
 }
 
+static unsigned long get_nr_to_reclaim(struct scan_control *sc)
+{
+	/* don't abort memcg reclaim to ensure fairness */
+	if (!global_reclaim(sc))
+		return -1;
+
+	/* discount the previous progress for kswapd */
+	if (current_is_kswapd())
+		return sc->nr_to_reclaim + sc->last_reclaimed;
+
+	return max(sc->nr_to_reclaim, compact_gap(sc->order));
+}
+
 static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
 {
 	struct blk_plug plug;
@@ -4952,6 +4998,8 @@ static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc
 	unsigned long scanned = 0;
 	unsigned long reclaimed = sc->nr_reclaimed;
 	DEFINE_MAX_SEQ(lruvec);
+	bool multiple_memcgs = multiple_mem_cgroups();
+	unsigned long nr_to_reclaim = multiple_memcgs ? 0 : get_nr_to_reclaim(sc);
 
 	lru_add_drain();
 
@@ -4983,8 +5031,13 @@ static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc
 		if (scanned >= nr_to_scan)
 			break;
 
-		if (should_abort_scan(lruvec, max_seq, sc, need_swapping))
-			break;
+		if (multiple_memcgs) {
+			if (should_abort_scan(lruvec, max_seq, sc, need_swapping))
+				break;
+		} else {
+			if (sc->nr_reclaimed >= nr_to_reclaim)
+				break;
+		}
 
 		cond_resched();
 	}
