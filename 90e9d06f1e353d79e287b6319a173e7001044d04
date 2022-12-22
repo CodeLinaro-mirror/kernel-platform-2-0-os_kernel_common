@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27c0ee14_d0d916c7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1982110
+      },
+      "writtenOn": "2022-12-22T02:20:01Z",
+      "side": 1,
+      "message": "repo download -c kernel/common 2313400",
+      "revId": "90e9d06f1e353d79e287b6319a173e7001044d04",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
