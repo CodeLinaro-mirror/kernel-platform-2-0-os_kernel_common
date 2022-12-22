@@ -4408,9 +4408,9 @@ static void lru_gen_age_node(struct pglist_data *pgdat, struct scan_control *sc)
 
 	VM_WARN_ON_ONCE(!current_is_kswapd());
 
-	sc->last_reclaimed = sc->nr_reclaimed;
-
 	if (multiple_memcgs) {
+		sc->last_reclaimed = sc->nr_reclaimed;
+
 		/*
 		 * To reduce the chance of going into the aging path, which can be
 		 * costly, optimistically skip it if the flag below was cleared in the
@@ -4969,7 +4969,7 @@ retry:
  * 1. Defer try_to_inc_max_seq() to workqueues to reduce latency for memcg
  *    reclaim.
  */
-static unsigned long get_nr_to_scan(struct lruvec *lruvec, struct scan_control *sc,
+static long get_nr_to_scan(struct lruvec *lruvec, struct scan_control *sc,
 				    bool can_swap, bool *need_aging)
 {
 	unsigned long nr_to_scan;
@@ -5003,11 +5003,8 @@ static unsigned long get_nr_to_scan(struct lruvec *lruvec, struct scan_control *
 			return nr_to_scan;
 
 	} else {
-
-		try_to_inc_max_seq(lruvec, max_seq, sc, can_swap, false);
-
 		/* skip this lruvec as it's low on cold pages */
-		return 0;
+		return try_to_inc_max_seq(lruvec, max_seq, sc, can_swap, false) ? -1 : 0;
 	}
 
 done:
@@ -5074,15 +5071,15 @@ static unsigned long get_nr_to_reclaim(struct scan_control *sc)
 		return -1;
 
 	/* discount the previous progress for kswapd */
-	if (current_is_kswapd())
+	if (multiple_mem_cgroups() && current_is_kswapd())
 		return sc->nr_to_reclaim + sc->last_reclaimed;
 
 	return max(sc->nr_to_reclaim, compact_gap(sc->order));
 }
 
-static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
+static bool try_to_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
 {
-	struct blk_plug plug;
+	long nr_to_scan;
 	bool need_aging = false;
 	bool need_swapping = false;
 	unsigned long scanned = 0;
@@ -5091,16 +5088,9 @@ static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc
 	bool multiple_memcgs = multiple_mem_cgroups();
 	unsigned long nr_to_reclaim = multiple_memcgs ? 0 : get_nr_to_reclaim(sc);
 
-	lru_add_drain();
-
-	blk_start_plug(&plug);
-
-	set_mm_walk(lruvec_pgdat(lruvec));
-
 	while (true) {
 		int delta;
 		int swappiness;
-		unsigned long nr_to_scan;
 
 		if (sc->may_swap)
 			swappiness = get_swappiness(lruvec, sc);
@@ -5110,7 +5100,7 @@ static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc
 			swappiness = 0;
 
 		nr_to_scan = get_nr_to_scan(lruvec, sc, swappiness, &need_aging);
-		if (!nr_to_scan)
+		if (nr_to_scan <= 0)
 			break;
 
 		delta = evict_pages(lruvec, sc, swappiness, &need_swapping);
@@ -5136,11 +5126,107 @@ static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc
 		/* see the comment in lru_gen_age_node() */
 		if (sc->nr_reclaimed - reclaimed >= MIN_LRU_BATCH && !need_aging)
 			sc->memcgs_need_aging = false;
+
+		return false;
+	} else {
+		/* whether try_to_inc_max_seq() was successful */
+		return nr_to_scan < 0;
 	}
+}
+
+static int shrink_one(struct lruvec *lruvec, struct scan_control *sc)
+{
+	unsigned long scanned = sc->nr_scanned;
+	unsigned long reclaimed = sc->nr_reclaimed;
+	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
+	struct pglist_data *pgdat = lruvec_pgdat(lruvec);
+
+	try_to_shrink_lruvec(lruvec, sc);
+
+	shrink_slab(sc->gfp_mask, pgdat->node_id, memcg, sc->priority);
+
+	vmpressure(sc->gfp_mask, memcg, false, sc->nr_scanned - scanned,
+		   sc->nr_reclaimed - reclaimed);
+
+	sc->nr_reclaimed += current->reclaim_state->reclaimed_slab;
+	current->reclaim_state->reclaimed_slab = 0;
+
+	return 0;
+}
+
+static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
+{
+	struct blk_plug plug;
+
+	VM_WARN_ON_ONCE(global_reclaim(sc));
+
+	lru_add_drain();
+
+	blk_start_plug(&plug);
+
+	set_mm_walk(lruvec_pgdat(lruvec));
+
+	/* Ignore the return. Due to frozen ABI in 13-5.15 we cannot rotate the memcg order */
+	try_to_shrink_lruvec(lruvec, sc);
 
 	clear_mm_walk();
 
 	blk_finish_plug(&plug);
+}
+
+static void set_initial_priority(struct pglist_data *pgdat, struct scan_control *sc)
+{
+	int priority;
+	unsigned long reclaimable;
+	struct lruvec *lruvec = mem_cgroup_lruvec(NULL, pgdat);
+
+	if (sc->priority != DEF_PRIORITY || sc->nr_to_reclaim < MIN_LRU_BATCH)
+		return;
+	/*
+	 * Determine the initial priority based on (total >> priority) *
+	 * reclaimed_to_scanned_ratio = nr_to_reclaim, where the
+	 * estimated reclaimed_to_scanned_ratio = inactive / total.
+	 */
+	reclaimable = node_page_state(pgdat, NR_INACTIVE_FILE);
+	if (get_swappiness(lruvec, sc))
+		reclaimable += node_page_state(pgdat, NR_INACTIVE_ANON);
+
+	/* round down reclaimable and round up sc->nr_to_reclaim */
+	priority = fls_long(reclaimable) - 1 - fls_long(sc->nr_to_reclaim - 1);
+
+	sc->priority = clamp(priority, 0, DEF_PRIORITY);
+}
+
+static void lru_gen_shrink_node(struct pglist_data *pgdat, struct scan_control *sc)
+{
+	struct blk_plug plug;
+	unsigned long reclaimed = sc->nr_reclaimed;
+
+	VM_WARN_ON_ONCE(!global_reclaim(sc));
+
+	lru_add_drain();
+
+	blk_start_plug(&plug);
+
+	set_mm_walk(pgdat);
+
+	set_initial_priority(pgdat, sc);
+
+	if (current_is_kswapd())
+		sc->nr_reclaimed = 0;
+
+	/* lru_gen_shrink_node() is only called if we don't have multiple memcgs */
+	shrink_one(&pgdat->__lruvec, sc);
+
+	if (current_is_kswapd())
+		sc->nr_reclaimed += reclaimed;
+
+	clear_mm_walk();
+
+	blk_finish_plug(&plug);
+
+	/* kswapd should never fail */
+	pgdat->kswapd_failures = 0;
 }
 
 /******************************************************************************
@@ -5600,11 +5686,11 @@ static int run_cmd(char cmd, int memcg_id, int nid, unsigned long seq,
 
 	if (!mem_cgroup_disabled()) {
 		rcu_read_lock();
+
 		memcg = mem_cgroup_from_id(memcg_id);
-#ifdef CONFIG_MEMCG
-		if (memcg && !css_tryget(&memcg->css))
+		if (!mem_cgroup_tryget(memcg))
 			memcg = NULL;
-#endif
+
 		rcu_read_unlock();
 
 		if (!memcg)
@@ -5801,6 +5887,10 @@ static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc
 {
 }
 
+static void lru_gen_shrink_node(struct pglist_data *pgdat, struct scan_control *sc)
+{
+}
+
 #endif /* CONFIG_LRU_GEN */
 
 static void shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
@@ -5814,7 +5904,7 @@ static void shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
 	bool proportional_reclaim;
 	struct blk_plug plug;
 
-	if (lru_gen_enabled()) {
+	if (lru_gen_enabled() && !global_reclaim(sc)) {
 		lru_gen_shrink_lruvec(lruvec, sc);
 		return;
 	}
@@ -6060,6 +6150,11 @@ static void shrink_node(pg_data_t *pgdat, struct scan_control *sc)
 	unsigned long nr_reclaimed, nr_scanned;
 	struct lruvec *target_lruvec;
 	bool reclaimable = false;
+
+	if (!multiple_mem_cgroups() && lru_gen_enabled() && global_reclaim(sc)) {
+		lru_gen_shrink_node(pgdat, sc);
+		return;
+	}
 
 	target_lruvec = mem_cgroup_lruvec(sc->target_mem_cgroup, pgdat);
 
