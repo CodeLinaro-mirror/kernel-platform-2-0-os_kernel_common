@@ -30,6 +30,8 @@ obj-$(CONFIG_RUST) += exports.o
 # Avoids running `$(RUSTC)` for the sysroot when it may not be available.
 ifdef CONFIG_RUST
 
+rust_flags += -C linker-flavor=gcc -C linker=$(CC)
+
 # `$(rust_flags)` is passed in case the user added `--sysroot`.
 rustc_sysroot := $(shell $(RUSTC) $(rust_flags) --print sysroot)
 rustc_host_target := $(shell $(RUSTC) --version --verbose | grep -F 'host: ' | cut -d' ' -f2)
@@ -332,6 +334,7 @@ $(obj)/exports_kernel_generated.h: $(obj)/kernel.o FORCE
 quiet_cmd_rustc_procmacro = $(RUSTC_OR_CLIPPY_QUIET) P $@
       cmd_rustc_procmacro = \
 	$(RUSTC_OR_CLIPPY) $(rust_common_flags) \
+		-C linker-flavor=gcc -C linker=$(HOSTCC) \
 		--emit=dep-info,link --extern proc_macro \
 		--crate-type proc-macro --out-dir $(objtree)/$(obj) \
 		--crate-name $(patsubst lib%.so,%,$(notdir $@)) $<; \

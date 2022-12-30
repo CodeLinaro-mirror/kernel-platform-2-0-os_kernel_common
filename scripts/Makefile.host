@@ -99,6 +99,8 @@ hostc_flags    = -Wp,-MMD,$(depfile) $(_hostc_flags)
 hostcxx_flags  = -Wp,-MMD,$(depfile) $(_hostcxx_flags)
 hostrust_flags = $(_hostrust_flags)
 
+hostrust_flags += -C linker-flavor=gcc -C linker=$(HOSTCC)
+
 #####
 # Compile programs on the host
 
