@@ -16,6 +16,24 @@
       "message": "I don\u0027t see any other callers that use wait_woken with MAX_SCHEDULE_TIMEOUT and also check if it timed out. It should be safe to leave that out here as well. Silently breaking out of the loop here does not seem helpful anyway.",
       "revId": "ffa6d4281ee13464f15cf849ed8d18e9d01eb4bd",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "96d16229_ed47606d",
+        "filename": "drivers/trusty/trusty.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 883,
+      "author": {
+        "id": 1964575
+      },
+      "writtenOn": "2023-01-03T20:32:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "970e2b7f_296a7fc8",
+      "revId": "ffa6d4281ee13464f15cf849ed8d18e9d01eb4bd",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
