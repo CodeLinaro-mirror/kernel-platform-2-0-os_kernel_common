@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2e59e1f_092cf75d",
+        "filename": "kernel/trace/ring_buffer.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 5178,
+      "author": {
+        "id": 1942270
+      },
+      "writtenOn": "2023-01-13T13:04:34Z",
+      "side": 1,
+      "message": "I don\u0027t really get why we can\u0027t synchronise with `cpu_buffer-\u003elock` and we need an additional spinlock here.",
+      "revId": "c9b7484cb442705eb21f8b3bcafc8d8a4e127a02",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "447b7234_005a0496",
+        "filename": "kernel/trace/ring_buffer.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 6079,
+      "author": {
+        "id": 1942270
+      },
+      "writtenOn": "2023-01-13T13:04:34Z",
+      "side": 1,
+      "message": "Q: Do we really need to represent the number of pages on `unsigned long` ? Can we do some basic validation on `nr_pages` ?",
+      "revId": "c9b7484cb442705eb21f8b3bcafc8d8a4e127a02",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c311fae_16e6d76d",
+        "filename": "kernel/trace/ring_buffer.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 6089,
+      "author": {
+        "id": 1942270
+      },
+      "writtenOn": "2023-01-13T13:04:34Z",
+      "side": 1,
+      "message": "Maybe re-write: Iterate the list from buffer_page and increment a counter that will be used to access cpu_pack-\u003epage_va as you did. If you reach the end of the list and your counter !\u003d nr_pages, then raise a BUG.",
+      "revId": "c9b7484cb442705eb21f8b3bcafc8d8a4e127a02",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
