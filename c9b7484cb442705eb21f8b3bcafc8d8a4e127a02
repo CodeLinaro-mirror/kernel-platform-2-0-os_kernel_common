@@ -18,6 +18,24 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee509652_f3fb05ff",
+        "filename": "kernel/trace/ring_buffer.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 5178,
+      "author": {
+        "id": 1951687
+      },
+      "writtenOn": "2023-01-20T10:15:11Z",
+      "side": 1,
+      "message": "The reader_lock makes sure that no other reader of that buffer is reading the buffer and is impacted by the reader_page and head_page changes.\n\nThe cpu_buffer-\u003elock protects the buffer against concurrent reader page swap.",
+      "parentUuid": "f2e59e1f_092cf75d",
+      "revId": "c9b7484cb442705eb21f8b3bcafc8d8a4e127a02",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "447b7234_005a0496",
@@ -37,6 +55,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7e13b965_048f4dd0",
+        "filename": "kernel/trace/ring_buffer.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 6079,
+      "author": {
+        "id": 1951687
+      },
+      "writtenOn": "2023-01-20T10:15:11Z",
+      "side": 1,
+      "message": "the `ring_buffer_per_cpu` struct is already using unsigned long for nr_pages.\n\nWhat validation do you think we should do?",
+      "parentUuid": "447b7234_005a0496",
+      "revId": "c9b7484cb442705eb21f8b3bcafc8d8a4e127a02",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5c311fae_16e6d76d",
         "filename": "kernel/trace/ring_buffer.c",
         "patchSetId": 6
@@ -48,6 +84,24 @@
       "writtenOn": "2023-01-13T13:04:34Z",
       "side": 1,
       "message": "Maybe re-write: Iterate the list from buffer_page and increment a counter that will be used to access cpu_pack-\u003epage_va as you did. If you reach the end of the list and your counter !\u003d nr_pages, then raise a BUG.",
+      "revId": "c9b7484cb442705eb21f8b3bcafc8d8a4e127a02",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "473fd492_abef9b82",
+        "filename": "kernel/trace/ring_buffer.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 6089,
+      "author": {
+        "id": 1951687
+      },
+      "writtenOn": "2023-01-20T10:15:11Z",
+      "side": 1,
+      "message": "You mean to validate we have the right number of pages? That number is not supposed to change but actually it makes me think I should:\n\na. make sure the buffer is \"ext\" i.e. the number of pages will never change\nb. maybe take the buffer lock to be sure no one tries to swap reader and head.\n\nWith that we have the guarantee that the nr of pages will be valid and we\u0027ll iterate on all the buffer_page.\n\nhyp_trace is the sole user of those functions and has the right locking in place to prevent any of this... but for correctness.",
+      "parentUuid": "5c311fae_16e6d76d",
       "revId": "c9b7484cb442705eb21f8b3bcafc8d8a4e127a02",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
