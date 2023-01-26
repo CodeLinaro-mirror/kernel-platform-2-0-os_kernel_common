@@ -16,6 +16,24 @@
       "message": "squash with previous patch",
       "revId": "fc43e41f3dffbd2bbb7b8b857b12d8712f7bbcec",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "475f4021_5373280e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1952985
+      },
+      "writtenOn": "2023-01-26T00:32:38Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "0e13d069_5940d266",
+      "revId": "fc43e41f3dffbd2bbb7b8b857b12d8712f7bbcec",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
