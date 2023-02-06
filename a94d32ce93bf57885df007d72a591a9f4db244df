@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4220048f_33556d72",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1874054
+      },
+      "writtenOn": "2023-02-06T07:10:52Z",
+      "side": 1,
+      "message": "As xiaomi internal team has other gki respins on android12-5.10-2022-10 later, so I just cherry-pick in advance, there is no respin request about this one, we shall respin after all patch merged.",
+      "revId": "a94d32ce93bf57885df007d72a591a9f4db244df",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
