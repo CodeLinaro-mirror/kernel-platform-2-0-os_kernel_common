@@ -7,11 +7,14 @@
 #include <linux/kvm_host.h>
 #include <linux/mm.h>
 
+#include <hyp/adjust_pc.h>
+
 #include <kvm/arm_hypercalls.h>
 #include <kvm/arm_psci.h>
 
 #include <asm/kvm_emulate.h>
 
+#include <nvhe/ffa.h>
 #include <nvhe/mem_protect.h>
 #include <nvhe/memory.h>
 #include <nvhe/mm.h>
@@ -29,6 +32,8 @@ unsigned int kvm_arm_vmid_bits;
  * protected KVM is enabled, but for both protected and non-protected VMs.
  */
 static DEFINE_PER_CPU(struct pkvm_hyp_vcpu *, loaded_hyp_vcpu);
+
+void __kvm_hyp_host_forward_smc(struct kvm_cpu_context *guest_ctxt);
 
 /*
  * Set trap register values based on features in ID_AA64PFR0.
@@ -1430,6 +1435,31 @@ static bool pkvm_forward_trng(struct kvm_vcpu *vcpu)
 	}
 
 	return true;
+}
+
+bool kvm_guest_filter_smc64(struct kvm_vcpu *vcpu)
+{
+	struct kvm_cpu_context *ctxt = &vcpu->arch.ctxt;
+
+	// TODO: additional filtering on the SMC calls allowed by the guest
+	__kvm_hyp_host_forward_smc(ctxt);
+	return true;
+}
+
+bool kvm_handle_pvm_smc64(struct kvm_vcpu *vcpu, u64 *exit_code)
+{
+	u32 fn = smccc_get_function(vcpu);
+	struct pkvm_hyp_vcpu *hyp_vcpu;
+	bool handled = false;
+
+	hyp_vcpu = container_of(vcpu, struct pkvm_hyp_vcpu, vcpu);
+	if (is_ffa_call(fn))
+		handled = kvm_guest_ffa_handler(hyp_vcpu);
+	if (!handled)
+		handled = kvm_guest_filter_smc64(vcpu);
+
+	__kvm_skip_instr(vcpu);
+	return handled;
 }
 
 /*
