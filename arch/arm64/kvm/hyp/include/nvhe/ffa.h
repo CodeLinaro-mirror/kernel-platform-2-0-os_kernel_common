@@ -7,12 +7,14 @@
 #define __KVM_HYP_FFA_H
 
 #include <asm/kvm_host.h>
+#include <nvhe/pkvm.h>
 
 #define FFA_MIN_FUNC_NUM 0x60
 #define FFA_MAX_FUNC_NUM 0x7F
 
 int hyp_ffa_init(void *pages);
 bool kvm_host_ffa_handler(struct kvm_cpu_context *host_ctxt);
+bool kvm_guest_ffa_handler(struct pkvm_hyp_vcpu *hyp_vcpu);
 
 static inline bool is_ffa_call(u64 func_id)
 {
