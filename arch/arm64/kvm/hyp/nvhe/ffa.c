@@ -181,7 +181,8 @@ static void ffa_rx_release(struct arm_smccc_res *res)
 }
 
 static void do_ffa_rxtx_map(struct arm_smccc_res *res,
-			    struct kvm_cpu_context *ctxt)
+			    struct kvm_cpu_context *ctxt,
+			    unsigned int vm_handle)
 {
 	DECLARE_REG(phys_addr_t, tx, ctxt, 1);
 	DECLARE_REG(phys_addr_t, rx, ctxt, 2);
@@ -260,7 +261,8 @@ err_unmap:
 }
 
 static void do_ffa_rxtx_unmap(struct arm_smccc_res *res,
-			      struct kvm_cpu_context *ctxt)
+			      struct kvm_cpu_context *ctxt,
+			      unsigned int vm_handle)
 {
 	DECLARE_REG(u32, id, ctxt, 1);
 	int ret = 0;
@@ -361,7 +363,8 @@ static int ffa_host_unshare_ranges(struct ffa_mem_region_addr_range *ranges,
 }
 
 static void do_ffa_mem_frag_tx(struct arm_smccc_res *res,
-			       struct kvm_cpu_context *ctxt)
+			       struct kvm_cpu_context *ctxt,
+			       unsigned int vm_handle)
 {
 	DECLARE_REG(u32, handle_lo, ctxt, 1);
 	DECLARE_REG(u32, handle_hi, ctxt, 2);
@@ -420,7 +423,8 @@ out:
 
 static __always_inline void do_ffa_mem_xfer(const u64 func_id,
 					    struct arm_smccc_res *res,
-					    struct kvm_cpu_context *ctxt)
+					    struct kvm_cpu_context *ctxt,
+					    unsigned int vm_handle)
 {
 	DECLARE_REG(u32, len, ctxt, 1);
 	DECLARE_REG(u32, fraglen, ctxt, 2);
@@ -505,7 +509,8 @@ err_unshare:
 }
 
 static void do_ffa_mem_reclaim(struct arm_smccc_res *res,
-			       struct kvm_cpu_context *ctxt)
+			       struct kvm_cpu_context *ctxt,
+			       unsigned int vm_handle)
 {
 	DECLARE_REG(u32, handle_lo, ctxt, 1);
 	DECLARE_REG(u32, handle_hi, ctxt, 2);
@@ -724,7 +729,8 @@ unlock:
 }
 
 static void do_ffa_part_get(struct arm_smccc_res *res,
-			    struct kvm_cpu_context *ctxt)
+			    struct kvm_cpu_context *ctxt,
+			    u64 vm_handle)
 {
 	DECLARE_REG(u32, uuid0, ctxt, 1);
 	DECLARE_REG(u32, uuid1, ctxt, 2);
@@ -812,30 +818,30 @@ bool kvm_host_ffa_handler(struct kvm_cpu_context *ctxt, u32 func_id)
 		break;
 	/* Memory management */
 	case FFA_FN64_RXTX_MAP:
-		do_ffa_rxtx_map(&res, ctxt);
+		do_ffa_rxtx_map(&res, ctxt, KVM_HOST_HANDLE);
 		break;
 	case FFA_RXTX_UNMAP:
-		do_ffa_rxtx_unmap(&res, ctxt);
+		do_ffa_rxtx_unmap(&res, ctxt, KVM_HOST_HANDLE);
 		break;
 	case FFA_MEM_SHARE:
 	case FFA_FN64_MEM_SHARE:
-		do_ffa_mem_xfer(FFA_FN64_MEM_SHARE, &res, ctxt);
+		do_ffa_mem_xfer(FFA_FN64_MEM_SHARE, &res, ctxt, KVM_HOST_HANDLE);
 		break;
 	case FFA_MEM_RECLAIM:
-		do_ffa_mem_reclaim(&res, ctxt);
+		do_ffa_mem_reclaim(&res, ctxt, KVM_HOST_HANDLE);
 		break;
 	case FFA_MEM_LEND:
 	case FFA_FN64_MEM_LEND:
-		do_ffa_mem_xfer(FFA_FN64_MEM_LEND, &res, ctxt);
+		do_ffa_mem_xfer(FFA_FN64_MEM_LEND, &res, ctxt, KVM_HOST_HANDLE);
 		break;
 	case FFA_MEM_FRAG_TX:
-		do_ffa_mem_frag_tx(&res, ctxt);
+		do_ffa_mem_frag_tx(&res, ctxt, KVM_HOST_HANDLE);
 		break;
 	case FFA_VERSION:
 		do_ffa_version(&res, ctxt);
 		break;
 	case FFA_PARTITION_INFO_GET:
-		do_ffa_part_get(&res, ctxt);
+		do_ffa_part_get(&res, ctxt, KVM_HOST_HANDLE);
 		break;
 	default:
 		if (ffa_call_supported(func_id)) {
