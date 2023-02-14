@@ -33,6 +33,9 @@ struct kvm_host_sve_state {
 /* Maximum number of VMs that can co-exist under pKVM. */
 #define KVM_MAX_PVMS 255
 
+/* VMID of 0 is reserved for host */
+#define KVM_HOST_HANDLE 0
+
 #define HYP_MEMBLOCK_REGIONS 128
 #define PVMFW_INVALID_LOAD_ADDR	(-1)
 
