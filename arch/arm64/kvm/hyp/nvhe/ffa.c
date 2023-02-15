@@ -71,6 +71,7 @@ static struct kvm_ffa_buffers endp_buffers[KVM_MAX_PVMS];
 static u32 hyp_ffa_version;
 static bool has_version_negotiated;
 static hyp_spinlock_t version_lock;
+static unsigned short hyp_buff_refcnt;
 
 static void ffa_to_smccc_error(struct arm_smccc_res *res, u64 ffa_errno)
 {
@@ -108,6 +109,11 @@ static int ffa_map_hyp_buffers(u64 ffa_page_count)
 {
 	struct arm_smccc_res res;
 
+	if (hyp_refcount_get(hyp_buff_refcnt) == USHRT_MAX)
+		return FFA_RET_BUSY;
+	else if (hyp_refcount_inc(hyp_buff_refcnt) > 1)
+		return FFA_RET_SUCCESS;
+
 	arm_smccc_1_1_smc(FFA_FN64_RXTX_MAP,
 			  hyp_virt_to_phys(hyp_buffers.tx),
 			  hyp_virt_to_phys(hyp_buffers.rx),
@@ -121,6 +127,10 @@ static int ffa_map_hyp_buffers(u64 ffa_page_count)
 static int ffa_unmap_hyp_buffers(void)
 {
 	struct arm_smccc_res res;
+
+	/* Unmap the buffers from the spmd only when no one references them */
+	if (hyp_refcount_dec(hyp_buff_refcnt) != 0)
+		return FFA_RET_SUCCESS;
 
 	arm_smccc_1_1_smc(FFA_RXTX_UNMAP,
 			  HOST_FFA_ID,
