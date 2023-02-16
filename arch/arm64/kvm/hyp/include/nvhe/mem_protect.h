@@ -99,6 +99,11 @@ void handle_host_mem_abort(struct kvm_cpu_context *host_ctxt);
 
 int hyp_register_host_perm_fault_handler(int (*cb)(struct kvm_cpu_context *ctxt, u64 esr, u64 addr));
 int hyp_pin_shared_mem(void *from, void *to);
+int hyp_pin_shared_mem_from_guest(struct pkvm_hyp_vcpu *vcpu, void *guest_ipa_from,
+				  void *hyp_va_from, void *hyp_va_to);
+void hyp_unpin_shared_mem_from_guest(struct pkvm_hyp_vcpu *vcpu,
+				     void *hyp_va_from,
+				     void *hyp_va_to);
 void hyp_unpin_shared_mem(void *from, void *to);
 int host_stage2_get_leaf(phys_addr_t phys, kvm_pte_t *ptep, u32 *level);
 int refill_memcache(struct kvm_hyp_memcache *mc, unsigned long min_pages,
