@@ -60,7 +60,9 @@ static struct kvm_ffa_descriptor_buffer ffa_desc_buf;
 struct kvm_ffa_buffers {
 	hyp_spinlock_t lock;
 	void *tx;
+	u64 tx_ipa;
 	void *rx;
+	u64 rx_ipa;
 };
 
 /*
@@ -294,6 +296,9 @@ static void do_ffa_rxtx_map(struct arm_smccc_res *res,
 			ret = FFA_RET_INVALID_PARAMETERS;
 			goto err_unpin_tx;
 		}
+
+		endp_buffers[vm_handle].tx_ipa = tx;
+		endp_buffers[vm_handle].rx_ipa = rx;
 	}
 	endp_buffers[vm_handle].tx = tx_virt;
 	endp_buffers[vm_handle].rx = rx_virt;
@@ -330,6 +335,7 @@ static void do_ffa_rxtx_unmap(struct arm_smccc_res *res,
 {
 	DECLARE_REG(u32, id, ctxt, 1);
 	int ret = 0;
+	struct pkvm_hyp_vcpu *pkvm_vcpu;
 
 	if (id != HOST_FFA_ID) {
 		ret = FFA_RET_INVALID_PARAMETERS;
@@ -342,15 +348,29 @@ static void do_ffa_rxtx_unmap(struct arm_smccc_res *res,
 		goto out_unlock;
 	}
 
-	hyp_unpin_shared_mem(endp_buffers[vm_handle].tx,
-			     endp_buffers[vm_handle].tx + 1);
-	WARN_ON(__pkvm_host_unshare_hyp(hyp_virt_to_pfn(endp_buffers[vm_handle].tx)));
-	endp_buffers[vm_handle].tx = NULL;
+	if (vm_handle == KVM_HOST_HANDLE) {
+		hyp_unpin_shared_mem(endp_buffers[vm_handle].tx,
+				     endp_buffers[vm_handle].tx + 1);
+		WARN_ON(__pkvm_host_unshare_hyp(hyp_virt_to_pfn(endp_buffers[vm_handle].tx)));
 
-	hyp_unpin_shared_mem(endp_buffers[vm_handle].rx,
-			     endp_buffers[vm_handle].rx + 1);
-	WARN_ON(__pkvm_host_unshare_hyp(hyp_virt_to_pfn(endp_buffers[vm_handle].rx)));
+		hyp_unpin_shared_mem(endp_buffers[vm_handle].rx,
+				     endp_buffers[vm_handle].rx + 1);
+		WARN_ON(__pkvm_host_unshare_hyp(hyp_virt_to_pfn(endp_buffers[vm_handle].rx)));
+	} else {
+		pkvm_vcpu = PKVM_VCPU_FROM_CTXT(ctxt);
+		hyp_unpin_shared_mem_from_guest(pkvm_vcpu,
+						endp_buffers[vm_handle].tx,
+						endp_buffers[vm_handle].tx + 1);
+		WARN_ON(__pkvm_guest_unshare_hyp(pkvm_vcpu, endp_buffers[vm_handle].tx_ipa));
+
+		hyp_unpin_shared_mem_from_guest(pkvm_vcpu,
+						endp_buffers[vm_handle].rx,
+						endp_buffers[vm_handle].rx + 1);
+		WARN_ON(__pkvm_guest_unshare_hyp(pkvm_vcpu, endp_buffers[vm_handle].rx_ipa));
+	}
+
 	endp_buffers[vm_handle].rx = NULL;
+	endp_buffers[vm_handle].tx = NULL;
 
 	ffa_unmap_hyp_buffers();
 
@@ -954,6 +974,9 @@ bool kvm_guest_ffa_handler(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code)
 	/* Memory management */
 	case FFA_FN64_RXTX_MAP:
 		do_ffa_rxtx_map(&res, ctxt, vm_handle);
+		break;
+	case FFA_RXTX_UNMAP:
+		do_ffa_rxtx_unmap(&res, ctxt, vm_handle);
 		break;
 	default:
 		if (ffa_call_supported(func_id)) {
