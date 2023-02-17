@@ -69,6 +69,23 @@
       "parentUuid": "101fae32_179f38e1",
       "revId": "128f0498664eab32daa46261744b00fa4ef781c7",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea7d8c90_bd04b80a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2023-02-17T12:48:45Z",
+      "side": 1,
+      "message": "I am quite hesitant to drop features from a release branch. In particular, this change is also part of android13-5.10 already. Release branches are depended on and the reason for the revert seems not to be because something is broken.\n\nCan you clarify?",
+      "revId": "128f0498664eab32daa46261744b00fa4ef781c7",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
