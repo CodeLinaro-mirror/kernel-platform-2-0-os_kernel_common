@@ -998,6 +998,10 @@ struct pkvm_mem_transition {
 			struct {
 				u64	completer_addr;
 			} hyp;
+
+			struct {
+				u64	completer_addr;
+			} ffa;
 		};
 
 		const enum kvm_pgtable_prot		prot;
@@ -1771,6 +1775,7 @@ static int __do_share(struct pkvm_mem_transition *tx,
 		 * We're not responsible for any secure page-tables, so there's
 		 * nothing to do here.
 		 */
+		tx->completer.ffa.completer_addr = checked_tx->completer_addr;
 		ret = 0;
 		break;
 	case PKVM_ID_GUEST:
@@ -2144,6 +2149,62 @@ int __pkvm_guest_unshare_hyp(struct pkvm_hyp_vcpu *vcpu, u64 ipa)
 	ret = do_unshare(&unshare, &nr_unshared);
 
 	hyp_unlock_component();
+	guest_unlock_component(vm);
+
+	return ret;
+}
+
+int __pkvm_guest_share_ffa(struct pkvm_hyp_vcpu *vcpu, u64 ipa, phys_addr_t *out_addr)
+{
+	int ret;
+	struct pkvm_hyp_vm *vm = pkvm_hyp_vcpu_to_hyp_vm(vcpu);
+	struct pkvm_mem_transition share = {
+		.nr_pages	= 1,
+		.initiator	= {
+			.id	= PKVM_ID_GUEST,
+			.addr	= ipa,
+			.guest  = {
+				.hyp_vm = vm,
+				.mc	= &vcpu->vcpu.arch.stage2_mc,
+			},
+		},
+		.completer	= {
+			.id	= PKVM_ID_FFA,
+		},
+	};
+	u64 nr_unshared;
+
+	guest_lock_component(vm);
+	ret = do_share(&share, &nr_unshared);
+	if (!ret && out_addr)
+		*out_addr = share.completer.ffa.completer_addr;
+	guest_unlock_component(vm);
+
+	return ret;
+}
+
+int __pkvm_guest_unshare_ffa(struct pkvm_hyp_vcpu *vcpu, u64 ipa)
+{
+	int ret;
+	struct pkvm_hyp_vm *vm = pkvm_hyp_vcpu_to_hyp_vm(vcpu);
+	struct pkvm_mem_transition unshare = {
+		.nr_pages	= 1,
+		.initiator	= {
+			.id	= PKVM_ID_GUEST,
+			.addr	= ipa,
+			.guest  = {
+				.hyp_vm = vm,
+				.mc	= &vcpu->vcpu.arch.stage2_mc,
+			},
+		},
+		.completer	= {
+			.id	= PKVM_ID_FFA,
+		},
+	};
+	u64 nr_unshared;
+
+	guest_lock_component(vm);
+	ret = do_unshare(&unshare, &nr_unshared);
 	guest_unlock_component(vm);
 
 	return ret;
