@@ -13,6 +13,7 @@
 #include <linux/kfence.h>
 #include <linux/signal.h>
 #include <linux/mm.h>
+#include <linux/mmzone.h>
 #include <linux/hardirq.h>
 #include <linux/init.h>
 #include <linux/kasan.h>
@@ -973,6 +974,8 @@ struct page *alloc_zeroed_user_highpage_movable(struct vm_area_struct *vma,
 
 void tag_clear_highpage(struct page *page)
 {
+	/* Tag storage pages cannot be tagged. */
+	WARN_ON_ONCE(is_migrate_metadata_page(page));
 	mte_zero_clear_page_tags(page_address(page));
 	set_page_mte_tagged(page);
 }

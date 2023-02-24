@@ -82,6 +82,7 @@
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
+#include <asm/memory_metadata.h>
 #include "internal.h"
 #include "shuffle.h"
 #include "page_reporting.h"
@@ -2658,6 +2659,17 @@ static inline struct page *__rmqueue_cma_fallback(struct zone *zone,
 					unsigned int order) { return NULL; }
 #endif
 
+#ifdef CONFIG_MEMORY_METADATA
+static __always_inline struct page *__rmqueue_metadata_fallback(struct zone *zone,
+					unsigned int order)
+{
+	return __rmqueue_smallest(zone, order, MIGRATE_METADATA);
+}
+#else
+static inline struct page *__rmqueue_metadata_fallback(struct zone *zone,
+					unsigned int order) { return NULL; }
+#endif
+
 /*
  * Move the free pages in a range to the freelist tail of the requested type.
  * Note that start_page and end_pages are not aligned on a pageblock
@@ -3146,6 +3158,15 @@ __rmqueue(struct zone *zone, unsigned int order, int migratetype,
 
 retry:
 	page = __rmqueue_smallest(zone, order, migratetype);
+
+	/*
+	 * Allocate data pages from MIGRATE_METADATA only if the regular
+	 * allocation path fails to increase the chance that the
+	 * metadata page is available when the associated data page
+	 * needs it.
+	 */
+	if (!page && (alloc_flags & ALLOC_FROM_METADATA))
+		page = __rmqueue_metadata_fallback(zone, order);
 
 	if (unlikely(!page) && __rmqueue_fallback(zone, order, migratetype,
 						  alloc_flags))
@@ -4258,6 +4279,13 @@ static inline unsigned int gfp_to_alloc_flags_fast(gfp_t gfp_mask,
 	if (gfp_migratetype(gfp_mask) == MIGRATE_MOVABLE && gfp_mask & __GFP_CMA)
 		alloc_flags |= ALLOC_CMA;
 #endif
+#ifdef CONFIG_MEMORY_METADATA
+	if (metadata_storage_enabled() &&
+	    gfp_migratetype(gfp_mask) == MIGRATE_MOVABLE &&
+	    alloc_can_use_metadata_pages(gfp_mask))
+		alloc_flags |= ALLOC_FROM_METADATA;
+#endif
+
 	return alloc_flags;
 }
 
