@@ -15,6 +15,8 @@
 #![feature(allocator_api)]
 #![feature(coerce_unsized)]
 #![feature(dispatch_from_dyn)]
+#![feature(generic_associated_types)]
+#![feature(new_uninit)]
 #![feature(receiver_trait)]
 #![feature(unsize)]
 
