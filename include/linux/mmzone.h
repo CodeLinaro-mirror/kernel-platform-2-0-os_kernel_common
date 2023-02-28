@@ -167,6 +167,7 @@ enum zone_stat_item {
 	NR_BOUNCE,
 	NR_ZSPAGES,		/* allocated in zsmalloc */
 	NR_FREE_CMA_PAGES,
+	NR_FREE_METADATA_PAGES,
 	NR_VM_ZONE_STAT_ITEMS };
 
 enum node_stat_item {
@@ -923,6 +924,9 @@ struct zone {
 #ifdef CONFIG_CMA
 	unsigned long		cma_pages;
 #endif
+#ifdef CONFIG_MEMORY_METADATA
+	unsigned long 		metadata_pages;
+#endif
 
 	const char		*name;
 
@@ -1030,6 +1034,15 @@ static inline unsigned long zone_cma_pages(struct zone *zone)
 {
 #ifdef CONFIG_CMA
 	return zone->cma_pages;
+#else
+	return 0;
+#endif
+}
+
+static inline unsigned long zone_metadata_pages(struct zone *zone)
+{
+#ifdef CONFIG_MEMORY_METADATA
+	return zone->metadata_pages;
 #else
 	return 0;
 #endif

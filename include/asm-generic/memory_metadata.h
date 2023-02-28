@@ -4,6 +4,8 @@
 
 #include <linux/gfp.h>
 
+extern unsigned long totalmetadata_pages;
+
 #ifndef CONFIG_MEMORY_METADATA
 static inline bool metadata_storage_enabled(void)
 {

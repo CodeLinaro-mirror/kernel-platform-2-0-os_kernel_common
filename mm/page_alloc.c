@@ -271,6 +271,7 @@ atomic_long_t _totalram_pages __read_mostly;
 EXPORT_SYMBOL(_totalram_pages);
 unsigned long totalreserve_pages __read_mostly;
 unsigned long totalcma_pages __read_mostly;
+unsigned long totalmetadata_pages __read_mostly;
 
 int percpu_pagelist_high_fraction;
 gfp_t gfp_allowed_mask __read_mostly = GFP_BOOT_MASK;
@@ -3237,9 +3238,14 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 		 */
 		list_add_tail(&page->pcp_list, list);
 		allocated++;
-		if (is_migrate_cma(get_pcppage_migratetype(page)))
+		if (is_migrate_cma(get_pcppage_migratetype(page))) {
 			__mod_zone_page_state(zone, NR_FREE_CMA_PAGES,
 					      -(1 << order));
+		}
+		if (is_migrate_metadata(get_pcppage_migratetype(page))) {
+			__mod_zone_page_state(zone, NR_FREE_METADATA_PAGES,
+					      -(1 << order));
+		}
 	}
 
 	/*
@@ -4071,6 +4077,10 @@ static inline long __zone_watermark_unusable_free(struct zone *z,
 	if (!(alloc_flags & ALLOC_CMA))
 		unusable_free += zone_page_state(z, NR_FREE_CMA_PAGES);
 #endif
+#ifdef CONFIG_MEMORY_METADATA
+	if (!(alloc_flags & ALLOC_FROM_METADATA))
+		unusable_free += zone_page_state(z, NR_FREE_METADATA_PAGES);
+#endif
 
 	return unusable_free;
 }
@@ -4144,6 +4154,12 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 #ifdef CONFIG_CMA
 		if ((alloc_flags & ALLOC_CMA) &&
 		    !free_area_empty(area, MIGRATE_CMA)) {
+			return true;
+		}
+#endif
+#ifdef CONFIG_MEMORY_METADATA
+		if ((alloc_flags & ALLOC_FROM_METADATA) &&
+		    !free_area_empty(area, MIGRATE_METADATA)) {
 			return true;
 		}
 #endif

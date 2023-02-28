@@ -1178,6 +1178,7 @@ const char * const vmstat_text[] = {
 	"nr_bounce",
 	"nr_zspages",
 	"nr_free_cma",
+	"nr_free_metadata",
 
 	/* enum numa_stat_item counters */
 #ifdef CONFIG_NUMA
@@ -1686,7 +1687,8 @@ static void zoneinfo_show_print(struct seq_file *m, pg_data_t *pgdat,
 		   "\n        spanned  %lu"
 		   "\n        present  %lu"
 		   "\n        managed  %lu"
-		   "\n        cma      %lu",
+		   "\n        cma      %lu"
+		   "\n        metadata %lu",
 		   zone_page_state(zone, NR_FREE_PAGES),
 		   zone->watermark_boost,
 		   min_wmark_pages(zone),
@@ -1695,7 +1697,8 @@ static void zoneinfo_show_print(struct seq_file *m, pg_data_t *pgdat,
 		   zone->spanned_pages,
 		   zone->present_pages,
 		   zone_managed_pages(zone),
-		   zone_cma_pages(zone));
+		   zone_cma_pages(zone),
+		   zone_metadata_pages(zone));
 
 	seq_printf(m,
 		   "\n        protection: (%ld",
@@ -1900,6 +1903,7 @@ int vmstat_refresh(struct ctl_table *table, int write,
 		switch (i) {
 		case NR_ZONE_WRITE_PENDING:
 		case NR_FREE_CMA_PAGES:
+		case NR_FREE_METADATA_PAGES:
 			continue;
 		}
 		val = atomic_long_read(&vm_zone_stat[i]);
