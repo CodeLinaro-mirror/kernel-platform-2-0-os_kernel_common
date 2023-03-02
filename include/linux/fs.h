@@ -692,11 +692,21 @@ struct inode {
 #endif
 
 #ifdef CONFIG_FS_ENCRYPTION
+#ifdef __GENKSYMS__
+	/* fscrypt structs are not part of KMI */
+	void			*i_crypt_info;
+#else
 	struct fscrypt_info	*i_crypt_info;
+#endif
 #endif
 
 #ifdef CONFIG_FS_VERITY
+#ifdef __GENKSYMS__
+	/* fsverity structs are not part of KMI */
+	void			*i_verity_info;
+#else
 	struct fsverity_info	*i_verity_info;
+#endif
 #endif
 
 	void			*i_private; /* fs or device private pointer */
@@ -1477,11 +1487,22 @@ struct super_block {
 #endif
 	const struct xattr_handler **s_xattr;
 #ifdef CONFIG_FS_ENCRYPTION
+#ifdef __GENKSYMS__
+	/* fscrypt structs are not part of KMI */
+	void *s_cop;
+	void *s_master_keys;
+#else
 	const struct fscrypt_operations	*s_cop;
 	struct fscrypt_keyring	*s_master_keys; /* master crypto keys in use */
 #endif
+#endif
 #ifdef CONFIG_FS_VERITY
+#ifdef __GENKSYMS__
+	/* fsverity structs are not part of KMI */
+	void *s_vop;
+#else
 	const struct fsverity_operations *s_vop;
+#endif
 #endif
 #if IS_ENABLED(CONFIG_UNICODE)
 	struct unicode_map *s_encoding;
