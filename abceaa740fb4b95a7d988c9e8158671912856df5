@@ -52,6 +52,24 @@
       "parentUuid": "15b78274_aa7055ae",
       "revId": "abceaa740fb4b95a7d988c9e8158671912856df5",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "affbef80_a513bc9a",
+        "filename": "include/linux/fs.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1494,
+      "author": {
+        "id": 1137063
+      },
+      "writtenOn": "2023-03-03T01:39:31Z",
+      "side": 1,
+      "message": "Vendor modules cannot use these.  (BTW, I\u0027ve been explaining this every time one of these KMI \"issues\" has arisen over the past several years, so this shouldn\u0027t be news.)  3 of these 5 structures are fully internal to fs/crypto/ and fs/verity/.  The other 2 are the operations structs that are also used by filesystems; they would be needed by loadable filesystem modules that use fs/crypto/ or fs/verity/, but we aren\u0027t supporting such modules and this is now enforced by https://r.android.com/2442063 (\"abi: deny exporting fscrypt and fsverity symbols\").",
+      "parentUuid": "8d25526e_4fb2cfad",
+      "revId": "abceaa740fb4b95a7d988c9e8158671912856df5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
