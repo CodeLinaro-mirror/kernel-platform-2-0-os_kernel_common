@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e4c5ef9_cd3f8014",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-03-03T17:39:21Z",
+      "side": 1,
+      "message": "Please abandon this patch and cherry-pick aosp/2469141 once it lands so the Change-Ids match.",
+      "revId": "4074e704118b0b682cb70fe7782b9c056454ecdf",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
