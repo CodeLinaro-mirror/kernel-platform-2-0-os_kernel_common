@@ -16,6 +16,24 @@
       "message": "Looks correct to me, you want to keep the crc stuff out of the way, and this should be fine.\n\nBut, to make it simpler, why not do it for the whole structure itself?  Just have 2 of them, one with the void * that you use for __GENKSYMS__ and then the \"real\" one for when it is not defined?  Might be easier to read and maintain over time.",
       "revId": "1b30f45dd5faa7f8c5d5c094a44c724fa2fb2d16",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26d1e09b_efd3a375",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-03-03T08:59:38Z",
+      "side": 1,
+      "message": "oh wait, nevermind, that wouldn\u0027t work for this structure.  This is fine as-is.",
+      "parentUuid": "b8c0501a_a83cc10f",
+      "revId": "1b30f45dd5faa7f8c5d5c094a44c724fa2fb2d16",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
