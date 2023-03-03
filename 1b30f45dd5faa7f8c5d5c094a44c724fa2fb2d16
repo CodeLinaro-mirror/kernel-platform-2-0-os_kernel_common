@@ -34,6 +34,23 @@
       "parentUuid": "b8c0501a_a83cc10f",
       "revId": "1b30f45dd5faa7f8c5d5c094a44c724fa2fb2d16",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d71b4a59_2646786f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2023-03-03T10:16:51Z",
+      "side": 1,
+      "message": "Looks good to me, blocking now to avoid accidental submission before the KMI break window at which time my -2 can be removed.",
+      "revId": "1b30f45dd5faa7f8c5d5c094a44c724fa2fb2d16",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
