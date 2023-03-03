@@ -34,6 +34,24 @@
       "parentUuid": "76d9809b_aaebc280",
       "revId": "abceaa740fb4b95a7d988c9e8158671912856df5",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8d25526e_4fb2cfad",
+        "filename": "include/linux/fs.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1494,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-03-03T01:10:25Z",
+      "side": 1,
+      "message": "It worked because it essentially locked the struct def for CRC and updated the XML for the struct change.\n\nWhen those struct change, the ABI tools will flag the changes as an KMI break and we we can update the ABI definition - as long as we can be _very_ sure that no vendor module is using those structs (which they can see via these structs). Are you confident that no partner would ever use them? If we can be confident, we can update the ABI when/if they change.\n\nI think we\u0027d want to make sure functions that would use them are never added to the KMI (this goes back to our previous discussion about adding fscrypt functions to `build/kernel/abi/symbols.deny`).",
+      "parentUuid": "15b78274_aa7055ae",
+      "revId": "abceaa740fb4b95a7d988c9e8158671912856df5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
