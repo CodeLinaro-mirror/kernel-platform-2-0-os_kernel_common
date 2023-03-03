@@ -16,6 +16,24 @@
       "message": "As Matthias mentioned in the chat, this will suppress CRC mismatches, however the ABI tools are looking at the `!__GENKSYMS__` and still including them in the KMI so changes to `struct fscrypt_keyring` will still trigger ABI failures in TH.\n\nTo allow post-freeze changes, you might want to add some padding:\n- `ANDROID_BACKPORT_RESERVED()` for future backports\n- `ANDRIOID_VENDOR_DATA()` a/o `ANDROID_OEM_DATA()` for partner use\n- `ANDRIOD_KABI_RESERVE()` for LTS update use",
       "revId": "abceaa740fb4b95a7d988c9e8158671912856df5",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15b78274_aa7055ae",
+        "filename": "include/linux/fs.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1494,
+      "author": {
+        "id": 1137063
+      },
+      "writtenOn": "2023-03-03T00:47:51Z",
+      "side": 1,
+      "message": "Why did https://r.android.com/2333043 (\"ANDROID: abi preservation for fscrypt change in 5.10.154\") work, then?  Because it updated the ABI XML file?  Why can\u0027t we just update the ABI XML file like that when something is changed?",
+      "parentUuid": "76d9809b_aaebc280",
+      "revId": "abceaa740fb4b95a7d988c9e8158671912856df5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
