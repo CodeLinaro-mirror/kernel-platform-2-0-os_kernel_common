@@ -7724,7 +7724,7 @@ static void __init calculate_node_totalpages(struct pglist_data *pgdat,
 						unsigned long node_start_pfn,
 						unsigned long node_end_pfn)
 {
-	unsigned long realtotalpages = 0, totalpages = 0;
+	unsigned long totalpages = 0;
 	enum zone_type i;
 
 	for (i = 0; i < MAX_NR_ZONES; i++) {
@@ -7755,13 +7755,12 @@ static void __init calculate_node_totalpages(struct pglist_data *pgdat,
 		zone->present_early_pages = real_size;
 #endif
 
-		totalpages += size;
-		realtotalpages += real_size;
+		totalpages += real_size;
 	}
 
-	pgdat->node_spanned_pages = totalpages;
-	pgdat->node_present_pages = realtotalpages;
-	pr_debug("On node %d totalpages: %lu\n", pgdat->node_id, realtotalpages);
+	pgdat->node_spanned_pages = node_end_pfn - node_start_pfn;
+	pgdat->node_present_pages = totalpages;
+	pr_debug("On node %d totalpages: %lu\n", pgdat->node_id, totalpages);
 }
 
 #ifndef CONFIG_SPARSEMEM
