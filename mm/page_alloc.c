@@ -7730,8 +7730,7 @@ static void __init calculate_node_totalpages(struct pglist_data *pgdat,
 	for (i = 0; i < MAX_NR_ZONES; i++) {
 		struct zone *zone = pgdat->node_zones + i;
 		unsigned long zone_start_pfn, zone_end_pfn;
-		unsigned long spanned, absent;
-		unsigned long size, real_size;
+		unsigned long spanned, absent, size;
 
 		spanned = zone_spanned_pages_in_node(pgdat->node_id, i,
 						     node_start_pfn,
@@ -7742,20 +7741,21 @@ static void __init calculate_node_totalpages(struct pglist_data *pgdat,
 						   node_start_pfn,
 						   node_end_pfn);
 
-		size = spanned;
-		real_size = size - absent;
+		size = spanned - absent;
 
-		if (size)
+		if (size) {
 			zone->zone_start_pfn = zone_start_pfn;
-		else
+		} else {
+			spanned = 0;
 			zone->zone_start_pfn = 0;
-		zone->spanned_pages = size;
-		zone->present_pages = real_size;
+		}
+		zone->spanned_pages = spanned;
+		zone->present_pages = size;
 #if defined(CONFIG_MEMORY_HOTPLUG)
-		zone->present_early_pages = real_size;
+		zone->present_early_pages = size;
 #endif
 
-		totalpages += real_size;
+		totalpages += size;
 	}
 
 	pgdat->node_spanned_pages = node_end_pfn - node_start_pfn;
