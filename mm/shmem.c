@@ -43,6 +43,9 @@
 #include <linux/mm_inline.h>
 #include "swap.h"
 
+#undef CREATE_TRACE_POINTS
+#include <trace/hooks/mm.h>
+
 static struct vfsmount *shm_mnt __ro_after_init;
 
 #ifdef CONFIG_SHMEM
@@ -1764,7 +1767,11 @@ static struct folio *shmem_alloc_folio(gfp_t gfp, int order,
 {
 	struct mempolicy *mpol;
 	pgoff_t ilx;
-	struct folio *folio;
+	struct folio *folio = NULL;
+
+	trace_android_rvh_shmem_get_folio(info, &folio);
+	if (folio)
+		return folio;
 
 	mpol = shmem_get_pgoff_policy(info, index, order, &ilx);
 	folio = folio_alloc_mpol(gfp, order, mpol, ilx, numa_node_id());
