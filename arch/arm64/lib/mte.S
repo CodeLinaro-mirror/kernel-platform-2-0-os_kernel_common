@@ -119,7 +119,7 @@ SYM_FUNC_START(mte_copy_tags_to_user)
 	cbz	x2, 2f
 1:
 	ldg	x4, [x1]
-	ubfx	x4, x4, #MTE_TAG_SHIFT, #MTE_TAG_SIZE
+	ubfx	x4, x4, #MTE_TAG_SHIFT, #MTE_TAG_SIZE_BITS
 USER(2f, sttrb	w4, [x0])
 	add	x0, x0, #1
 	add	x1, x1, #MTE_GRANULE_SIZE
@@ -134,9 +134,9 @@ SYM_FUNC_END(mte_copy_tags_to_user)
 /*
  * Save the tags in a page
  *   x0 - page address
- *   x1 - tag storage, MTE_PAGE_TAG_STORAGE bytes
+ *   x1 - memory buffer, MTE_PAGE_TAG_STORAGE_SIZE bytes
  */
-SYM_FUNC_START(mte_save_page_tags)
+SYM_FUNC_START(mte_save_page_tags_to_mem)
 	multitag_transfer_size x7, x5
 1:
 	mov	x2, #0
@@ -153,14 +153,14 @@ SYM_FUNC_START(mte_save_page_tags)
 	b.ne	1b
 
 	ret
-SYM_FUNC_END(mte_save_page_tags)
+SYM_FUNC_END(mte_save_page_tags_to_mem)
 
 /*
  * Restore the tags in a page
  *   x0 - page address
- *   x1 - tag storage, MTE_PAGE_TAG_STORAGE bytes
+ *   x1 - memory buffer, MTE_PAGE_TAG_STORAGE_SIZE bytes
  */
-SYM_FUNC_START(mte_restore_page_tags)
+SYM_FUNC_START(mte_restore_page_tags_from_mem)
 	multitag_transfer_size x7, x5
 1:
 	ldr	x2, [x1], #8
@@ -174,4 +174,4 @@ SYM_FUNC_START(mte_restore_page_tags)
 	b.ne	1b
 
 	ret
-SYM_FUNC_END(mte_restore_page_tags)
+SYM_FUNC_END(mte_restore_page_tags_from_mem)
