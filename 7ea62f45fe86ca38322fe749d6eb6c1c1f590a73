@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11bccda9_a9af51f2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-03-23T08:27:48Z",
+      "side": 1,
+      "message": "Please submit all f2fs patches upstream first.",
+      "revId": "7ea62f45fe86ca38322fe749d6eb6c1c1f590a73",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
