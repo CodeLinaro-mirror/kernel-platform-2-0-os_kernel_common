@@ -5576,6 +5576,14 @@ unsigned long __alloc_pages_bulk(gfp_t gfp, int preferred_nid,
 		goto out;
 	gfp = alloc_gfp;
 
+	/*
+	 * pcp lists puts MIGRATE_METADATA on the MIGRATE_MOVABLE list, don't
+	 * use pcp if allocating metadata pages is not allowed.
+	 */
+	if (metadata_storage_enabled() && ac.migratetype == MIGRATE_MOVABLE &&
+	    !(alloc_flags & ALLOC_FROM_METADATA))
+		goto failed;
+
 	/* Find an allowed local zone that meets the low watermark. */
 	for_each_zone_zonelist_nodemask(zone, z, ac.zonelist, ac.highest_zoneidx, ac.nodemask) {
 		unsigned long mark;
