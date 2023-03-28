@@ -26,6 +26,7 @@
 #include <linux/spinlock.h>
 #include <linux/sched/signal.h>
 #include <linux/wait.h>
+#include <linux/uio.h>
 
 __noreturn void rust_helper_BUG(void)
 {
@@ -50,6 +51,18 @@ unsigned long rust_helper_clear_user(void __user *to, unsigned long n)
 	return clear_user(to, n);
 }
 EXPORT_SYMBOL_GPL(rust_helper_clear_user);
+
+size_t rust_helper_copy_from_iter(void *addr, size_t bytes, struct iov_iter *i)
+{
+	return copy_from_iter(addr, bytes, i);
+}
+EXPORT_SYMBOL_GPL(rust_helper_copy_from_iter);
+
+size_t rust_helper_copy_to_iter(const void *addr, size_t bytes, struct iov_iter *i)
+{
+	return copy_to_iter(addr, bytes, i);
+}
+EXPORT_SYMBOL_GPL(rust_helper_copy_to_iter);
 
 void rust_helper_mutex_lock(struct mutex *lock)
 {
