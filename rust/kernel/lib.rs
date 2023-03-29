@@ -58,6 +58,8 @@ pub mod task;
 pub mod types;
 pub mod user_ptr;
 
+pub mod rbtree;
+
 #[doc(hidden)]
 pub use bindings;
 pub use macros;
