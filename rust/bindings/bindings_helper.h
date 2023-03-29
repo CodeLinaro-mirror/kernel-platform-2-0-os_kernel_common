@@ -12,6 +12,8 @@
 #include <linux/sched.h>
 #include <linux/fs.h>
 #include <linux/fdtable.h>
+#include <linux/miscdevice.h>
+#include <linux/mm.h>
 #include <linux/uio.h>
 #include <linux/security.h>
 #include <linux/poll.h>

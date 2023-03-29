@@ -25,6 +25,7 @@
 #include <linux/gfp.h>
 #include <linux/highmem.h>
 #include <linux/mutex.h>
+#include <linux/miscdevice.h>
 #include <linux/fs.h>
 #include <linux/spinlock.h>
 #include <linux/sched/signal.h>
@@ -196,6 +197,12 @@ struct file *rust_helper_get_file(struct file *f)
 	return get_file(f);
 }
 EXPORT_SYMBOL_GPL(rust_helper_get_file);
+
+const char *rust_helper_dev_name(const struct device *dev)
+{
+	return dev_name(dev);
+}
+EXPORT_SYMBOL_GPL(rust_helper_dev_name);
 
 /*
  * We use `bindgen`'s `--size_t-is-usize` option to bind the C `size_t` type
