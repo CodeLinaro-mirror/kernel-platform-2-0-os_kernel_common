@@ -25,6 +25,7 @@
 #include <linux/gfp.h>
 #include <linux/highmem.h>
 #include <linux/mutex.h>
+#include <linux/fs.h>
 #include <linux/spinlock.h>
 #include <linux/sched/signal.h>
 #include <linux/wait.h>
@@ -189,6 +190,12 @@ void rust_helper_put_cred(const struct cred *cred) {
 	put_cred(cred);
 }
 EXPORT_SYMBOL_GPL(rust_helper_put_cred);
+
+struct file *rust_helper_get_file(struct file *f)
+{
+	return get_file(f);
+}
+EXPORT_SYMBOL_GPL(rust_helper_get_file);
 
 /*
  * We use `bindgen`'s `--size_t-is-usize` option to bind the C `size_t` type

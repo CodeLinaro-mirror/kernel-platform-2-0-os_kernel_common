@@ -171,4 +171,14 @@ impl CondVar {
     pub fn notify_all(&self) {
         self.notify(0, 0);
     }
+
+    /// Wakes all waiters up. If they were added by `epoll`, they are also removed from the list of
+    /// waiters. This is useful when cleaning up a condition variable that may be waited on by
+    /// threads that use `epoll`.
+    pub fn free_waiters(&self) {
+        // TODO: `bindgen` is not generating this constant. Figure out why.
+        const POLLFREE: u32 = 0x4000;
+
+        self.notify(1, bindings::POLLHUP | POLLFREE);
+    }
 }
