@@ -260,6 +260,11 @@ impl<T: ?Sized> Arc<T> {
         // reference count held then will be owned by the new `Arc` object.
         unsafe { Self::from_inner(NonNull::new_unchecked(ptr)) }
     }
+
+    /// Compare whether two Arcs point at the same object.
+    pub fn ptr_eq(&self, other: &Arc<T>) -> bool {
+        core::ptr::eq(self.ptr.as_ptr(), other.ptr.as_ptr())
+    }
 }
 
 impl<T: 'static> ForeignOwnable for Arc<T> {
@@ -295,6 +300,12 @@ impl<T: ?Sized> Deref for Arc<T> {
         // SAFETY: By the type invariant, there is necessarily a reference to the object, so it is
         // safe to dereference it.
         unsafe { &self.ptr.as_ref().data }
+    }
+}
+
+impl<T: ?Sized> AsRef<T> for Arc<T> {
+    fn as_ref(&self) -> &T {
+        self.deref()
     }
 }
 
