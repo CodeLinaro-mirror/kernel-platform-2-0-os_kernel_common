@@ -1145,6 +1145,7 @@ struct kvm_ppc_resize_hpt {
 #define KVM_CAP_DIRTY_LOG_RING_ACQ_REL 223
 #endif
 #define KVM_CAP_ARM_PROTECTED_VM 0xffbadab1
+#define KVM_CAP_GET_CUR_CPUFREQ 512
 
 #ifdef KVM_CAP_IRQ_ROUTING
 
