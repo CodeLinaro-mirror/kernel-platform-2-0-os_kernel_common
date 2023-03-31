@@ -966,7 +966,7 @@ struct page *alloc_zeroed_user_highpage_movable(struct vm_area_struct *vma,
 	 * separate DC ZVA and STGM.
 	 */
 	if (vma->vm_flags & VM_MTE)
-		flags |= __GFP_ZEROTAGS;
+		flags |= __GFP_TAGGED;
 
 	return alloc_page_vma(flags, vma, vaddr);
 }
