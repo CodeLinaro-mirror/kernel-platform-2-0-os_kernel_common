@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08fb0a47_eae8e1a0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1572468
+      },
+      "writtenOn": "2023-04-04T08:12:08Z",
+      "side": 1,
+      "message": "4c532321bf90288dae6b07a3f52279bfde842a80 doesn\u0027t exist in my upstream checkout",
+      "revId": "c8a8aac28a4456cb01c0fb273886319bea18845b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
