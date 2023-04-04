@@ -693,12 +693,14 @@ EXPORT_SYMBOL(fscrypt_has_permitted_context);
 const union fscrypt_policy *fscrypt_policy_to_inherit(struct inode *dir)
 {
 	int err;
+	struct fscrypt_info *ci;
 
 	if (IS_ENCRYPTED(dir)) {
 		err = fscrypt_require_key(dir);
 		if (err)
 			return ERR_PTR(err);
-		return &dir->i_crypt_info->ci_policy;
+		ci = dir->i_crypt_info;
+		return &ci->ci_policy;
 	}
 
 	return fscrypt_get_dummy_policy(dir->i_sb);

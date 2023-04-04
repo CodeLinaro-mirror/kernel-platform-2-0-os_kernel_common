@@ -299,8 +299,8 @@ bool __fscrypt_fname_encrypted_size(const union fscrypt_policy *policy,
 bool fscrypt_fname_encrypted_size(const struct inode *inode, u32 orig_len,
 				  u32 max_len, u32 *encrypted_len_ret)
 {
-	return __fscrypt_fname_encrypted_size(&inode->i_crypt_info->ci_policy,
-					      orig_len, max_len,
+	const struct fscrypt_info *ci = inode->i_crypt_info;
+	return __fscrypt_fname_encrypted_size(&ci->ci_policy, orig_len, max_len,
 					      encrypted_len_ret);
 }
 EXPORT_SYMBOL_GPL(fscrypt_fname_encrypted_size);

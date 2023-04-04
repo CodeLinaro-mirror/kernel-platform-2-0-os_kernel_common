@@ -82,6 +82,7 @@ void fscrypt_put_master_key(struct fscrypt_master_key *mk)
 void fscrypt_put_master_key_activeref(struct super_block *sb,
 				      struct fscrypt_master_key *mk)
 {
+	struct fscrypt_keyring *keyring;
 	size_t i;
 
 	if (!refcount_dec_and_test(&mk->mk_active_refs))
@@ -92,9 +93,10 @@ void fscrypt_put_master_key_activeref(struct super_block *sb,
 	 * destroying any subkeys embedded in it.
 	 */
 
-	spin_lock(&sb->s_master_keys->lock);
+	keyring = sb->s_master_keys;
+	spin_lock(&keyring->lock);
 	hlist_del_rcu(&mk->mk_node);
-	spin_unlock(&sb->s_master_keys->lock);
+	spin_unlock(&keyring->lock);
 
 	/*
 	 * ->mk_active_refs == 0 implies that ->mk_secret is not present and
