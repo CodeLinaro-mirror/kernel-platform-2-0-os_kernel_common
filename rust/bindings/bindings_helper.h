@@ -12,6 +12,7 @@
 #include <linux/sched.h>
 #include <linux/fs.h>
 #include <linux/fdtable.h>
+#include <linux/jiffies.h>
 #include <linux/miscdevice.h>
 #include <linux/mm.h>
 #include <linux/uio.h>
