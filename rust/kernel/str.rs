@@ -540,6 +540,24 @@ pub struct CString {
 }
 
 impl CString {
+    /// Clones the provided string into a new buffer.
+    pub fn try_from_cstr(cstr: &CStr) -> Result<CString, Error> {
+        let len = cstr.len_with_nul();
+        let mut buf = Vec::try_with_capacity(len)?;
+
+        // SAFETY: This just copies data into the vector, which has enough
+        // capacity to hold it.
+        //
+        // This could be done with `try_extend_from_slice`, but this method has
+        // not yet been added.
+        unsafe {
+            core::ptr::copy_nonoverlapping(cstr.0.as_ptr(), buf.as_mut_ptr(), len);
+            buf.set_len(len);
+        }
+
+        Ok(Self { buf })
+    }
+
     /// Creates an instance of [`CString`] from the given formatted arguments.
     pub fn try_from_fmt(args: fmt::Arguments<'_>) -> Result<Self, Error> {
         // Calculate the size needed (formatted string plus `NUL` terminator).
