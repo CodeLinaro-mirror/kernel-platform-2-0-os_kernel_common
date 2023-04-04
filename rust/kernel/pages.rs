@@ -99,6 +99,19 @@ impl<const ORDER: u32> Pages<ORDER> {
         Ok(())
     }
 
+    /// Maps the pages and zero them.
+    pub fn fill_zero(&self, offset: usize, len: usize) -> Result {
+        // TODO: For now this only works on the first page.
+        let end = offset.checked_add(len).ok_or(EINVAL)?;
+        if end > PAGE_SIZE {
+            return Err(EINVAL);
+        }
+
+        let mapping = self.kmap(0).ok_or(EINVAL)?;
+        unsafe { ptr::write_bytes((mapping.ptr as *mut u8).add(offset), 0u8, len) };
+        Ok(())
+    }
+
     /// Maps the page at index `index`.
     fn kmap(&self, index: usize) -> Option<PageMapping<'_>> {
         if index >= 1usize << ORDER {
