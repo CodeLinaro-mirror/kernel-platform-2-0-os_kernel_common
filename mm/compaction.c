@@ -2155,6 +2155,13 @@ static enum compact_result __compact_finished(struct compact_control *cc)
 			!free_area_empty(area, MIGRATE_CMA))
 			return COMPACT_SUCCESS;
 #endif
+#ifdef CONFIG_MEMORY_METADATA
+		if (metadata_storage_enabled() &&
+		    migratetype == MIGRATE_MOVABLE &&
+		    (cc->alloc_flags & ALLOC_FROM_METADATA) &&
+		    !free_area_empty(area, MIGRATE_METADATA))
+			return COMPACT_SUCCESS;
+#endif
 		/*
 		 * Job done if allocation would steal freepages from
 		 * other migratetype buddy lists.
