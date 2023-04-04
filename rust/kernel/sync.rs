@@ -13,8 +13,8 @@ pub mod lock;
 mod locked_by;
 
 pub use arc::{Arc, ArcBorrow, UniqueArc};
-pub use condvar::CondVar;
 pub use lock::Guard;
+pub use condvar::{CondVar, CondVarTimeoutResult};
 pub use lock::mutex::{Mutex, MutexBackend};
 pub use lock::spinlock::{SpinLock, SpinLockBackend};
 pub use locked_by::LockedBy;
