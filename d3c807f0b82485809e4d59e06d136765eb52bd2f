@@ -34,6 +34,24 @@
       "parentUuid": "0304b20f_8b7fb0a7",
       "revId": "d3c807f0b82485809e4d59e06d136765eb52bd2f",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fbdc7f46_a0b39f93",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-04-05T12:37:36Z",
+      "side": 1,
+      "message": "The better way to do this is to put the definitions of these structures ONLY in a local directory to the crypto code, and have an \"empty\" definition of the type out in the normal .h files.\n\nThat way no hook or external driver can ever get access to them, and if we \"leak\" the structure types into the abi definitions, it\u0027s ok we can update them safely as we \"know\" that no external code can ever touch them.\n\nAnd that\u0027s the best way to do it upstream as well, hide the structure type so that no other code can touch it.  I make changes like this all the time to other subsystems, most recently, the driver core.",
+      "parentUuid": "b3855457_b8741de1",
+      "revId": "d3c807f0b82485809e4d59e06d136765eb52bd2f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
