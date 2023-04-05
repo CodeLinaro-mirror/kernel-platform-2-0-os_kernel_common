@@ -1126,6 +1126,9 @@ isolate_success_no_list:
 		nr_isolated += compound_nr(page);
 		nr_scanned += compound_nr(page) - 1;
 
+		if (page_has_metadata(page))
+			cc->source_has_metadata = true;
+
 		/*
 		 * Avoid isolating too much unless this block is being
 		 * rescanned (e.g. dirty/writeback pages, parallel allocation)
@@ -1301,6 +1304,15 @@ static bool suitable_migration_source(struct compact_control *cc,
 static bool suitable_migration_target(struct compact_control *cc,
 							struct page *page)
 {
+	int block_mt;
+
+	block_mt = get_pageblock_migratetype(page);
+
+	/* Pages from MIGRATE_METADATA cannot have metadata. */
+	if (is_migrate_metadata(block_mt) && cc->source_has_metadata)
+		return false;
+
+
 	/* If the page is a large free page, then disallow migration */
 	if (PageBuddy(page)) {
 		/*
@@ -1315,8 +1327,11 @@ static bool suitable_migration_target(struct compact_control *cc,
 	if (cc->ignore_block_suitable)
 		return true;
 
-	/* If the block is MIGRATE_MOVABLE or MIGRATE_CMA, allow migration */
-	if (is_migrate_movable(get_pageblock_migratetype(page)))
+	/*
+	 * If the block is MIGRATE_MOVABLE, MIGRATE_CMA or MIGRATE_METADATA,
+	 * allow migration.
+	 */
+	if (is_migrate_movable(block_mt))
 		return true;
 
 	/* Otherwise skip the block */

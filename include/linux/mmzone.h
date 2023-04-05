@@ -94,7 +94,7 @@ extern const char * const migratetype_names[MIGRATE_TYPES];
 
 static inline bool is_migrate_movable(int mt)
 {
-	return is_migrate_cma(mt) || mt == MIGRATE_MOVABLE;
+	return is_migrate_cma(mt) || is_migrate_metadata(mt) || mt == MIGRATE_MOVABLE;
 }
 
 /*
