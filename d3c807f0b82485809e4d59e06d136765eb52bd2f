@@ -70,6 +70,24 @@
       "parentUuid": "fbdc7f46_a0b39f93",
       "revId": "d3c807f0b82485809e4d59e06d136765eb52bd2f",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "907c51f2_5e184353",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-04-05T13:29:39Z",
+      "side": 1,
+      "message": "Ah, I missed that.  Then no, all is good, there\u0027s no real need for this change at all.\n\nYes, we don\u0027t have tooling for \"it\u0027s ok to touch them\" type of stuff, that\u0027s just tribal knowledge we are getting over time here.  Now with the DDK logic preventing out-of-tree code from using internal .h files, it should be much better.\n\nSo no, this whole thing shouldn\u0027t be needed at all, if we have \"issues\" come up in the future, it will be safe to update those structures.  We do this occasionally when other things change, manual review is what is required for now, sorry.",
+      "parentUuid": "274b4ae5_d8fd728c",
+      "revId": "d3c807f0b82485809e4d59e06d136765eb52bd2f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
