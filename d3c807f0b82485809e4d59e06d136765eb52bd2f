@@ -88,6 +88,24 @@
       "parentUuid": "274b4ae5_d8fd728c",
       "revId": "d3c807f0b82485809e4d59e06d136765eb52bd2f",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1097f061_e79911b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1956160
+      },
+      "writtenOn": "2023-04-05T13:38:35Z",
+      "side": 1,
+      "message": "Thank you for explanation! I agree with this, abandoning change.",
+      "parentUuid": "907c51f2_5e184353",
+      "revId": "d3c807f0b82485809e4d59e06d136765eb52bd2f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ],
   "submitRequirementResults": [
