@@ -52,6 +52,24 @@
       "parentUuid": "b3855457_b8741de1",
       "revId": "d3c807f0b82485809e4d59e06d136765eb52bd2f",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "274b4ae5_d8fd728c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1956160
+      },
+      "writtenOn": "2023-04-05T13:04:55Z",
+      "side": 1,
+      "message": "Your suggestion is already implemented, the definitions of these structures is already local to the crypto code, and we have an forward-declaration definition of these out in the normal .h files.\n\nThe problem is that we don\u0027t have tooling that can say \"it\u0027s ok to update them, we \"know\" that no external code can ever touch them\". And approving these changes manually while bypassing presubmits frustrates people.\n\nMy solution is a workaround on these issues and I would like to understand, is this workaround acceptable and justifiable upstream? Or we have to keep these structures in KMI until we develop such tool and policy to allow changes for private structures?",
+      "parentUuid": "fbdc7f46_a0b39f93",
+      "revId": "d3c807f0b82485809e4d59e06d136765eb52bd2f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
