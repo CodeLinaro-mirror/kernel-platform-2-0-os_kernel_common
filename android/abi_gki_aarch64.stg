@@ -1,4 +1,4 @@
-root_id: 0x25a8b173
+root_id: 0x84ea5130
 void {
   id: 0x48b5725f
 }
@@ -312706,6 +312706,15 @@ elf_symbol {
   full_name: "gpiod_get"
 }
 elf_symbol {
+  id: 0x80497778
+  name: "gpiod_get_direction"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x6ee55349
+  type_id: 0x94d8cba3
+  full_name: "gpiod_get_direction"
+}
+elf_symbol {
   id: 0x4950fc9e
   name: "gpiod_get_optional"
   is_defined: true
@@ -322627,6 +322636,15 @@ elf_symbol {
   crc: 0xdd093334
   type_id: 0xaf453ff9
   full_name: "regmap_get_device"
+}
+elf_symbol {
+  id: 0x29b53308
+  name: "regmap_get_max_register"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x679362f2
+  type_id: 0x9feaece8
+  full_name: "regmap_get_max_register"
 }
 elf_symbol {
   id: 0x248856c2
@@ -332895,7 +332913,7 @@ elf_symbol {
   full_name: "zs_unmap_object"
 }
 symbols {
-  id: 0x25a8b173
+  id: 0x84ea5130
   symbol {
     key: "I_BDEV"
     value: 0x2dddbe52
@@ -340877,6 +340895,10 @@ symbols {
     value: 0x652eb3f5
   }
   symbol {
+    key: "gpiod_get_direction"
+    value: 0x80497778
+  }
+  symbol {
     key: "gpiod_get_optional"
     value: 0x4950fc9e
   }
@@ -345287,6 +345309,10 @@ symbols {
   symbol {
     key: "regmap_get_device"
     value: 0x2b688ec7
+  }
+  symbol {
+    key: "regmap_get_max_register"
+    value: 0x29b53308
   }
   symbol {
     key: "regmap_get_val_bytes"
