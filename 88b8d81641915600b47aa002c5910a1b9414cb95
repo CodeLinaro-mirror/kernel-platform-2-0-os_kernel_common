@@ -34,6 +34,24 @@
       "parentUuid": "52fe2bfb_65bed313",
       "revId": "88b8d81641915600b47aa002c5910a1b9414cb95",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "deafbf7b_f52d5236",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-04-06T14:16:15Z",
+      "side": 1,
+      "message": "Then please mark the patch for the next KMI update as per the information on how to do this in the weekly GKI newsletter.",
+      "parentUuid": "cd17ec78_5d5ebd15",
+      "revId": "88b8d81641915600b47aa002c5910a1b9414cb95",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
