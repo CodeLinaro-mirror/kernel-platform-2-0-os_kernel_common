@@ -8,6 +8,7 @@
 #include <nvhe/iommu.h>
 #include <nvhe/mem_protect.h>
 #include <nvhe/pviommu.h>
+#include <nvhe/pviommu-host.h>
 
 #include <linux/kvm_host.h>
 #include <nvhe/pkvm.h>
@@ -22,9 +23,44 @@ static bool pkvm_guest_iommu_unmap(struct pkvm_hyp_vcpu *hyp_vcpu)
 	return false;
 }
 
-static bool pkvm_guest_iommu_attach_dev(struct pkvm_hyp_vcpu *hyp_vcpu)
+static void pkvm_pviommu_hyp_req(u64 *exit_code)
 {
-	return false;
+	u64 elr;
+
+	elr = read_sysreg(elr_el2);
+	elr -= 4;
+	write_sysreg(elr, elr_el2);
+	*exit_code = ARM_EXCEPTION_HYP_REQ;
+}
+
+static bool pkvm_guest_iommu_attach_dev(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code)
+{
+	int ret;
+	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
+	u64 iommu_id = smccc_get_arg1(vcpu);
+	u64 sid = smccc_get_arg2(vcpu);
+	u64 pasid = smccc_get_arg3(vcpu);
+	u64 domain_id = smccc_get_arg4(vcpu);
+	u64 pasid_bits = smccc_get_arg5(vcpu);
+	struct pviommu_route route;
+	struct pkvm_hyp_vm *vm = pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu);
+
+	ret = pkvm_pviommu_route(vm, iommu_id, sid, &route);
+	if (ret)
+		goto out_ret;
+	iommu_id = route.iommu;
+	sid = route.sid;
+
+	ret = kvm_iommu_attach_dev(iommu_id, domain_id, sid, pasid, pasid_bits);
+	if (ret == -ENOMEM) {
+		pkvm_pviommu_hyp_req(exit_code);
+		return false;
+	}
+
+out_ret:
+	smccc_set_retval(vcpu, ret ?  SMCCC_RET_INVALID_PARAMETER : SMCCC_RET_SUCCESS,
+			 0, 0, 0);
+	return true;
 }
 
 static bool pkvm_guest_iommu_detach_dev(struct pkvm_hyp_vcpu *hyp_vcpu)
@@ -88,7 +124,7 @@ bool kvm_handle_pviommu_hvc(struct kvm_vcpu *vcpu, u64 *exit_code)
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_UNMAP_FUNC_ID:
 		return pkvm_guest_iommu_unmap(hyp_vcpu);
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_ATTACH_DEV_FUNC_ID:
-		return pkvm_guest_iommu_attach_dev(hyp_vcpu);
+		return pkvm_guest_iommu_attach_dev(hyp_vcpu, exit_code);
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_DETACH_DEV_FUNC_ID:
 		return pkvm_guest_iommu_detach_dev(hyp_vcpu);
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_VERSION_FUNC_ID:
