@@ -303,7 +303,7 @@ int kvm_iommu_attach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	 * At the moment the IOMMU in EL2 is not aware of guests and pvIOMMU
 	 * doesn't exist yet, so all attaches come from host, this should change soon.
 	 */
-	ret = pkvm_devices_iommu_lock(iommu_id, endpoint_id, NULL);
+	ret = pkvm_devices_iommu_lock(iommu_id, endpoint_id, __get_ctxt());
 	if (ret)
 		return ret;
 
