@@ -48,9 +48,132 @@ static void pkvm_guest_iommu_free_id(int domain_id)
 	guest_domains[domain_id / BITS_PER_LONG] &= ~(1UL << (domain_id % BITS_PER_LONG));
 }
 
-static bool pkvm_guest_iommu_map(struct pkvm_hyp_vcpu *hyp_vcpu)
+/*
+ * Some IOMMU ops have no error return (map/ummap) and return the number of mapped,
+ * bytes. However, we need to a way to check if memory was needed, so we rely o
+ * requestes issued from the vcpu to check that.
+ */
+bool __need_req(struct kvm_vcpu *vcpu)
 {
+	struct kvm_hyp_req *hyp_req = vcpu->arch.hyp_reqs;
+
+	return hyp_req->type != KVM_HYP_LAST_REQ;
+}
+
+static int pkvm_get_guest_pa(struct pkvm_hyp_vcpu *hyp_vcpu, u64 ipa, u64 ipa_size,
+			     u64 *pa, u64 *exit_code)
+{
+	struct kvm_hyp_req *req;
+	int ret;
+	u64 pte;
+	u32 level;
+	struct pkvm_hyp_vm *vm = pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu);
+
+	ret = kvm_pgtable_get_leaf(&vm->pgt, ipa, &pte, &level);
+	if (ret || !kvm_pte_valid(pte)) {
+		/* Page not mapped, create a request*/
+		req = pkvm_hyp_req_reserve(hyp_vcpu, KVM_HYP_REQ_TYPE_MAP);
+		if (!req)
+			return -ENOMEM;
+
+		req->map.guest_ipa = ipa;
+		req->map.size = ipa_size;
+		*exit_code = ARM_EXCEPTION_HYP_REQ;
+		return -ENODEV;
+	}
+
+	*pa = kvm_pte_to_phys(pte);
+	*pa |= (ipa & kvm_granule_size(level) - 1) & PAGE_MASK;
+
+	return 0;
+}
+
+static bool prev_guest_req(struct kvm_vcpu *vcpu, u64 *exit_code)
+{
+	u64 elr;
+
+	if (__need_req(vcpu)) {
+		elr = read_sysreg(elr_el2);
+		elr -= 4;
+		write_sysreg(elr, elr_el2);
+		*exit_code = ARM_EXCEPTION_HYP_REQ;
+		return true;
+	}
 	return false;
+}
+
+static int __smccc_prot_linux(u64 prot)
+{
+	int iommu_prot = 0;
+
+	if (prot & ARM_SMCCC_KVM_PVIOMMU_READ)
+		iommu_prot |= IOMMU_READ;
+	if (prot & ARM_SMCCC_KVM_PVIOMMU_WRITE)
+		iommu_prot |= IOMMU_WRITE;
+	if (prot & ARM_SMCCC_KVM_PVIOMMU_CACHE)
+		iommu_prot |= IOMMU_CACHE;
+	if (prot & ARM_SMCCC_KVM_PVIOMMU_NOEXEC)
+		iommu_prot |= IOMMU_NOEXEC;
+	if (prot & ARM_SMCCC_KVM_PVIOMMU_MMIO)
+		iommu_prot |= IOMMU_MMIO;
+	if (prot & ARM_SMCCC_KVM_PVIOMMU_PRIV)
+		iommu_prot |= IOMMU_PRIV;
+
+	return iommu_prot;
+}
+
+static bool pkvm_guest_iommu_map(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code)
+{
+	size_t mapped, total_mapped = 0;
+	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
+	u64 domain = smccc_get_arg1(vcpu);
+	u64 iova = smccc_get_arg2(vcpu);
+	u64 ipa = smccc_get_arg3(vcpu);
+	u64 pgsize = smccc_get_arg4(vcpu);
+	u64 pgcount = smccc_get_arg5(vcpu);
+	u64 prot = smccc_get_arg6(vcpu);
+	u64 paddr;
+	int ret;
+	u64 smccc_ret = SMCCC_RET_SUCCESS;
+
+	/* In theory we can support larger page sizes, see pkvm_guest_iommu_get_feature(). */
+	if (pgsize != PAGE_SIZE) {
+		smccc_set_retval(vcpu, SMCCC_RET_INVALID_PARAMETER, 0, 0, 0);
+		return true;
+	}
+
+	/* See comment below after kvm_iommu_map_pages(). */
+	if (prev_guest_req(vcpu, exit_code))
+		return false;
+
+	while (pgcount--) {
+		ret = pkvm_get_guest_pa(hyp_vcpu, ipa, pgsize * pgcount, &paddr, exit_code);
+		if (ret)
+			break;
+		mapped = kvm_iommu_map_pages(domain, iova, paddr,
+					     pgsize, 1, __smccc_prot_linux(prot));
+		/*
+		 * In case we need memory, we return the current mapped pages, and on the next
+		 * HVC we would return directly to host to fulfill the request as the current
+		 * context can't be saved.
+		 * We rely on requests only cleared with exit reason ARM_EXCEPTION_HYP_REQ, as
+		 * there it is possible the guest can exit by other reasons as ARM_EXCEPTION_IRQ
+		 * however in this case the request should be retained in the next time we run
+		 * the vcpu.
+		 */
+		if (!mapped) {
+			if (!__need_req(vcpu))
+				smccc_ret = SMCCC_RET_INVALID_PARAMETER;
+			break;
+		}
+
+		ipa += pgsize;
+		iova += pgsize;
+		total_mapped += pgsize;
+	}
+
+	smccc_set_retval(vcpu, smccc_ret, total_mapped, 0, 0);
+	return true;
 }
 
 static bool pkvm_guest_iommu_unmap(struct pkvm_hyp_vcpu *hyp_vcpu)
@@ -190,7 +313,7 @@ bool kvm_handle_pviommu_hvc(struct kvm_vcpu *vcpu, u64 *exit_code)
 	refill_hyp_pool(&vm->iommu_pool, &hyp_vcpu->host_vcpu->arch.iommu_mc);
 	switch (fn) {
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_MAP_FUNC_ID:
-		return pkvm_guest_iommu_map(hyp_vcpu);
+		return pkvm_guest_iommu_map(hyp_vcpu, exit_code);
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_UNMAP_FUNC_ID:
 		return pkvm_guest_iommu_unmap(hyp_vcpu);
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_ATTACH_DEV_FUNC_ID:
