@@ -381,7 +381,7 @@ size_t kvm_iommu_map_pages(pkvm_handle_t domain_id, unsigned long iova,
 	if (!domain || domain_get(domain))
 		return 0;
 
-	ret = __pkvm_host_use_dma(paddr, size);
+	ret = __pkvm_use_dma(paddr, size, __get_ctxt());
 	if (ret)
 		return 0;
 
@@ -394,7 +394,7 @@ size_t kvm_iommu_map_pages(pkvm_handle_t domain_id, unsigned long iova,
 	 * so far.
 	 */
 	if (pgcount)
-		__pkvm_host_unuse_dma(paddr + total_mapped, pgcount * pgsize);
+		__pkvm_unuse_dma(paddr + total_mapped, pgcount * pgsize, __get_ctxt());
 
 	domain_put(domain);
 	return total_mapped;
@@ -447,8 +447,8 @@ void kvm_iommu_flush_unmap_cache(struct kvm_iommu_paddr_cache *cache)
 {
 	while (cache->ptr) {
 		cache->ptr--;
-		WARN_ON(__pkvm_host_unuse_dma(cache->paddr[cache->ptr],
-					      cache->pgsize[cache->ptr]));
+		WARN_ON(__pkvm_unuse_dma(cache->paddr[cache->ptr],
+					 cache->pgsize[cache->ptr], __get_ctxt()));
 	}
 }
 

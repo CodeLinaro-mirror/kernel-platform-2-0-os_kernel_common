@@ -2455,15 +2455,13 @@ int __pkvm_host_unshare_ffa(u64 pfn, u64 nr_pages)
 	return ret;
 }
 
-static int __pkvm_host_use_dma_page(phys_addr_t phys_addr)
+static int __pkvm_use_dma_page(phys_addr_t phys_addr, struct pkvm_hyp_vcpu *hyp_vcpu)
 {
-	int ret;
+	int ret = 0;
 	struct hyp_page *p = hyp_phys_to_page(phys_addr);
 	enum pkvm_page_state state;
 	kvm_pte_t pte;
 	enum kvm_pgtable_prot prot;
-
-	hyp_assert_lock_held(&host_mmu.lock);
 
 	/*
 	 * Some differences between handling of RAM and device memory:
@@ -2476,6 +2474,8 @@ static int __pkvm_host_use_dma_page(phys_addr_t phys_addr)
 	 *   pages that ideally comes with device assignment support.
 	 */
 	if (!addr_is_memory(phys_addr)) {
+		if (hyp_vcpu)
+			return -EINVAL;
 		ret = kvm_pgtable_get_leaf(&host_mmu.pgt, phys_addr, &pte, NULL);
 		if (ret)
 			return ret;
@@ -2490,8 +2490,15 @@ static int __pkvm_host_use_dma_page(phys_addr_t phys_addr)
 
 	state = hyp_phys_to_page(phys_addr)->host_state;
 
-	if (state & (PKVM_NOPAGE | PKVM_MODULE_OWNED_PAGE))
-		return -EPERM;
+	/*
+	 * No need to check that VMs have access to this memory as the use IPA
+	 * for DMA requests where the pviommu code convert to PA through the
+	 * page table
+	 */
+	if (!hyp_vcpu) {
+		if (state & (PKVM_NOPAGE | PKVM_MODULE_OWNED_PAGE))
+			return -EPERM;
+	}
 
 	/*
 	 * Technically, this page is accessible by the host, however it seems strange,
@@ -2509,7 +2516,7 @@ static int __pkvm_host_use_dma_page(phys_addr_t phys_addr)
 	return 0;
 }
 
-static int __pkvm_host_unuse_dma_page(phys_addr_t phys_addr)
+static int __pkvm_unuse_dma_page(phys_addr_t phys_addr, struct pkvm_hyp_vcpu *hyp_vcpu)
 {
 	struct hyp_page *p = hyp_phys_to_page(phys_addr);
 
@@ -2518,11 +2525,21 @@ static int __pkvm_host_unuse_dma_page(phys_addr_t phys_addr)
 
 	hyp_page_ref_dec(p);
 
+	/*
+	 * Debug check that the page was allowed to the host.
+	 * As we don't know IPA, so we can't check for guests.
+	 */
+	if (IS_ENABLED(CONFIG_NVHE_EL2_DEBUG) && !hyp_vcpu) {
+		host_lock_component();
+		BUG_ON(!__host_check_page_state_range(phys_addr, PAGE_SIZE, PKVM_NOPAGE));
+		host_unlock_component();
+	}
+
 	return 0;
 }
 
 /*
- * __pkvm_host_use_dma - Mark host memory as used for DMA
+ * __pkvm_use_dma - Mark host memory as used for DMA
  * @phys_addr:	physical address of the DMA region
  * @size:	size of the DMA region
  *
@@ -2532,7 +2549,7 @@ static int __pkvm_host_unuse_dma_page(phys_addr_t phys_addr)
  * refcounting, for example if all devices and sub-devices map the same MSI
  * doorbell page. It will do for now.
  */
-int __pkvm_host_use_dma(phys_addr_t phys_addr, size_t size)
+int __pkvm_use_dma(phys_addr_t phys_addr, size_t size, struct pkvm_hyp_vcpu *hyp_vcpu)
 {
 	int i;
 	int ret = 0;
@@ -2541,27 +2558,31 @@ int __pkvm_host_use_dma(phys_addr_t phys_addr, size_t size)
 	if (WARN_ON(!PAGE_ALIGNED(phys_addr | size)))
 		return -EINVAL;
 
-	host_lock_component();
+	/* We don't walk the page table for guests. */
+	if (!hyp_vcpu)
+		host_lock_component();
+
 	hyp_lock_component();
 
 	for (i = 0; i < nr_pages; i++) {
-		ret = __pkvm_host_use_dma_page(phys_addr + i * PAGE_SIZE);
+		ret = __pkvm_use_dma_page(phys_addr + i * PAGE_SIZE, hyp_vcpu);
 		if (ret)
 			break;
 	}
 
 	if (ret) {
 		for (--i; i >= 0; --i)
-			__pkvm_host_unuse_dma_page(phys_addr + i * PAGE_SIZE);
+			__pkvm_unuse_dma_page(phys_addr + i * PAGE_SIZE, hyp_vcpu);
 	}
 
 	hyp_unlock_component();
-	host_unlock_component();
+	if (!hyp_vcpu)
+		host_unlock_component();
 
 	return ret;
 }
 
-int __pkvm_host_unuse_dma(phys_addr_t phys_addr, size_t size)
+int __pkvm_unuse_dma(phys_addr_t phys_addr, size_t size, struct pkvm_hyp_vcpu *hyp_vcpu)
 {
 	int i;
 	int ret = 0;
@@ -2573,7 +2594,7 @@ int __pkvm_host_unuse_dma(phys_addr_t phys_addr, size_t size)
 	 * in the host s2, there can be no failure.
 	 */
 	for (i = 0; i < nr_pages; i++) {
-		ret = __pkvm_host_unuse_dma_page(phys_addr + i * PAGE_SIZE);
+		ret = __pkvm_unuse_dma_page(phys_addr + i * PAGE_SIZE, hyp_vcpu);
 		if (ret)
 			break;
 	}
