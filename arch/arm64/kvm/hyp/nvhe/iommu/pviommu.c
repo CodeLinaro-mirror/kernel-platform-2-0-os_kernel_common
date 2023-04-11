@@ -247,7 +247,27 @@ out_ret:
 
 static bool pkvm_guest_iommu_detach_dev(struct pkvm_hyp_vcpu *hyp_vcpu)
 {
-	return false;
+	int ret;
+	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
+	u64 iommu = smccc_get_arg1(vcpu);
+	u64 sid = smccc_get_arg2(vcpu);
+	u64 pasid = smccc_get_arg3(vcpu);
+	u64 domain = smccc_get_arg4(vcpu);
+	struct pviommu_route route;
+	struct pkvm_hyp_vm *vm = pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu);
+
+	ret = pkvm_pviommu_route(vm, iommu, sid, &route);
+	if (ret)
+		goto out_ret;
+	iommu = route.iommu;
+	sid = route.sid;
+
+	ret = kvm_iommu_detach_dev(iommu, domain, sid, pasid);
+
+out_ret:
+	smccc_set_retval(vcpu, ret ?  SMCCC_RET_INVALID_PARAMETER : SMCCC_RET_SUCCESS,
+			 0, 0, 0);
+	return true;
 }
 
 static bool pkvm_guest_iommu_version(struct pkvm_hyp_vcpu *hyp_vcpu)
