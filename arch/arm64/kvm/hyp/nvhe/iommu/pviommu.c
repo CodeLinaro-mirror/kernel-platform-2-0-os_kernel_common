@@ -176,9 +176,33 @@ static bool pkvm_guest_iommu_map(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code)
 	return true;
 }
 
-static bool pkvm_guest_iommu_unmap(struct pkvm_hyp_vcpu *hyp_vcpu)
+static bool pkvm_guest_iommu_unmap(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code)
 {
-	return false;
+	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
+	u64 domain = smccc_get_arg1(vcpu);
+	u64 iova = smccc_get_arg2(vcpu);
+	u64 pgsize = smccc_get_arg3(vcpu);
+	u64 pgcount = smccc_get_arg4(vcpu);
+	size_t unmapped, size = pgsize * pgcount;
+	unsigned long ret = SMCCC_RET_SUCCESS;
+
+	if (pgsize != PAGE_SIZE) {
+		smccc_set_retval(vcpu, SMCCC_RET_INVALID_PARAMETER, 0, 0, 0);
+		return true;
+	}
+
+	/* See comment in pkvm_guest_iommu_map(). */
+	if (prev_guest_req(vcpu, exit_code))
+		return false;
+
+	unmapped = kvm_iommu_unmap_pages(domain, iova, pgsize, pgcount);
+	if (unmapped < size) {
+		if (!__need_req(vcpu))
+			ret = SMCCC_RET_INVALID_PARAMETER;
+	}
+
+	smccc_set_retval(vcpu, ret, unmapped, 0, 0);
+	return true;
 }
 
 static void pkvm_pviommu_hyp_req(u64 *exit_code)
@@ -315,7 +339,7 @@ bool kvm_handle_pviommu_hvc(struct kvm_vcpu *vcpu, u64 *exit_code)
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_MAP_FUNC_ID:
 		return pkvm_guest_iommu_map(hyp_vcpu, exit_code);
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_UNMAP_FUNC_ID:
-		return pkvm_guest_iommu_unmap(hyp_vcpu);
+		return pkvm_guest_iommu_unmap(hyp_vcpu, exit_code);
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_ATTACH_DEV_FUNC_ID:
 		return pkvm_guest_iommu_attach_dev(hyp_vcpu, exit_code);
 	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_DETACH_DEV_FUNC_ID:
