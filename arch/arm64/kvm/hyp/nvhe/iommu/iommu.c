@@ -370,7 +370,7 @@ int kvm_iommu_detach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 		return -EINVAL;
 
 	/* See kvm_iommu_attach_dev(). */
-	ret = pkvm_devices_iommu_lock(iommu_id, endpoint_id, NULL);
+	ret = pkvm_devices_iommu_lock(iommu_id, endpoint_id, __get_ctxt());
 	if (ret)
 		return ret;
 
