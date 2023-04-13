@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "338c830e_3fddf95d",
+        "filename": "android/abi_gki_aarch64_virtual_device",
+        "patchSetId": 1
+      },
+      "lineNbr": 1069,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2023-04-13T22:15:27Z",
+      "side": 0,
+      "message": "why extra moves?",
+      "range": {
+        "startLine": 1069,
+        "startChar": 2,
+        "endLine": 1069,
+        "endChar": 18
+      },
+      "revId": "012e035471ccfca1b991df2a61c73f2963cc2fe4",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
