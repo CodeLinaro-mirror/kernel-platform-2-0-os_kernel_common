@@ -19,6 +19,7 @@
 #include <nvhe/memory.h>
 #include <nvhe/mm.h>
 #include <nvhe/pkvm.h>
+#include <nvhe/pviommu.h>
 #include <nvhe/pviommu-host.h>
 #include <nvhe/rwlock.h>
 #include <nvhe/trap_handler.h>
@@ -1750,6 +1751,9 @@ bool kvm_handle_pvm_hvc64(struct kvm_vcpu *vcpu, u64 *exit_code)
 		if (smccc_trng_available)
 			return pkvm_forward_trng(vcpu);
 		break;
+	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_MAP_FUNC_ID ...
+	     ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_FREE_DOMAIN_FUNC_ID:
+		return kvm_handle_pviommu_hvc(vcpu, exit_code);
 	case ARM_SMCCC_VENDOR_HYP_KVM_DEV_REQ_MMIO_FUNC_ID:
 		return pkvm_device_request_mmio(hyp_vcpu, exit_code);
 	default:
@@ -1778,6 +1782,9 @@ bool kvm_hyp_handle_hvc64(struct kvm_vcpu *vcpu, u64 *exit_code)
 		return pkvm_meminfo_call(hyp_vcpu);
 	case ARM_SMCCC_VENDOR_HYP_KVM_MEM_RELINQUISH_FUNC_ID:
 		return pkvm_memrelinquish_call(hyp_vcpu, exit_code);
+	case ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_MAP_FUNC_ID ...
+	     ARM_SMCCC_VENDOR_HYP_KVM_IOMMU_FREE_DOMAIN_FUNC_ID:
+		return kvm_handle_pviommu_hvc(vcpu, exit_code);
 	}
 
 	return false;
