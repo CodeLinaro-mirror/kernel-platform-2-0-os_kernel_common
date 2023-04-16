@@ -263,6 +263,13 @@ int kvm_iommu_alloc_domain(pkvm_handle_t domain_id, u32 type)
 	struct pkvm_hyp_vcpu *ctxt = __get_ctxt();
 	struct pkvm_hyp_vm *vm;
 
+	/*
+	 * Host only has access to the lower half of the domain IDs.
+	 * Guest ID space manage by the hypervisor, so it is trusted.
+	 */
+	if (!ctxt && (domain_id >= (KVM_IOMMU_MAX_DOMAINS >> 1)))
+		return -EINVAL;
+
 	domain = handle_to_domain(domain_id);
 	if (!domain)
 		return -ENOMEM;
