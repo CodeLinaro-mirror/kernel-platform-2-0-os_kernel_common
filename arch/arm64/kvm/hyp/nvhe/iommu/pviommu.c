@@ -341,7 +341,19 @@ out_inval:
 
 static bool pkvm_guest_iommu_free_domain(struct pkvm_hyp_vcpu *hyp_vcpu)
 {
-	return false;
+	int ret;
+	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
+	u64 domain_id = smccc_get_arg1(vcpu);
+
+	hyp_spin_lock(&pviommu_guest_domain_lock);
+	ret = kvm_iommu_free_domain(domain_id);
+	if (!ret)
+		pkvm_guest_iommu_free_id(domain_id);
+	hyp_spin_unlock(&pviommu_guest_domain_lock);
+
+	smccc_set_retval(vcpu, ret ?  SMCCC_RET_INVALID_PARAMETER : SMCCC_RET_SUCCESS,
+			 0, 0, 0);
+	return true;
 }
 
 bool kvm_handle_pviommu_hvc(struct kvm_vcpu *vcpu, u64 *exit_code)
