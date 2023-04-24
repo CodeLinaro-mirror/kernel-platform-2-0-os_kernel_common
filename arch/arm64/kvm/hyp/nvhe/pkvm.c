@@ -19,6 +19,7 @@
 #include <nvhe/memory.h>
 #include <nvhe/mm.h>
 #include <nvhe/pkvm.h>
+#include <nvhe/pviommu-host.h>
 #include <nvhe/rwlock.h>
 #include <nvhe/trap_handler.h>
 
@@ -882,6 +883,11 @@ int __pkvm_init_vm(struct kvm *host_kvm, unsigned long pgd_hva)
 	ret = kvm_guest_prepare_stage2(hyp_vm, pgd);
 	if (ret)
 		goto err_remove_vm_table_entry;
+
+	ret = pkvm_pviommu_finalise(hyp_vm);
+	if (ret)
+		goto err_remove_vm_table_entry;
+
 	hyp_write_unlock(&vm_table_lock);
 
 	return hyp_vm->kvm.arch.pkvm.handle;
@@ -1005,6 +1011,8 @@ int __pkvm_finalize_teardown_vm(pkvm_handle_t handle)
 	__kvm_tlb_flush_vmid(&hyp_vm->kvm.arch.mmu);
 	remove_vm_table_entry(handle);
 	hyp_write_unlock(&vm_table_lock);
+
+	pkvm_pviommu_teardown(hyp_vm);
 
 	pkvm_devices_teardown(hyp_vm);
 
