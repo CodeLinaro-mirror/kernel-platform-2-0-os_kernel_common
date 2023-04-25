@@ -1448,6 +1448,15 @@ struct kvm_vfio_iommu_info {
 
 #define  KVM_DEV_VFIO_PVIOMMU_GET_INFO			2
 
+/* pvIOMMU fd IOCTLs. */
+struct kvm_vfio_iommu_config {
+	int device_fd;
+	int sid_idx;
+	int vsid;
+};
+
+#define KVM_PVIOMMU_SET_CONFIG                 _IOWR(KVMIO, 0x1, struct kvm_vfio_iommu_config)
+
 enum kvm_device_type {
 	KVM_DEV_TYPE_FSL_MPIC_20	= 1,
 #define KVM_DEV_TYPE_FSL_MPIC_20	KVM_DEV_TYPE_FSL_MPIC_20
