@@ -354,10 +354,52 @@ static int kvm_vfio_set_file(struct kvm_device *dev, long attr,
 	return -ENXIO;
 }
 
+static int kvm_vfio_pviommu_set_config(struct file *fiommu, struct kvm_vfio_iommu_config *config)
+{
+	int vfio_dev_fd = config->device_fd;
+	struct file *filp;
+	int ret;
+	u32 phys_sid;
+	pkvm_handle_t iommu;
+	struct kvm_pviommu *pviommu = fiommu->private_data;
+	struct device *dev;
+
+	filp = fget(vfio_dev_fd);
+	if (!filp)
+		return -EBADF;
+
+	dev = kvm_vfio_file_get_device(filp);
+	if (!dev) {
+		ret = -ENODEV;
+		goto err_fput;
+	}
+
+	ret = kvm_iommu_device_id(dev, config->sid_idx, &iommu, &phys_sid);
+	if (ret)
+		goto err_fput;
+
+	ret = kvm_call_hyp_nvhe(__pkvm_pviommu_add_vsid, pviommu->dev->kvm, pviommu->fd,
+				iommu, phys_sid, config->vsid);
+
+err_fput:
+	fput(filp);
+	return ret;
+}
+
 static long pviommufd_ioctl(struct file *filp, unsigned int ioctl,
 			    unsigned long arg)
 {
-	return -ENXIO;
+	struct kvm_vfio_iommu_config config;
+
+	switch (ioctl) {
+	case KVM_PVIOMMU_SET_CONFIG:
+		if (copy_from_user(&config, (void *)arg, sizeof(config)))
+			return -EFAULT;
+		return kvm_vfio_pviommu_set_config(filp, &config);
+	default:
+		return -ENXIO;
+	}
+	return 0;
 }
 
 static int pviommufd_release(struct inode *i, struct file *filp)
