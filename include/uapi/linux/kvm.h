@@ -1441,6 +1441,12 @@ struct kvm_device_attr {
 /* PVIOMMU for guests. */
 #define KVM_DEV_VFIO_PVIOMMU				2
 #define  KVM_DEV_VFIO_PVIOMMU_ATTACH			1
+struct kvm_vfio_iommu_info {
+	__s32 device_fd;
+	__u32 nr_sids;
+};
+
+#define  KVM_DEV_VFIO_PVIOMMU_GET_INFO			2
 
 enum kvm_device_type {
 	KVM_DEV_TYPE_FSL_MPIC_20	= 1,
