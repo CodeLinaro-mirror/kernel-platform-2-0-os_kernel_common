@@ -62,6 +62,7 @@ pub mod user_ptr;
 pub mod linked_list;
 pub mod raw_list;
 pub mod rbtree;
+pub mod workqueue;
 
 #[doc(hidden)]
 pub use bindings;
