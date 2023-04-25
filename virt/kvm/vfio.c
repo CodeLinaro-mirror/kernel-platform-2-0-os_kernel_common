@@ -6,6 +6,7 @@
  *     Author: Alex Williamson <alex.williamson@redhat.com>
  */
 
+#include <linux/anon_inodes.h>
 #include <linux/errno.h>
 #include <linux/file.h>
 #include <linux/kvm_host.h>
@@ -33,6 +34,11 @@ struct kvm_vfio {
 	struct list_head file_list;
 	struct mutex lock;
 	bool noncoherent;
+};
+
+struct kvm_pviommu {
+	struct kvm_device *dev;
+	int fd;
 };
 
 static void kvm_vfio_file_set_kvm(struct file *file, struct kvm *kvm)
@@ -348,6 +354,63 @@ static int kvm_vfio_set_file(struct kvm_device *dev, long attr,
 	return -ENXIO;
 }
 
+static long pviommufd_ioctl(struct file *filp, unsigned int ioctl,
+			    unsigned long arg)
+{
+	return -ENXIO;
+}
+
+static int pviommufd_release(struct inode *i, struct file *filp)
+{
+	struct kvm_pviommu *pviommu = filp->private_data;
+
+	kfree(pviommu);
+	return 0;
+}
+
+static const struct file_operations pviommu_fops = {
+	.unlocked_ioctl = pviommufd_ioctl,
+	.release = pviommufd_release,
+};
+
+static int kvm_vfio_pviommu_attach(struct kvm_device *dev)
+{
+	int ret;
+	struct kvm_pviommu *pviommu;
+
+	pviommu = kmalloc(sizeof(*pviommu), GFP_KERNEL);
+	if (!pviommu)
+		return -ENOMEM;
+
+	pviommu->dev = dev;
+
+	ret = anon_inode_getfd("kvm-pviommu", &pviommu_fops, pviommu, O_CLOEXEC);
+	if (ret < 0)
+		goto out_free;
+
+	pviommu->fd = ret;
+
+	/* Create pvIOMMU with this ID. */
+	ret = kvm_call_hyp_nvhe(__pkvm_pviommu_attach, dev->kvm, pviommu->fd);
+	if (ret)
+		goto out_free;
+
+	return pviommu->fd;
+out_free:
+	kfree(pviommu);
+	return ret;
+}
+
+static int kvm_vfio_pviommu(struct kvm_device *dev, long attr,
+			    void __user *arg)
+{
+	switch (attr) {
+	case KVM_DEV_VFIO_PVIOMMU_ATTACH:
+		return kvm_vfio_pviommu_attach(dev);
+	}
+	return -ENXIO;
+}
+
 static int kvm_vfio_set_attr(struct kvm_device *dev,
 			     struct kvm_device_attr *attr)
 {
@@ -355,6 +418,9 @@ static int kvm_vfio_set_attr(struct kvm_device *dev,
 	case KVM_DEV_VFIO_FILE:
 		return kvm_vfio_set_file(dev, attr->attr,
 					 u64_to_user_ptr(attr->addr));
+	case KVM_DEV_VFIO_PVIOMMU:
+		return kvm_vfio_pviommu(dev, attr->attr,
+					u64_to_user_ptr(attr->addr));
 	}
 
 	return -ENXIO;
@@ -371,6 +437,14 @@ static int kvm_vfio_has_attr(struct kvm_device *dev,
 #ifdef CONFIG_SPAPR_TCE_IOMMU
 		case KVM_DEV_VFIO_GROUP_SET_SPAPR_TCE:
 #endif
+			return 0;
+		}
+
+		break;
+
+	case KVM_DEV_VFIO_PVIOMMU:
+		switch (attr->attr) {
+		case KVM_DEV_VFIO_PVIOMMU_ATTACH:
 			return 0;
 		}
 
