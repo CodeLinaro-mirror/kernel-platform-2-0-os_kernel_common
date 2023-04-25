@@ -401,12 +401,47 @@ out_free:
 	return ret;
 }
 
+static int kvm_vfio_pviommu_get_info(struct kvm_device *dev,
+				     struct kvm_vfio_iommu_info *info)
+{
+	int vfio_dev_fd = info->device_fd;
+	int ret = 0;
+	struct file *filp;
+	struct device *device;
+
+	filp = fget(vfio_dev_fd);
+	if (!filp)
+		return -EBADF;
+
+	device = kvm_vfio_file_get_device(filp);
+	if (!device) {
+		ret = -ENODEV;
+		goto err_fput;
+	}
+
+	info->nr_sids = kvm_iommu_device_num_ids(device);
+err_fput:
+	fput(filp);
+	return ret;
+}
+
 static int kvm_vfio_pviommu(struct kvm_device *dev, long attr,
 			    void __user *arg)
 {
+	int32_t __user *argp = arg;
+	struct kvm_vfio_iommu_info info;
+	int ret;
+
 	switch (attr) {
 	case KVM_DEV_VFIO_PVIOMMU_ATTACH:
 		return kvm_vfio_pviommu_attach(dev);
+	case KVM_DEV_VFIO_PVIOMMU_GET_INFO:
+		if (copy_from_user(&info, argp, sizeof(info)))
+			return -EFAULT;
+		ret = kvm_vfio_pviommu_get_info(dev, &info);
+		if (ret)
+			return ret;
+		return copy_to_user(arg, &info, sizeof(info));
 	}
 	return -ENXIO;
 }
@@ -445,6 +480,7 @@ static int kvm_vfio_has_attr(struct kvm_device *dev,
 	case KVM_DEV_VFIO_PVIOMMU:
 		switch (attr->attr) {
 		case KVM_DEV_VFIO_PVIOMMU_ATTACH:
+		case KVM_DEV_VFIO_PVIOMMU_GET_INFO:
 			return 0;
 		}
 
