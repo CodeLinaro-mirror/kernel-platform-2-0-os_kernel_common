@@ -112,3 +112,27 @@ void pkvm_pviommu_teardown(struct pkvm_hyp_vm *hyp_vm)
 	}
 	hyp_spin_unlock(&host_pviommu_lock);
 }
+
+int pkvm_pviommu_route(struct pkvm_hyp_vm *hyp_vm, pkvm_handle_t viommu, u32 vsid,
+		       struct pviommu_route *route)
+{
+	struct pviommu_host *ph;
+	int i;
+
+	if (!route)
+		return -EINVAL;
+
+	list_for_each_entry(ph, &hyp_vm->pviommus, list) {
+		if (ph->pviommu_id == viommu) {
+			for (i = 0 ; i < ph->nr_entries ; ++i) {
+				if (ph->entries[i].vsid == vsid) {
+					route->sid = ph->entries[i].sid;
+					route->iommu = ph->entries[i].iommu;
+					return 0;
+				}
+			}
+			break;
+		}
+	}
+	return -ENOENT;
+}
