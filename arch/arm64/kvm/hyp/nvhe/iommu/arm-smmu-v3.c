@@ -616,7 +616,7 @@ static int smmu_detach_dev(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 	return smmu_sync_ste(smmu, sid);
 }
 
-static struct kvm_iommu_ops smmu_ops = {
+struct kvm_iommu_ops smmu_ops = {
 	.init				= smmu_init,
 	.get_iommu_by_id		= smmu_id_to_iommu,
 	.alloc_iopt			= kvm_arm_io_pgtable_alloc,
@@ -625,8 +625,3 @@ static struct kvm_iommu_ops smmu_ops = {
 	.detach_dev			= smmu_detach_dev,
 };
 
-int kvm_arm_smmu_v3_register(void)
-{
-	kvm_iommu_ops = smmu_ops;
-	return 0;
-}

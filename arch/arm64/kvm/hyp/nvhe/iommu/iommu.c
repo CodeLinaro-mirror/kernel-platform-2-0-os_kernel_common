@@ -106,7 +106,7 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
-	iommu = kvm_iommu_ops.get_iommu_by_id(iommu_id);
+	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
 	if (!iommu)
 		return -EINVAL;
 
@@ -119,7 +119,7 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 		goto out_unlock;
 
 	iopt = domain_to_iopt(iommu, domain, domain_id);
-	ret = kvm_iommu_ops.alloc_iopt(&iopt, pgd_hva);
+	ret = kvm_iommu_ops->alloc_iopt(&iopt, pgd_hva);
 	if (ret)
 		goto out_unlock;
 
@@ -137,7 +137,7 @@ int kvm_iommu_free_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id)
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
-	iommu = kvm_iommu_ops.get_iommu_by_id(iommu_id);
+	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
 	if (!iommu)
 		return -EINVAL;
 
@@ -162,7 +162,7 @@ int kvm_iommu_free_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id)
 out_unlock:
 	hyp_spin_unlock(&iommu->lock);
 	if (!ret)
-		ret = kvm_iommu_ops.free_iopt(&iopt);
+		ret = kvm_iommu_ops->free_iopt(&iopt);
 	return ret;
 }
 
@@ -173,7 +173,7 @@ int kvm_iommu_attach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
-	iommu = kvm_iommu_ops.get_iommu_by_id(iommu_id);
+	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
 	if (!iommu)
 		return -EINVAL;
 
@@ -182,7 +182,7 @@ int kvm_iommu_attach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (!domain || domain_get(domain))
 		goto out_unlock;
 
-	ret = kvm_iommu_ops.attach_dev(iommu, domain_id, domain, endpoint_id);
+	ret = kvm_iommu_ops->attach_dev(iommu, domain_id, domain, endpoint_id);
 	if (ret)
 		goto err_put_domain;
 
@@ -201,7 +201,7 @@ int kvm_iommu_detach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
-	iommu = kvm_iommu_ops.get_iommu_by_id(iommu_id);
+	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
 	if (!iommu)
 		return -EINVAL;
 
@@ -210,7 +210,7 @@ int kvm_iommu_detach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (!domain || atomic_read(&domain->refs) <= 1)
 		goto out_unlock;
 
-	ret = kvm_iommu_ops.detach_dev(iommu, domain_id, domain, endpoint_id);
+	ret = kvm_iommu_ops->detach_dev(iommu, domain_id, domain, endpoint_id);
 	if (ret)
 		goto out_unlock;
 
@@ -236,6 +236,9 @@ size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
+	if (!kvm_iommu_ops)
+		return 0;
+
 	if (prot & ~IOMMU_PROT_MASK)
 		return 0;
 
@@ -243,7 +246,7 @@ size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	    iova + size < iova || paddr + size < paddr)
 		return 0;
 
-	iommu = kvm_iommu_ops.get_iommu_by_id(iommu_id);
+	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
 	if (!iommu)
 		return 0;
 
@@ -307,6 +310,9 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
+	if (!kvm_iommu_ops)
+		return 0;
+
 	if (!pgsize || !pgcount)
 		return 0;
 
@@ -314,7 +320,7 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	    iova + size < iova)
 		return 0;
 
-	iommu = kvm_iommu_ops.get_iommu_by_id(iommu_id);
+	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
 	if (!iommu)
 		return 0;
 
@@ -359,7 +365,7 @@ phys_addr_t kvm_iommu_iova_to_phys(pkvm_handle_t iommu_id,
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
-	iommu = kvm_iommu_ops.get_iommu_by_id(iommu_id);
+	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
 	if (!iommu)
 		return 0;
 
@@ -425,11 +431,11 @@ int kvm_iommu_init(void)
 {
 	enum kvm_pgtable_prot prot;
 
-	if (WARN_ON(!kvm_iommu_ops.get_iommu_by_id ||
-		    !kvm_iommu_ops.alloc_iopt ||
-		    !kvm_iommu_ops.free_iopt ||
-		    !kvm_iommu_ops.attach_dev ||
-		    !kvm_iommu_ops.detach_dev))
+	if (WARN_ON(!kvm_iommu_ops->get_iommu_by_id ||
+		    !kvm_iommu_ops->alloc_iopt ||
+		    !kvm_iommu_ops->free_iopt ||
+		    !kvm_iommu_ops->attach_dev ||
+		    !kvm_iommu_ops->detach_dev))
 		return -ENODEV;
 
 	/* The memcache is shared with the host */
