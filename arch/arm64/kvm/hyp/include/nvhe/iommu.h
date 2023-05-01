@@ -108,6 +108,7 @@ struct kvm_iommu_ops {
 			  struct kvm_hyp_iommu_domain *domain, u32 endpoint_id);
 	int (*detach_dev)(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 			  struct kvm_hyp_iommu_domain *domain, u32 endpoint_id);
+	int (*alloc_domain)(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *domain);
 };
 
 extern struct kvm_iommu_ops *kvm_iommu_ops;
