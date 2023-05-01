@@ -13,7 +13,6 @@
 
 /*
  * Parameters from the trusted host:
- * @pgtable_cfg:	page table configuration
  * @domains:		root domain table
  * @nr_domains:		max number of domains (exclusive)
  * @power_domain:	power domain information
@@ -21,12 +20,9 @@
  * Other members are filled and used at runtime by the IOMMU driver.
  */
 struct kvm_hyp_iommu {
-	struct io_pgtable_cfg		pgtable_cfg;
 	void				**domains;
 	size_t				nr_domains;
 	struct kvm_power_domain		power_domain;
-
-	struct io_pgtable_params	*pgtable;
 #ifdef __KVM_NVHE_HYPERVISOR__
 	hyp_spinlock_t			lock;
 #else
@@ -46,6 +42,7 @@ extern struct kvm_hyp_iommu_memcache *kvm_nvhe_sym(kvm_hyp_iommu_memcaches);
 struct kvm_hyp_iommu_domain {
 	void			*pgd;
 	atomic_t		refs;
+	struct io_pgtable_params	*pgtable;
 };
 
 /*

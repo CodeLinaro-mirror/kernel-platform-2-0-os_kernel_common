@@ -743,7 +743,7 @@ static int kvm_arm_smmu_probe(struct platform_device *pdev)
 	hyp_smmu->mmio_addr = mmio_addr;
 	hyp_smmu->mmio_size = mmio_size;
 	hyp_smmu->features = smmu->features;
-	hyp_smmu->iommu.pgtable_cfg = cfg;
+	hyp_smmu->pgtable_cfg = cfg;
 	hyp_smmu->iommu.power_domain = power_domain;
 
 	kvm_arm_smmu_cur++;
