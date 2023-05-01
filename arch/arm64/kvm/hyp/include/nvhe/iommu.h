@@ -8,17 +8,10 @@
 #if IS_ENABLED(CONFIG_ARM_SMMU_V3_PKVM)
 #include <linux/io-pgtable-arm.h>
 
-int kvm_arm_smmu_v3_register(void);
-
 int kvm_arm_io_pgtable_init(struct io_pgtable_cfg *cfg,
 			    struct arm_lpae_io_pgtable *data);
 int kvm_arm_io_pgtable_alloc(struct io_pgtable *iop, unsigned long pgd_hva);
 int kvm_arm_io_pgtable_free(struct io_pgtable *iop);
-#else /* CONFIG_ARM_SMMU_V3_PKVM */
-static inline int kvm_arm_smmu_v3_register(void)
-{
-	return -EINVAL;
-}
 #endif /* CONFIG_ARM_SMMU_V3_PKVM */
 
 #if IS_ENABLED(CONFIG_KVM_IOMMU)
@@ -110,6 +103,6 @@ struct kvm_iommu_ops {
 			  struct kvm_hyp_iommu_domain *domain, u32 endpoint_id);
 };
 
-extern struct kvm_iommu_ops kvm_iommu_ops;
+extern struct kvm_iommu_ops *kvm_iommu_ops;
 
 #endif /* __ARM64_KVM_NVHE_IOMMU_H__ */
