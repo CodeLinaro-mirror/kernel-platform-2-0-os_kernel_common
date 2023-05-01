@@ -15,7 +15,7 @@ struct kvm_hyp_iommu_memcache *kvm_hyp_iommu_memcaches;
 
 #define domain_to_iopt(_iommu, _domain, _domain_id)		\
 	(struct io_pgtable) {					\
-		.ops = &(_iommu)->pgtable->ops,			\
+		.ops = &(_domain)->pgtable->ops,		\
 		.pgd = (_domain)->pgd,				\
 		.cookie = &(struct kvm_iommu_tlb_cookie) {	\
 			.iommu		= (_iommu),		\
@@ -116,6 +116,10 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 		goto out_unlock;
 
 	if (atomic_read(&domain->refs))
+		goto out_unlock;
+
+	ret = kvm_iommu_ops->alloc_domain(iommu, domain);
+	if (ret)
 		goto out_unlock;
 
 	iopt = domain_to_iopt(iommu, domain, domain_id);
@@ -263,7 +267,7 @@ size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (!domain || domain_get(domain))
 		return 0;
 
-	granule = 1 << __ffs(iommu->pgtable->cfg.pgsize_bitmap);
+	granule = 1 << __ffs(domain->pgtable->cfg.pgsize_bitmap);
 	if (!IS_ALIGNED(iova | paddr | pgsize, granule))
 		goto out_put_domain;
 
@@ -328,7 +332,7 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (!domain || domain_get(domain))
 		return 0;
 
-	granule = 1 << __ffs(iommu->pgtable->cfg.pgsize_bitmap);
+	granule = 1 << __ffs(domain->pgtable->cfg.pgsize_bitmap);
 	if (!IS_ALIGNED(iova | pgsize, granule))
 		goto out_put_domain;
 
@@ -436,6 +440,7 @@ int kvm_iommu_init(struct kvm_iommu_ops *ops, struct kvm_hyp_iommu_memcache *mc,
 	if (WARN_ON(!ops->get_iommu_by_id ||
 		    !ops->alloc_iopt ||
 		    !ops->free_iopt ||
+		    !ops->alloc_domain ||
 		    !ops->attach_dev ||
 		    !ops->detach_dev))
 		return -ENODEV;

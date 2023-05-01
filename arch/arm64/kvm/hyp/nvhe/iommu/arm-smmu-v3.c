@@ -475,13 +475,11 @@ static int smmu_init_device(struct hyp_arm_smmu_v3_device *smmu)
 	if (ret)
 		return ret;
 
-	smmu->iommu.pgtable_cfg.tlb = &smmu_tlb_ops;
+	smmu->pgtable_cfg.tlb = &smmu_tlb_ops;
 
-	ret = kvm_arm_io_pgtable_init(&smmu->iommu.pgtable_cfg, &smmu->pgtable);
+	ret = kvm_arm_io_pgtable_init(&smmu->pgtable_cfg, &smmu->pgtable);
 	if (ret)
 		return ret;
-
-	smmu->iommu.pgtable = &smmu->pgtable.iop;
 
 	ret = smmu_init_registers(smmu);
 	if (ret)
@@ -547,7 +545,7 @@ static int smmu_attach_dev(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 	if (!dst || dst[0])
 		return -EINVAL;
 
-	cfg = &smmu->pgtable.iop.cfg;
+	cfg = &domain->pgtable->cfg;
 	ps = cfg->arm_lpae_s2_cfg.vtcr.ps;
 	tg = cfg->arm_lpae_s2_cfg.vtcr.tg;
 	sh = cfg->arm_lpae_s2_cfg.vtcr.sh;
@@ -612,6 +610,15 @@ static int smmu_detach_dev(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 	return smmu_sync_ste(smmu, sid);
 }
 
+int smmu_alloc_domain(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *domain)
+{
+	struct hyp_arm_smmu_v3_device *smmu = to_smmu(iommu);
+
+	domain->pgtable = &smmu->pgtable.iop;
+
+	return 0;
+}
+
 struct kvm_iommu_ops smmu_ops = {
 	.init				= smmu_init,
 	.get_iommu_by_id		= smmu_id_to_iommu,
@@ -619,5 +626,6 @@ struct kvm_iommu_ops smmu_ops = {
 	.free_iopt			= kvm_arm_io_pgtable_free,
 	.attach_dev			= smmu_attach_dev,
 	.detach_dev			= smmu_detach_dev,
+	.alloc_domain			= smmu_alloc_domain,
 };
 
