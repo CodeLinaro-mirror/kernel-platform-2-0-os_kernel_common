@@ -14,9 +14,7 @@
 #![no_std]
 #![feature(allocator_api)]
 #![feature(coerce_unsized)]
-#![feature(core_ffi_c)]
 #![feature(dispatch_from_dyn)]
-#![feature(generic_associated_types)]
 #![feature(receiver_trait)]
 #![feature(unsize)]
 

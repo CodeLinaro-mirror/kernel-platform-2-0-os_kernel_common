@@ -145,7 +145,7 @@ use core::hash::{Hash, Hasher};
 #[cfg(not(no_global_oom_handling))]
 use core::iter::FromIterator;
 use core::iter::{FusedIterator, Iterator};
-use core::marker::{Destruct, Unpin, Unsize};
+use core::marker::{Destruct, Unpin, Tuple, Unsize};
 use core::mem;
 use core::ops::{
     CoerceUnsized, Deref, DerefMut, DispatchFromDyn, Generator, GeneratorState, Receiver,
@@ -1869,7 +1869,7 @@ impl<I: ExactSizeIterator + ?Sized, A: Allocator> ExactSizeIterator for Box<I, A
 impl<I: FusedIterator + ?Sized, A: Allocator> FusedIterator for Box<I, A> {}
 
 #[stable(feature = "boxed_closure_impls", since = "1.35.0")]
-impl<Args, F: FnOnce<Args> + ?Sized, A: Allocator> FnOnce<Args> for Box<F, A> {
+impl<Args: Tuple, F: FnOnce<Args> + ?Sized, A: Allocator> FnOnce<Args> for Box<F, A> {
     type Output = <F as FnOnce<Args>>::Output;
 
     extern "rust-call" fn call_once(self, args: Args) -> Self::Output {
@@ -1878,14 +1878,14 @@ impl<Args, F: FnOnce<Args> + ?Sized, A: Allocator> FnOnce<Args> for Box<F, A> {
 }
 
 #[stable(feature = "boxed_closure_impls", since = "1.35.0")]
-impl<Args, F: FnMut<Args> + ?Sized, A: Allocator> FnMut<Args> for Box<F, A> {
+impl<Args: Tuple, F: FnMut<Args> + ?Sized, A: Allocator> FnMut<Args> for Box<F, A> {
     extern "rust-call" fn call_mut(&mut self, args: Args) -> Self::Output {
         <F as FnMut<Args>>::call_mut(self, args)
     }
 }
 
 #[stable(feature = "boxed_closure_impls", since = "1.35.0")]
-impl<Args, F: Fn<Args> + ?Sized, A: Allocator> Fn<Args> for Box<F, A> {
+impl<Args: Tuple, F: Fn<Args> + ?Sized, A: Allocator> Fn<Args> for Box<F, A> {
     extern "rust-call" fn call(&self, args: Args) -> Self::Output {
         <F as Fn<Args>>::call(self, args)
     }
@@ -1973,8 +1973,7 @@ impl<T: ?Sized, A: Allocator> AsMut<T> for Box<T, A> {
  *  could have a method to project a Pin<T> from it.
  */
 #[stable(feature = "pin", since = "1.33.0")]
-#[rustc_const_unstable(feature = "const_box", issue = "92521")]
-impl<T: ?Sized, A: Allocator> const Unpin for Box<T, A> where A: 'static {}
+impl<T: ?Sized, A: Allocator> Unpin for Box<T, A> where A: 'static {}
 
 #[unstable(feature = "generator_trait", issue = "43122")]
 impl<G: ?Sized + Generator<R> + Unpin, R, A: Allocator> Generator<R> for Box<G, A>
