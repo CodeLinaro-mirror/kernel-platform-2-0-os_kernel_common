@@ -240,7 +240,8 @@ $(obj)/target.json: $(objtree)/include/config/auto.conf FORCE
 	$(call filechk,rust_target)
 
 ifdef CONFIG_CC_IS_CLANG
-bindgen_c_flags = $(c_flags)
+bindgen_skip_c_flags := -ftrivial-auto-var-init=% -fsanitize=kcfi
+bindgen_c_flags = $(filter-out $(bindgen_skip_c_flags), $(c_flags))
 else
 # bindgen relies on libclang to parse C. Ideally, bindgen would support a GCC
 # plugin backend and/or the Clang driver would be perfectly compatible with GCC.
