@@ -240,7 +240,8 @@ $(obj)/target.json: $(objtree)/include/config/auto.conf FORCE
 	$(call filechk,rust_target)
 
 ifdef CONFIG_CC_IS_CLANG
-bindgen_skip_c_flags := -ftrivial-auto-var-init=% -fsanitize=kcfi
+bindgen_skip_c_flags := -ftrivial-auto-var-init=% -fsanitize=kcfi \
+	-mindirect-branch-cs-prefix -mfunction-return=%
 bindgen_c_flags = $(filter-out $(bindgen_skip_c_flags), $(c_flags))
 else
 # bindgen relies on libclang to parse C. Ideally, bindgen would support a GCC
@@ -304,8 +305,8 @@ $(obj)/bindings/bindings_generated.rs: $(src)/bindings/bindings_helper.h \
 # given it is `libclang`; but for consistency, future Clang changes and/or
 # a potential future GCC backend for `bindgen`, we disable it too.
 $(obj)/bindings/bindings_helpers_generated.rs: private bindgen_target_flags = \
-    --blacklist-type '.*' --whitelist-var '' \
-    --whitelist-function 'rust_helper_.*'
+    --blocklist-type '.*' --allowlist-var '' \
+    --allowlist-function 'rust_helper_.*'
 $(obj)/bindings/bindings_helpers_generated.rs: private bindgen_target_cflags = \
     -I$(objtree)/$(obj) -Wno-missing-prototypes -Wno-missing-declarations
 $(obj)/bindings/bindings_helpers_generated.rs: private bindgen_target_extra = ; \

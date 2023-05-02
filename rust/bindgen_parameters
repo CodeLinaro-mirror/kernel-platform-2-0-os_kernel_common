@@ -8,6 +8,7 @@
 # Packed type cannot transitively contain a `#[repr(align)]` type.
 --opaque-type x86_msi_data
 --opaque-type x86_msi_addr_lo
+--opaque-type alt_instr
 
 # `try` is a reserved keyword since Rust 2018; solved in `bindgen` v0.59.2,
 # commit 2aed6b021680 ("context: Escape the try keyword properly").
