@@ -5,6 +5,7 @@
 //! C header: [`include/linux/workqueue.h`](../../../../include/linux/workqueue.h)
 
 use crate::{bindings, prelude::*, sync::Arc, types::Opaque};
+use alloc::alloc::AllocError;
 use core::marker::{PhantomData, PhantomPinned};
 use core::result::Result;
 
@@ -57,6 +58,42 @@ impl Queue {
             w.__enqueue(move |work_ptr| {
                 bindings::queue_work_on(bindings::WORK_CPU_UNBOUND as _, queue_ptr, work_ptr)
             })
+        }
+    }
+
+    /// Tries to spawn the given function or closure as a work item.
+    ///
+    /// This method can fail because it allocates memory to store the work item.
+    pub fn try_spawn<T: 'static + Send + Fn()>(&self, func: T) -> Result<(), AllocError> {
+        let init = pin_init!(ClosureWork {
+            work <- Work::new(),
+            func: Some(func),
+        });
+
+        self.enqueue(Box::pin_init(init).map_err(|_| AllocError)?);
+        Ok(())
+    }
+}
+
+/// A helper type used in `try_spawn`.
+#[pin_data]
+struct ClosureWork<T> {
+    #[pin]
+    work: Work<Pin<Box<ClosureWork<T>>>>,
+    func: Option<T>,
+}
+
+impl<T> ClosureWork<T> {
+    fn project(self: Pin<&mut Self>) -> &mut Option<T> {
+        // SAFETY: The `func` field is not structurally pinned.
+        unsafe { &mut self.get_unchecked_mut().func }
+    }
+}
+
+impl<T: FnOnce()> BoxWorkItem for ClosureWork<T> {
+    fn run(mut self: Pin<Box<Self>>) {
+        if let Some(func) = self.as_mut().project().take() {
+            (func)()
         }
     }
 }
@@ -280,6 +317,10 @@ macro_rules! impl_has_work {
             }
         }
     )*};
+}
+
+impl_has_work! {
+    impl<T> HasWork<Pin<Box<Self>>> for ClosureWork<T> { self.work }
 }
 
 /// Declares that [`Arc<Self>`] should implement [`WorkItem`].
