@@ -293352,6 +293352,14 @@ function {
   parameter_id: 0xc9082b19
 }
 function {
+  id: 0x9bfd1c84
+  return_type_id: 0x6720d32f
+  parameter_id: 0x18bd6530
+  parameter_id: 0x1d19a9d5
+  parameter_id: 0x92233392
+  parameter_id: 0x92233392
+}
+function {
   id: 0x9bff5408
   return_type_id: 0x6720d32f
   parameter_id: 0x18bd6530
@@ -305475,6 +305483,15 @@ elf_symbol {
   full_name: "__traceiter_sched_stat_iowait"
 }
 elf_symbol {
+  id: 0xf29865b1
+  name: "__traceiter_sched_stat_runtime"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xe83ec93b
+  type_id: 0x9bfd1c84
+  full_name: "__traceiter_sched_stat_runtime"
+}
+elf_symbol {
   id: 0xa785ee77
   name: "__traceiter_sched_stat_sleep"
   is_defined: true
@@ -307192,6 +307209,15 @@ elf_symbol {
   crc: 0x3dcb44d9
   type_id: 0x18ccbd2c
   full_name: "__tracepoint_sched_stat_iowait"
+}
+elf_symbol {
+  id: 0xeac9b507
+  name: "__tracepoint_sched_stat_runtime"
+  is_defined: true
+  symbol_type: OBJECT
+  crc: 0xe601e892
+  type_id: 0x18ccbd2c
+  full_name: "__tracepoint_sched_stat_runtime"
 }
 elf_symbol {
   id: 0xbc210559
@@ -346429,6 +346455,10 @@ symbols {
     value: 0x9cf075c5
   }
   symbol {
+    key: "__traceiter_sched_stat_runtime"
+    value: 0xf29865b1
+  }
+  symbol {
     key: "__traceiter_sched_stat_sleep"
     value: 0xa785ee77
   }
@@ -347191,6 +347221,10 @@ symbols {
   symbol {
     key: "__tracepoint_sched_stat_iowait"
     value: 0x6aa1a617
+  }
+  symbol {
+    key: "__tracepoint_sched_stat_runtime"
+    value: 0xeac9b507
   }
   symbol {
     key: "__tracepoint_sched_stat_sleep"
