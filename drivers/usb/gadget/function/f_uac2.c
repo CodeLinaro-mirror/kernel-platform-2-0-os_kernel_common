@@ -1343,6 +1343,8 @@ afunc_set_alt(struct usb_function *fn, unsigned intf, unsigned alt)
 	struct usb_gadget *gadget = cdev->gadget;
 	struct device *dev = &gadget->dev;
 	int ret = 0;
+	struct f_uac2_opts *audio_opts =
+		container_of(fn->fi, struct f_uac2_opts, func_inst);
 
 	/* No i/f has more than 2 alt settings */
 	if (alt > 1) {
@@ -1374,6 +1376,11 @@ afunc_set_alt(struct usb_function *fn, unsigned intf, unsigned alt)
 			ret = u_audio_start_capture(&uac2->g_audio);
 		else
 			u_audio_stop_capture(&uac2->g_audio);
+		audio_opts->c_status = alt;
+		pr_err("%s:uac2 C state changed:%d\n", __func__, audio_opts->c_status);
+#ifdef CONFIG_USB_CONFIGFS_UEVENT
+		schedule_work(&audio_opts->work);
+#endif
 	} else if (intf == uac2->as_in_intf) {
 		uac2->as_in_alt = alt;
 
@@ -1381,6 +1388,11 @@ afunc_set_alt(struct usb_function *fn, unsigned intf, unsigned alt)
 			ret = u_audio_start_playback(&uac2->g_audio);
 		else
 			u_audio_stop_playback(&uac2->g_audio);
+		audio_opts->p_status = alt;
+		pr_err("%s:uac2 P state changed:%d\n", __func__, audio_opts->p_status);
+#ifdef CONFIG_USB_CONFIGFS_UEVENT
+		schedule_work(&audio_opts->work);
+#endif
 	} else {
 		dev_err(dev, "%s:%d Error!\n", __func__, __LINE__);
 		return -EINVAL;
@@ -1413,9 +1425,17 @@ static void
 afunc_disable(struct usb_function *fn)
 {
 	struct f_uac2 *uac2 = func_to_uac2(fn);
+	struct f_uac2_opts *audio_opts =
+		container_of(fn->fi, struct f_uac2_opts, func_inst);
 
 	uac2->as_in_alt = 0;
 	uac2->as_out_alt = 0;
+	audio_opts->p_status = 0;//alt;
+	audio_opts->c_status = 0; //alt;
+
+#ifdef CONFIG_USB_CONFIGFS_UEVENT
+	schedule_work(&audio_opts->work);
+#endif
 	u_audio_stop_capture(&uac2->g_audio);
 	u_audio_stop_playback(&uac2->g_audio);
 	if (uac2->int_ep)
@@ -1869,6 +1889,25 @@ UAC2_ATTRIBUTE(s16, c_volume_max);
 UAC2_ATTRIBUTE(s16, c_volume_res);
 UAC2_ATTRIBUTE(u32, fb_max);
 
+#define UAC2_ATTRIBUTE_RO(name)                                         \
+	static ssize_t f_uac2_opts_##name##_show(                       \
+			struct config_item *item,                       \
+			char *page)                                     \
+{                                                                       \
+	struct f_uac2_opts *opts = to_f_uac2_opts(item);                \
+	int result;                                                     \
+	\
+	mutex_lock(&opts->lock);                                        \
+	result = scnprintf(page, PAGE_SIZE, "%u\n", opts->name);        \
+	mutex_unlock(&opts->lock);                                      \
+	\
+	return result;                                                  \
+}                                                                       \
+CONFIGFS_ATTR_RO(f_uac2_opts_, name)
+
+UAC2_ATTRIBUTE_RO(c_status);
+UAC2_ATTRIBUTE_RO(p_status);
+
 static struct configfs_attribute *f_uac2_attrs[] = {
 	&f_uac2_opts_attr_p_chmask,
 	&f_uac2_opts_attr_p_srate,
@@ -1891,6 +1930,8 @@ static struct configfs_attribute *f_uac2_attrs[] = {
 	&f_uac2_opts_attr_c_volume_min,
 	&f_uac2_opts_attr_c_volume_max,
 	&f_uac2_opts_attr_c_volume_res,
+	&f_uac2_opts_attr_c_status,
+	&f_uac2_opts_attr_p_status,
 
 	NULL,
 };
@@ -1906,8 +1947,25 @@ static void afunc_free_inst(struct usb_function_instance *f)
 	struct f_uac2_opts *opts;
 
 	opts = container_of(f, struct f_uac2_opts, func_inst);
+#ifdef CONFIG_USB_CONFIGFS_UEVENT
+	device_destroy(opts->device->class, opts->device->devt);
+	cancel_work_sync(&opts->work);
+#endif
 	kfree(opts);
 }
+
+#ifdef CONFIG_USB_CONFIGFS_UEVENT
+static void f_uac2_audio_status_change_work(struct work_struct *data)
+{
+	struct f_uac2_opts *audio_opts =
+		container_of(data, struct f_uac2_opts, work);
+	char *envp[2] = { "UAC2_STATE=Changed", NULL };
+
+	kobject_uevent_env(&audio_opts->device->kobj,
+			KOBJ_CHANGE, envp);
+	pr_err("%s:uac2 state changed\n", __func__);
+}
+#endif
 
 static struct usb_function_instance *afunc_alloc_inst(void)
 {
@@ -1945,6 +2003,10 @@ static struct usb_function_instance *afunc_alloc_inst(void)
 
 	opts->req_number = UAC2_DEF_REQ_NUM;
 	opts->fb_max = UAC2_DEF_FB_MAX;
+#ifdef CONFIG_USB_CONFIGFS_UEVENT
+	INIT_WORK(&opts->work, f_uac2_audio_status_change_work);
+	opts->device = create_function_device("f_uac2");
+#endif
 	return &opts->func_inst;
 }
 
