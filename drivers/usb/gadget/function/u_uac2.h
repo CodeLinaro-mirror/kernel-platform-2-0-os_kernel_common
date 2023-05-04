@@ -61,6 +61,13 @@ struct f_uac2_opts {
 
 	struct mutex			lock;
 	int				refcnt;
+	u8				c_status;
+	u8				p_status;
+	struct device                   *device;
+#ifdef CONFIG_USB_CONFIGFS_UEVENT
+	struct work_struct              work;
+#endif
 };
 
+extern struct device *create_function_device(char *name);
 #endif
