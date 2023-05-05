@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a7f69e1d_a1bad1b5",
+        "filename": "scripts/gen_gki_modules_headers.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1889091
+      },
+      "writtenOn": "2023-05-05T17:20:10Z",
+      "side": 1,
+      "message": "I am not getting what you are saying? Are you saying to update the sed command with oneline for each processing? What is the benefit of doing that?",
+      "parentUuid": "a20bc2a7_420c9da0",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 83
+      },
+      "revId": "6a6142792d9343a1bc4d477dd338bf2b37b12225",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "73689f05_712d7292",
         "filename": "scripts/gen_gki_modules_headers.sh",
         "patchSetId": 1
@@ -37,6 +61,30 @@
       "writtenOn": "2023-05-05T17:09:16Z",
       "side": 1,
       "message": "Is sort -o file file as safe as sed -i?\n\nGeneral comment though, why are is the script mutating one of its inputs instead of generating something else?",
+      "range": {
+        "startLine": 57,
+        "startChar": 11,
+        "endLine": 57,
+        "endChar": 55
+      },
+      "revId": "6a6142792d9343a1bc4d477dd338bf2b37b12225",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "551c09a2_591cad0c",
+        "filename": "scripts/gen_gki_modules_headers.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1889091
+      },
+      "writtenOn": "2023-05-05T17:20:10Z",
+      "side": 1,
+      "message": "Mutation is happening on the temp file and not the input. Don\u0027t know about the `sort -o` and `sed -i` but they both changes input and I know with LC_ALL\u003dC and sort I get the binary searchable output required by the kernel bserach().",
+      "parentUuid": "73689f05_712d7292",
       "range": {
         "startLine": 57,
         "startChar": 11,
