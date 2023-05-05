@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a20bc2a7_420c9da0",
+        "filename": "scripts/gen_gki_modules_headers.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1625880
+      },
+      "writtenOn": "2023-05-05T17:09:16Z",
+      "side": 1,
+      "message": "How about approximately:\n\nremove \\r$ (CRLF)\nremove #.*$ (trailing comments; add a ^ for whole comment lines)\nremove ^ * (leading space)\nremove  *$ (trailing space)\ndelete empty lines\ndelete lines that are just the marker (technically the syntax accepted by libabigail is more generous, but let\u0027s stick with what we generate ourselves)\n\nI don\u0027t think libabigail accepts trailing comments, but I\u0027m pretty sure leading and trailing whitespace can occur.",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 83
+      },
+      "revId": "6a6142792d9343a1bc4d477dd338bf2b37b12225",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "73689f05_712d7292",
+        "filename": "scripts/gen_gki_modules_headers.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1625880
+      },
+      "writtenOn": "2023-05-05T17:09:16Z",
+      "side": 1,
+      "message": "Is sort -o file file as safe as sed -i?\n\nGeneral comment though, why are is the script mutating one of its inputs instead of generating something else?",
+      "range": {
+        "startLine": 57,
+        "startChar": 11,
+        "endLine": 57,
+        "endChar": 55
+      },
+      "revId": "6a6142792d9343a1bc4d477dd338bf2b37b12225",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
