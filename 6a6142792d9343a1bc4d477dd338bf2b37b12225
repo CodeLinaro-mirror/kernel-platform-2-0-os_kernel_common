@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2cc9bc74_68240f14",
+        "filename": "scripts/gen_gki_modules_headers.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1889091
+      },
+      "writtenOn": "2023-05-07T05:13:26Z",
+      "side": 1,
+      "message": "Line#62 will make sure leading and trailing spaces are not counted in the length of the symbol.\nLine#90 will remove the trailing and leading white spaces before adding the symbol into the header.",
+      "parentUuid": "a7f69e1d_a1bad1b5",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 83
+      },
+      "revId": "6a6142792d9343a1bc4d477dd338bf2b37b12225",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "73689f05_712d7292",
         "filename": "scripts/gen_gki_modules_headers.sh",
         "patchSetId": 1
