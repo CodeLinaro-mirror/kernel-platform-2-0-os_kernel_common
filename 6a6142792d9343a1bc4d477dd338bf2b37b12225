@@ -74,6 +74,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fbd7bca2_71bf1be3",
+        "filename": "scripts/gen_gki_modules_headers.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1625880
+      },
+      "writtenOn": "2023-05-10T11:12:22Z",
+      "side": 1,
+      "message": "The line-by-line presentation was just to keep things separated for readability in my comment. You could do the same in the code if you like.\n\nThe main difference between what you have and what I suggest is that with my change, leading and trailing whitespace around a symbol will also be removed.\n\nPerhaps this:\n\n```\n# Remove any trailing CR, leading / trailing whitespace, line comments, empty lines and symbol list markers.\nsed -i -e \u0027s/\\r$//\u0027 -e \u0027s/^[[:space:]]*//\u0027 -e \u0027s/[[:space:]]*$//\u0027 -e \u0027/^#/d\u0027 -e \u0027/^$/d\u0027 -e \u0027/^\\[abi_symbol_list\\]$/d\u0027 \"${symbol_file}\"\n```\n\nor this:\n\n```\n# Remove any trailing CR, leading / trailing whitespace, line comments, empty lines and symbol list markers.\nsed -i \u0027\ns/\\r$//\ns/^[[:space:]]*//\ns/[[:space:]]*$//\n/^#/d\n/^$/d\n/^\\[abi_symbol_list\\]$/d\n\u0027 \"${symbol_file}\"\n```\n\nThis could be made more compact by combining things together. However, I think it is more readable all separated and performance will not be an issue!\n\nThis should handle the subset of the libabigail symbol file format we expect from our own tools and vendor edits. [Syntax we don\u0027t care about includes: other symbol list markers, trailing comments and comments that start with `;` instead of `#`.]",
+      "parentUuid": "2cc9bc74_68240f14",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 83
+      },
+      "revId": "6a6142792d9343a1bc4d477dd338bf2b37b12225",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "73689f05_712d7292",
         "filename": "scripts/gen_gki_modules_headers.sh",
         "patchSetId": 1
