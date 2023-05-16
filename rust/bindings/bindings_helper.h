@@ -19,6 +19,8 @@
 #include <linux/uio.h>
 #include <linux/security.h>
 #include <linux/poll.h>
+#include <linux/workqueue.h>
+#include <uapi/linux/android/binder.h>
 
 /* `bindgen` gets confused at certain things. */
 const gfp_t BINDINGS_GFP_KERNEL = GFP_KERNEL;
