@@ -19,6 +19,7 @@ use crate::{
 };
 use core::convert::{TryFrom, TryInto};
 use core::{cell::UnsafeCell, marker, mem, ptr};
+use core::marker::PhantomData;
 use macros::vtable;
 
 /// Flags associated with a [`File`].
@@ -113,6 +114,9 @@ pub mod flags {
 #[repr(transparent)]
 pub struct File(pub(crate) UnsafeCell<bindings::file>);
 
+unsafe impl Send for File {}
+unsafe impl Sync for File {}
+
 // TODO: Accessing fields of `struct file` through the pointer is UB because other threads may be
 // writing to them. However, this is how the C code currently operates: naked reads and writes to
 // fields. Even if we used relaxed atomics on the Rust side, we can't force this on the C side.
@@ -183,19 +187,31 @@ unsafe impl AlwaysRefCounted for File {
 /// This allows the creation of a file descriptor in two steps: first, we reserve a slot for it,
 /// then we commit or drop the reservation. The first step may fail (e.g., the current process ran
 /// out of available slots), but commit and drop never fail (and are mutually exclusive).
+///
+/// # Invariants
+///
+/// The fd stored in this struct must correspond to a reserved file descriptor of the current task.
 pub struct FileDescriptorReservation {
     fd: u32,
+    /// Prevent values of this type from being moved to a different task.
+    ///
+    /// This is necessary because the C FFI calls assume that `current` is set to the task that
+    /// owns the fd in question.
+    _not_send_sync: PhantomData<*mut ()>,
 }
 
 impl FileDescriptorReservation {
     /// Creates a new file descriptor reservation.
     pub fn new(flags: u32) -> Result<Self> {
         // SAFETY: FFI call, there are no safety requirements on `flags`.
-        let fd = unsafe { bindings::get_unused_fd_flags(flags) };
+        let fd: i32 = unsafe { bindings::get_unused_fd_flags(flags) };
         if fd < 0 {
             return Err(Error::from_errno(fd));
         }
-        Ok(Self { fd: fd as _ })
+        Ok(Self {
+            fd: fd as _,
+            _not_send_sync: PhantomData,
+        })
     }
 
     /// Returns the file descriptor number that was reserved.
@@ -240,7 +256,7 @@ impl PollTable {
     /// # Safety
     ///
     /// The pointer `ptr` must be either null or a valid pointer for the lifetime of the object.
-    unsafe fn from_ptr(ptr: *mut bindings::poll_table_struct) -> Self {
+    pub unsafe fn from_ptr(ptr: *mut bindings::poll_table_struct) -> Self {
         Self { ptr }
     }
 
@@ -703,7 +719,7 @@ pub struct IoctlCommand {
 
 impl IoctlCommand {
     /// Constructs a new [`IoctlCommand`].
-    fn new(cmd: u32, arg: usize) -> Self {
+    pub fn new(cmd: u32, arg: usize) -> Self {
         let size = (cmd >> bindings::_IOC_SIZESHIFT) & bindings::_IOC_SIZEMASK;
 
         // SAFETY: We only create one instance of the user slice per ioctl call, so TOCTOU issues

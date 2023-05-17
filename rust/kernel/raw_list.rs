@@ -99,6 +99,32 @@ impl<G: GetLinks> RawList<G> {
         self.head.is_none()
     }
 
+    fn insert_before_priv(
+        &mut self,
+        existing: &G::EntryType,
+        new_entry: &mut ListEntry<G::EntryType>,
+        new_ptr: Option<NonNull<G::EntryType>>,
+    ) {
+        {
+            // SAFETY: It's safe to get the previous entry of `existing` because the list cannot
+            // change.
+            let existing_links = unsafe { &mut *G::get_links(existing).entry.get() };
+            new_entry.prev = existing_links.prev;
+            existing_links.prev = new_ptr;
+        }
+
+        new_entry.next = Some(NonNull::from(existing));
+
+        // SAFETY: It's safe to get the next entry of `existing` because the list cannot change.
+        let prev_links =
+            unsafe { &mut *G::get_links(new_entry.prev.unwrap().as_ref()).entry.get() };
+        prev_links.next = new_ptr;
+
+        if self.head == new_entry.next {
+            self.head = new_ptr;
+        }
+    }
+
     fn insert_after_priv(
         &mut self,
         existing: &G::EntryType,
@@ -167,6 +193,32 @@ impl<G: GetLinks> RawList<G> {
 
     pub(crate) unsafe fn push_back(&mut self, new: &G::EntryType) -> bool {
         self.push_back_internal(new)
+    }
+
+    fn push_front_internal(&mut self, new: &G::EntryType) -> bool {
+        let links = G::get_links(new);
+        if !links.acquire_for_insertion() {
+            // Nothing to do if already inserted.
+            return false;
+        }
+
+        // SAFETY: The links are now owned by the list, so it is safe to get a mutable reference.
+        let new_entry = unsafe { &mut *links.entry.get() };
+        let new_ptr = Some(NonNull::from(new));
+        match self.front() {
+            // SAFETY: `front` is valid as the list cannot change.
+            Some(front) => self.insert_before_priv(unsafe { front.as_ref() }, new_entry, new_ptr),
+            None => {
+                self.head = new_ptr;
+                new_entry.next = new_ptr;
+                new_entry.prev = new_ptr;
+            }
+        }
+        true
+    }
+
+    pub(crate) unsafe fn push_front(&mut self, new: &G::EntryType) -> bool {
+        self.push_front_internal(new)
     }
 
     fn remove_internal(&mut self, data: &G::EntryType) -> bool {
