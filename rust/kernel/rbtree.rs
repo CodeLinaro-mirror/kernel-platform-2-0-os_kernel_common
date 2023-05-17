@@ -187,6 +187,14 @@ pub struct RBTree<K, V> {
     _p: PhantomData<Node<K, V>>,
 }
 
+// SAFETY: An `RBTree` allows the same kinds of access to its values that a struct allows to its
+// fields, so we use the same Send condition as would be used for a struct with K and V fields.
+unsafe impl<K: Send, V: Send> Send for RBTree<K, V> {}
+
+// SAFETY: An `RBTree` allows the same kinds of access to its values that a struct allows to its
+// fields, so we use the same Sync condition as would be used for a struct with K and V fields.
+unsafe impl<K: Sync, V: Sync> Sync for RBTree<K, V> {}
+
 impl<K, V> RBTree<K, V> {
     /// Creates a new and empty tree.
     pub fn new() -> Self {

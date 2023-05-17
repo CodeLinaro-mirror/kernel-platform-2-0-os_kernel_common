@@ -22,6 +22,9 @@ pub struct Pages<const ORDER: u32> {
     pub(crate) pages: NonNull<bindings::page>,
 }
 
+unsafe impl<const ORDER: u32> Send for Pages<ORDER> {}
+unsafe impl<const ORDER: u32> Sync for Pages<ORDER> {}
+
 impl<const ORDER: u32> Pages<ORDER> {
     /// Allocates a new set of contiguous pages.
     pub fn new() -> Result<Self> {
