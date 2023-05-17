@@ -19,6 +19,13 @@ use core::cell::UnsafeCell;
 #[repr(transparent)]
 pub struct Credential(pub(crate) UnsafeCell<bindings::cred>);
 
+// SAFETY: The only time this is mutably accessed is when the destructor runs. That's ok to happen
+// on any thread.
+unsafe impl Send for Credential {}
+
+// SAFETY: The `&self` methods on this type do not require synchronization.
+unsafe impl Sync for Credential {}
+
 impl Credential {
     /// Creates a reference to a [`Credential`] from a valid pointer.
     ///

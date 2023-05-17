@@ -321,6 +321,11 @@ pub struct ARef<T: AlwaysRefCounted> {
     _p: PhantomData<T>,
 }
 
+// SAFETY: If the inner type is thread safe, then so is the `ARef`.
+unsafe impl<T: Send + Sync + AlwaysRefCounted> Send for ARef<T> {}
+// SAFETY: If the inner type is thread safe, then so is the `ARef`.
+unsafe impl<T: Send + Sync + AlwaysRefCounted> Sync for ARef<T> {}
+
 impl<T: AlwaysRefCounted> ARef<T> {
     /// Creates a new instance of [`ARef`].
     ///
