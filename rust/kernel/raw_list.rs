@@ -35,6 +35,9 @@ pub struct Links<T: ?Sized> {
     entry: UnsafeCell<ListEntry<T>>,
 }
 
+unsafe impl<T: ?Sized> Send for Links<T> {}
+unsafe impl<T: ?Sized> Sync for Links<T> {}
+
 impl<T: ?Sized> Links<T> {
     /// Constructs a new [`Links`] instance that isn't inserted on any lists yet.
     pub fn new() -> Self {
@@ -83,6 +86,9 @@ impl<T: ?Sized> ListEntry<T> {
 pub(crate) struct RawList<G: GetLinks> {
     head: Option<NonNull<G::EntryType>>,
 }
+
+unsafe impl<G: GetLinks + Send> Send for RawList<G> {}
+unsafe impl<G: GetLinks + Sync> Sync for RawList<G> {}
 
 impl<G: GetLinks> RawList<G> {
     pub(crate) const fn new() -> Self {
