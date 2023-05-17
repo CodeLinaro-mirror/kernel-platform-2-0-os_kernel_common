@@ -22,7 +22,9 @@
 #include <linux/workqueue.h>
 #include <linux/shrinker.h>
 #include <linux/list_lru.h>
+#include <linux/rust_binder.h>
 #include <uapi/linux/android/binder.h>
+#include <uapi/linux/android/binderfs.h>
 
 /* `bindgen` gets confused at certain things. */
 const gfp_t BINDINGS_GFP_KERNEL = GFP_KERNEL;
