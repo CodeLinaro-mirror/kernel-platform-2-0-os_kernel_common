@@ -64,6 +64,11 @@ macro_rules! current {
 #[repr(transparent)]
 pub struct Task(pub(crate) Opaque<bindings::task_struct>);
 
+// SAFETY: The only situation in which this can be accessed mutably is when the refcount drops to
+// zero and the destructor runs. It is safe for that to happen on any thread, so it is ok for this
+// type to be `Send`.
+unsafe impl Send for Task {}
+
 // SAFETY: It's OK to access `Task` through references from other threads because we're either
 // accessing properties that don't change (e.g., `pid`, `group_leader`) or that are properly
 // synchronised by C code (e.g., `signal_pending`).
