@@ -16,104 +16,11 @@
 static DEFINE_MUTEX(gzvm_list_lock);
 static LIST_HEAD(gzvm_list);
 
-/**
- * hva_to_pa_fast() - converts hva to pa in generic fast way
- * @hva: Host virtual address.
- *
- * Return: 0 if translation error
- */
-static u64 hva_to_pa_fast(u64 hva)
-{
-	struct page *page[1];
-
-	u64 pfn;
-
-	if (get_user_page_fast_only(hva, 0, page)) {
-		pfn = page_to_phys(page[0]);
-		put_page((struct page *)page);
-		return pfn;
-	} else {
-		return 0;
-	}
-}
-
-/**
- * hva_to_pa_slow() - note that this function may sleep
- * @hva: Host virtual address.
- *
- * Return: 0 if translation error
- */
-static u64 hva_to_pa_slow(u64 hva)
-{
-	struct page *page;
-	int npages;
-	u64 pfn;
-
-	npages = get_user_pages_unlocked(hva, 1, &page, 0);
-	if (npages != 1)
-		return 0;
-
-	pfn = page_to_phys(page);
-	put_page(page);
-
-	return pfn;
-}
-
-static u64 gzvm_gfn_to_hva_memslot(struct gzvm_memslot *memslot, u64 gfn)
+u64 gzvm_gfn_to_hva_memslot(struct gzvm_memslot *memslot, u64 gfn)
 {
 	u64 offset = gfn - memslot->base_gfn;
 
 	return memslot->userspace_addr + offset * PAGE_SIZE;
-}
-
-static u64 __gzvm_gfn_to_pfn_memslot(struct gzvm_memslot *memslot, u64 gfn)
-{
-	u64 hva, pa;
-
-	hva = gzvm_gfn_to_hva_memslot(memslot, gfn);
-
-	pa = gzvm_hva_to_pa_arch(hva);
-	if (pa != 0)
-		return PHYS_PFN(pa);
-
-	pa = hva_to_pa_fast(hva);
-	if (pa)
-		return PHYS_PFN(pa);
-
-	pa = hva_to_pa_slow(hva);
-	if (pa)
-		return PHYS_PFN(pa);
-
-	return 0;
-}
-
-/**
- * gzvm_gfn_to_pfn_memslot() - Translate gfn (guest ipa) to pfn (host pa),
- *			       result is in @pfn
- * @memslot: Pointer to struct gzvm_memslot.
- * @gfn: Guest frame number.
- * @pfn: Host page frame number.
- *
- * Return:
- * * 0			- Succeed
- * * -EFAULT		- Failed to convert
- */
-int gzvm_gfn_to_pfn_memslot(struct gzvm_memslot *memslot, u64 gfn, u64 *pfn)
-{
-	u64 __pfn;
-
-	if (!memslot)
-		return -EFAULT;
-
-	__pfn = __gzvm_gfn_to_pfn_memslot(memslot, gfn);
-	if (__pfn == 0) {
-		*pfn = 0;
-		return -EFAULT;
-	}
-
-	*pfn = __pfn;
-
-	return 0;
 }
 
 /**
@@ -380,6 +287,21 @@ out:
 	return ret;
 }
 
+static void gzvm_destroy_ppage(struct gzvm *gzvm)
+{
+	struct gzvm_pinned_page *ppage;
+	struct rb_node *node;
+
+	node = rb_first(&gzvm->pinned_pages);
+	while (node) {
+		ppage = rb_entry(node, struct gzvm_pinned_page, node);
+		unpin_user_pages_dirty_lock(&ppage->page, 1, true);
+		node = rb_next(node);
+		rb_erase(&ppage->node, &gzvm->pinned_pages);
+		kfree(ppage);
+	}
+}
+
 static void gzvm_destroy_vm(struct gzvm *gzvm)
 {
 	pr_debug("VM-%u is going to be destroyed\n", gzvm->vm_id);
@@ -395,6 +317,8 @@ static void gzvm_destroy_vm(struct gzvm *gzvm)
 	mutex_unlock(&gzvm_list_lock);
 
 	mutex_unlock(&gzvm->lock);
+
+	gzvm_destroy_ppage(gzvm);
 
 	kfree(gzvm);
 }
@@ -431,6 +355,7 @@ static struct gzvm *gzvm_create_vm(unsigned long vm_type)
 	gzvm->vm_id = ret;
 	gzvm->mm = current->mm;
 	mutex_init(&gzvm->lock);
+	gzvm->pinned_pages = RB_ROOT;
 
 	ret = gzvm_vm_irqfd_init(gzvm);
 	if (ret) {
