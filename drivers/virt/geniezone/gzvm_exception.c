@@ -7,38 +7,6 @@
 #include <linux/gzvm_drv.h>
 
 /**
- * gzvm_handle_page_fault() - Handle guest page fault, find corresponding page
- *                            for the faulting gpa
- * @vcpu: Pointer to struct gzvm_vcpu_run of the faulting vcpu
- *
- * Return:
- * * 0			- Success to handle guest page fault
- * * -EFAULT		- Failed to map phys addr to guest's GPA
- */
-static int gzvm_handle_page_fault(struct gzvm_vcpu *vcpu)
-{
-	struct gzvm *vm = vcpu->gzvm;
-	int memslot_id;
-	u64 pfn, gfn;
-	int ret;
-
-	gfn = PHYS_PFN(vcpu->run->exception.fault_gpa);
-	memslot_id = gzvm_find_memslot(vm, gfn);
-	if (unlikely(memslot_id < 0))
-		return -EFAULT;
-
-	ret = gzvm_gfn_to_pfn_memslot(&vm->memslot[memslot_id], gfn, &pfn);
-	if (unlikely(ret))
-		return -EFAULT;
-
-	ret = gzvm_arch_map_guest(vm->vm_id, memslot_id, pfn, gfn, 1);
-	if (unlikely(ret))
-		return -EFAULT;
-
-	return 0;
-}
-
-/**
  * gzvm_handle_guest_exception() - Handle guest exception
  * @vcpu: Pointer to struct gzvm_vcpu_run in userspace
  * Return:
@@ -62,6 +30,34 @@ bool gzvm_handle_guest_exception(struct gzvm_vcpu *vcpu)
 		fallthrough;
 	default:
 		ret = -EFAULT;
+	}
+
+	if (!ret)
+		return true;
+	else
+		return false;
+}
+
+/**
+ * gzvm_handle_guest_hvc() - Handle guest hvc
+ * @vcpu: Pointer to struct gzvm_vcpu_run in userspace
+ * Return:
+ * * true - This hvc has been processed, no need to back to VMM.
+ * * false - This hvc has not been processed, require userspace.
+ */
+bool gzvm_handle_guest_hvc(struct gzvm_vcpu *vcpu)
+{
+	unsigned long ipa;
+	int ret;
+
+	switch (vcpu->run->hypercall.args[0]) {
+	case GZVM_HVC_MEM_RELINQUISH:
+		ipa = vcpu->run->hypercall.args[1];
+		ret = gzvm_handle_relinquish(vcpu, ipa);
+		break;
+	default:
+		ret = false;
+		break;
 	}
 
 	if (!ret)
