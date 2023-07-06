@@ -14,9 +14,13 @@ typedef void (*ffa_fn)(struct arm_smccc_1_2_regs, struct arm_smccc_1_2_regs *);
 int arm_ffa_bus_init(void);
 void arm_ffa_bus_exit(void);
 
-static inline int __init ffa_transport_init(ffa_fn **invoke_ffa_fn)
+#ifdef CONFIG_ARM_FFA_SMCCC
+int __init ffa_transport_init(ffa_fn * invoke_ffa_fn);
+#else
+static inline int __init ffa_transport_init(ffa_fn *invoke_ffa_fn)
 {
 	return -EOPNOTSUPP;
 }
+#endif
 
 #endif /* _FFA_COMMON_H */
