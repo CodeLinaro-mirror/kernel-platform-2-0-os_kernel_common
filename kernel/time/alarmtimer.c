@@ -27,7 +27,7 @@
 #include <linux/compat.h>
 #include <linux/module.h>
 #include <linux/time_namespace.h>
-
+#include <trace/hooks/batteryswap.h>
 #include "posix-timers.h"
 
 #define CREATE_TRACE_POINTS
@@ -242,7 +242,7 @@ EXPORT_SYMBOL_GPL(alarm_expires_remaining);
 static int alarmtimer_suspend(struct device *dev)
 {
 	ktime_t min, now, expires;
-	int i, ret, type;
+	int i, ret, type, swap_enabled;
 	struct rtc_device *rtc;
 	unsigned long flags;
 	struct rtc_time tm;
@@ -254,6 +254,11 @@ static int alarmtimer_suspend(struct device *dev)
 	freezer_delta = 0;
 	spin_unlock_irqrestore(&freezer_delta_lock, flags);
 
+	swap_enabled = 0;
+	trace_android_vh_check_battery_swap(&swap_enabled);
+	if(swap_enabled) {
+		return 0;
+	}
 	rtc = alarmtimer_get_rtcdev();
 	/* If we have no rtcdev, just return */
 	if (!rtc)
