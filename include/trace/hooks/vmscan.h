@@ -36,6 +36,9 @@ DECLARE_HOOK(android_vh_tune_scan_type,
 DECLARE_HOOK(android_vh_kswapd_per_node,
 	TP_PROTO(int nid, bool *skip, bool run),
 	TP_ARGS(nid, skip, run));
+DECLARE_HOOK(android_vh_scan_abort_check_wmarks,
+	TP_PROTO(bool *check_wmarks),
+	TP_ARGS(check_wmarks));
 #endif /* _TRACE_HOOK_VMSCAN_H */
 /* This part must be outside protection */
 #include <trace/define_trace.h>

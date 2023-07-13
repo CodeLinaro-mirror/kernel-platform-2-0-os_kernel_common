@@ -377,3 +377,4 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_free_user);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_save_vmalloc_stack);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_show_stack_hash);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_kswapd_per_node);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_scan_abort_check_wmarks);
