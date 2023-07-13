@@ -71,6 +71,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "097fbc01_70ea31b2",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-07-13T16:30:13Z",
+      "side": 1,
+      "message": "Move this after the inclusion of trace/events/alarmtimer.h and add #undef:\n```\n#undef CREATE_TRACE_POINTS\n#include \u003ctrace/hooks/batteryswap.h\u003e\n```",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ec10bd4e_0db0a8c2",
         "filename": "kernel/time/alarmtimer.c",
         "patchSetId": 2
