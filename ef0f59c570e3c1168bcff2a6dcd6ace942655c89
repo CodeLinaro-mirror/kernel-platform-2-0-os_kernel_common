@@ -200,6 +200,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d4006db1_6250cdc0",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-13T19:39:56Z",
+      "side": 1,
+      "message": "During a battery swap, it is crucial to ensure that the device remains in a suspended state, relying on a limited backup power source. It is essential to prevent any unintended awakenings in this state, as they could potentially lead to sudden surges in the power consumption, ultimately resulting in a device shutdown. Hence, we disable alarmtimer IRQs when in batteryswap mode.",
+      "parentUuid": "1979d430_9ebc0645",
+      "range": {
+        "startLine": 258,
+        "startChar": 1,
+        "endLine": 258,
+        "endChar": 36
+      },
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b7d73a6d_34e86977",
         "filename": "kernel/time/alarmtimer.c",
         "patchSetId": 2
