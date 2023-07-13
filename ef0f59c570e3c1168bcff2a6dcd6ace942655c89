@@ -105,6 +105,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1979d430_9ebc0645",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-07-13T17:29:25Z",
+      "side": 1,
+      "message": "why is this needed at all?  Shouldn\u0027t the battery driver handle this properly instead?  Why is the alarmtime involved?",
+      "range": {
+        "startLine": 258,
+        "startChar": 1,
+        "endLine": 258,
+        "endChar": 36
+      },
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b7d73a6d_34e86977",
         "filename": "kernel/time/alarmtimer.c",
         "patchSetId": 2
