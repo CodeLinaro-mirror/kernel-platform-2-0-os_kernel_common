@@ -224,6 +224,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8460837a_9bb3b4d0",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-13T20:03:22Z",
+      "side": 1,
+      "message": "One of the challenges we encounter is the occurrence of random RTC events that can cause unintended wake-ups during the battery swap. These events, happening unpredictably, disrupt the process and can lead to device shutdowns. Addressing and resolving these RTC events is essential to ensure a smooth battery swap experience and minimize any potential disruptions.",
+      "parentUuid": "d4006db1_6250cdc0",
+      "range": {
+        "startLine": 258,
+        "startChar": 1,
+        "endLine": 258,
+        "endChar": 36
+      },
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b7d73a6d_34e86977",
         "filename": "kernel/time/alarmtimer.c",
         "patchSetId": 2
