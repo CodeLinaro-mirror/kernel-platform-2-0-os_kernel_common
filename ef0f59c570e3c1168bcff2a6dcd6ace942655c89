@@ -16,6 +16,74 @@
       "message": "bijosh@zebra.corp-partner.google.com",
       "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f68a3923_c0e8d355",
+        "filename": "include/trace/hooks/batteryswap.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-07-13T15:58:51Z",
+      "side": 1,
+      "message": "Please remove this unneeded inclusion",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d4d57930_4a7d1296",
+        "filename": "include/trace/hooks/batteryswap.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-07-13T15:58:51Z",
+      "side": 1,
+      "message": "remove this line and the #endif at line 16",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec10bd4e_0db0a8c2",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-07-13T15:58:51Z",
+      "side": 1,
+      "message": "initialize to zero in the declaration",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7d73a6d_34e86977",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-07-13T15:58:51Z",
+      "side": 1,
+      "message": "add a space after \"if\". Also, no \"{ }\" if there is only 1 statement",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
