@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dfd31c03_575ade41",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-13T13:26:30Z",
+      "side": 1,
+      "message": "bijosh@zebra.corp-partner.google.com",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
