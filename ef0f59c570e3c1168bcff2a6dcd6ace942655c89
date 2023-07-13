@@ -52,6 +52,24 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b2f7585_5227d17c",
+        "filename": "include/trace/hooks/batteryswap.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-13T19:03:58Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "f68a3923_c0e8d355",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d4d57930_4a7d1296",
@@ -65,6 +83,24 @@
       "writtenOn": "2023-07-13T15:58:51Z",
       "side": 1,
       "message": "remove this line and the #endif at line 16",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "88951e3e_d8fd84dd",
+        "filename": "include/trace/hooks/batteryswap.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-13T19:03:58Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "d4d57930_4a7d1296",
       "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
@@ -86,6 +122,24 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "da0b41d1_542f584f",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-13T19:03:58Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "097fbc01_70ea31b2",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ec10bd4e_0db0a8c2",
@@ -99,6 +153,24 @@
       "writtenOn": "2023-07-13T15:58:51Z",
       "side": 1,
       "message": "initialize to zero in the declaration",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8caea738_bed2a692",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-13T19:03:58Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "ec10bd4e_0db0a8c2",
       "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
@@ -139,6 +211,24 @@
       "writtenOn": "2023-07-13T15:58:51Z",
       "side": 1,
       "message": "add a space after \"if\". Also, no \"{ }\" if there is only 1 statement",
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "62b23d1d_4967e587",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-13T19:03:58Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "b7d73a6d_34e86977",
       "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
