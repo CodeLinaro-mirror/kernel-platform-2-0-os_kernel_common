@@ -296,6 +296,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "be73e13c_8c2a9b6a",
+        "filename": "kernel/time/alarmtimer.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-07-18T16:17:18Z",
+      "side": 1,
+      "message": "\u003e the solution is not generic and may not be the right candidate for Android Common Kernel.\n\nDoes that mean this patch should be abandoned? Shouldn\u0027t the whole solution be developed (and tested!) before adding code to the kernel?",
+      "parentUuid": "471ca281_49ca0977",
+      "range": {
+        "startLine": 258,
+        "startChar": 1,
+        "endLine": 258,
+        "endChar": 36
+      },
+      "revId": "ef0f59c570e3c1168bcff2a6dcd6ace942655c89",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b7d73a6d_34e86977",
         "filename": "kernel/time/alarmtimer.c",
         "patchSetId": 2
