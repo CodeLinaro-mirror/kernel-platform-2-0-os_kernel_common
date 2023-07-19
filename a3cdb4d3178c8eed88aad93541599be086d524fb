@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "90b27bec_f58091a4",
+        "filename": "drivers/input/keyboard/gpio_keys.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 986,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-07-19T21:40:41Z",
+      "side": 1,
+      "message": "Add the new decl on a new line.",
+      "revId": "a3cdb4d3178c8eed88aad93541599be086d524fb",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "338d2771_36273992",
+        "filename": "drivers/input/keyboard/gpio_keys.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 991,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2023-07-19T21:40:41Z",
+      "side": 1,
+      "message": "No { } required here. Should be:\n```\n  if (!wakeup_bypass_enabled)\n      gpio_keys_disable_wakeup(ddata);\n````",
+      "revId": "a3cdb4d3178c8eed88aad93541599be086d524fb",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
