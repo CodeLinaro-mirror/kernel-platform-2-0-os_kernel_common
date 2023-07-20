@@ -18,6 +18,24 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed170e65_348c48c4",
+        "filename": "drivers/input/keyboard/gpio_keys.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 986,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-20T00:37:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90b27bec_f58091a4",
+      "revId": "a3cdb4d3178c8eed88aad93541599be086d524fb",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "338d2771_36273992",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-07-19T21:40:41Z",
       "side": 1,
       "message": "No { } required here. Should be:\n```\n  if (!wakeup_bypass_enabled)\n      gpio_keys_disable_wakeup(ddata);\n````",
+      "revId": "a3cdb4d3178c8eed88aad93541599be086d524fb",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad149ed5_a29e2ab6",
+        "filename": "drivers/input/keyboard/gpio_keys.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 991,
+      "author": {
+        "id": 2022258
+      },
+      "writtenOn": "2023-07-20T00:37:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "338d2771_36273992",
       "revId": "a3cdb4d3178c8eed88aad93541599be086d524fb",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
