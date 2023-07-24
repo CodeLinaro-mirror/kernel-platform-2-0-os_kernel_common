@@ -16,6 +16,23 @@
       "message": "Also needs to go to other branches, thanks!",
       "revId": "eb4ab9fea2baec51756f120be16fd40236b15c2b",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6ff6e44b_16fe82f5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2023-07-24T09:27:16Z",
+      "side": 1,
+      "message": "Note, this also needs the respective reverts on all applicable branches for the .gitignore files. Here is the series:\n\naosp/2617646\naosp/2617460",
+      "revId": "eb4ab9fea2baec51756f120be16fd40236b15c2b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ],
   "submitRequirementResults": [
