@@ -68,9 +68,17 @@ _head:
 	 * its opcode forms the magic "MZ" signature required by UEFI.
 	 */
 	add	x13, x18, #0x16
-	b	primary_entry
+#ifdef CONFIG_ARM64_VA_BITS_36
+	b	reloc_hack			// branch to kernel start, magic
 #else
-	b	primary_entry			// branch to kernel start, magic
+	b	primary_entry
+#endif /* CONFIG_ARM64_VA_BITS_36 */
+#else
+#ifdef CONFIG_ARM64_VA_BITS_36
+	b	reloc_hack			// branch to kernel start, magic
+#else
+	b	primary_entry
+#endif /* CONFIG_ARM64_VA_BITS_36 */
 	.long	0				// reserved
 #endif
 	.quad	0				// Image load offset from start of RAM, little-endian
@@ -90,6 +98,70 @@ pe_header:
 #endif
 
 	__INIT
+
+#ifdef CONFIG_ARM64_VA_BITS_36
+#define HACK_36VA_UPPER_KERNEL 0x800000000 // this is OR'd with original addresses
+
+/* Update these defines based on your device. You should be able to check
+ * /proc/iomem to get this data.
+ */
+#define HACK_36VA_DT_SIZE      0x58000  (raven: 58000 oriole: 53000)
+#define HACK_36VA_INITRD_ADDR  0x86000000
+#define HACK_36VA_INITRD_SIZE  0x2120000
+
+SYM_CODE_START(reloc_hack)
+	mov	x23, x0			// x0-x3 needs to be saved.
+	mov	x24, x1
+	mov	x25, x2
+	mov	x26, x3
+	adrp	x18, KERNEL_START	// Copy the kernel.
+	orr	x19, x18, #HACK_36VA_UPPER_KERNEL
+	adrp	x20, KERNEL_END
+1:
+	mov	x0, x19			// dest
+	mov	x1, x18			// src
+	bl	__pi_copy_page
+	add	x18, x18, #PAGE_SIZE
+	add	x19, x19, #PAGE_SIZE
+	cmp	x18, x20
+	b.lt	1b
+
+	mov	x18, x23		// Copy the device tree.
+	orr	x19, x18, #HACK_36VA_UPPER_KERNEL
+	add	x20, x18, #HACK_36VA_DT_SIZE
+2:
+	mov	x0, x19			// dest
+	mov	x1, x18			// src
+	bl	__pi_copy_page
+	add	x18, x18, #PAGE_SIZE
+	add	x19, x19, #PAGE_SIZE
+	cmp	x18, x20
+	b.lt	2b
+
+	orr	x23, x23, #HACK_36VA_UPPER_KERNEL  // Use the moved dtb.
+
+	mov	x18, #HACK_36VA_INITRD_ADDR	// Copy initrd. Hardcoded address!
+	orr	x19, x18, #HACK_36VA_UPPER_KERNEL
+        mov     x21, #HACK_36VA_INITRD_SIZE	// Hardcoded size! check /proc/iomem
+	add	x20, x18, x21
+3:
+	mov	x0, x19			// dest
+	mov	x1, x18			// src
+	bl	__pi_copy_page
+	add	x18, x18, #PAGE_SIZE
+	add	x19, x19, #PAGE_SIZE
+	cmp	x18, x20
+	b.lt	3b
+
+	mov	x0, x23			// x0-x3 has to be restored.
+	mov	x1, x24
+	mov	x2, x25
+	mov	x3, x26
+	adr	x27, primary_entry	// Continue booting at the new address.
+	orr	x27, x27, #HACK_36VA_UPPER_KERNEL
+	br	x27
+SYM_CODE_END(reloc_hack)
+#endif /* CONFIG_ARM64_VA_BITS_36 */
 
 	/*
 	 * The following callee saved general purpose registers are used on the
