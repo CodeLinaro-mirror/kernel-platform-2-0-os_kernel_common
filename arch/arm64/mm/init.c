@@ -374,6 +374,8 @@ void __init arm64_memblock_init(void)
 		u64 base = phys_initrd_start & PAGE_MASK;
 		u64 size = PAGE_ALIGN(phys_initrd_start + phys_initrd_size) - base;
 
+                printk("WILL: initrd_start: %pa, size: %llx\n", &phys_initrd_start, phys_initrd_size);
+
 		/*
 		 * We can only add back the initrd memory if we don't end up
 		 * with more memory than we can address via the linear mapping.

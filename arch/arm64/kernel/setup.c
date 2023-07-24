@@ -97,6 +97,7 @@ void __init smp_setup_processor_id(void)
 	set_my_cpu_offset(0);
 	pr_info("Booting Linux on physical CPU 0x%010lx [0x%08x]\n",
 		(unsigned long)mpidr, read_cpuid_id());
+        pr_info("WILL: x0 was: %llx\n", boot_args[0]);
 }
 
 bool arch_match_cpu_phys_id(int cpu, u64 phys_id)
@@ -204,6 +205,8 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
 		while (true)
 			cpu_relax();
 	}
+        pr_info("WILL: HACK: device tree blob at physical address %pa (virtual address 0x%p)\n",
+                &dt_phys, dt_virt);
 
 	/* Early fixups are done, map the FDT as read-only now */
 	fixmap_remap_fdt(dt_phys, &size, PAGE_KERNEL_RO);
