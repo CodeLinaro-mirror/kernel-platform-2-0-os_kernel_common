@@ -888,6 +888,10 @@ static void __init early_init_dt_check_for_initrd(unsigned long node)
 
 	__early_init_dt_declare_initrd(start, end);
 	phys_initrd_start = start;
+#ifdef CONFIG_ARM64_VA_BITS_36
+	/* Hack to relocate the kernel to the upper 32GB RAM region. */
+	phys_initrd_start |= 0x800000000ULL;
+#endif
 	phys_initrd_size = end - start;
 
 	pr_debug("initrd_start=0x%llx  initrd_end=0x%llx\n",
@@ -1017,6 +1021,13 @@ int __init early_init_dt_scan_memory(unsigned long node, const char *uname,
 
 		base = dt_mem_next_cell(dt_root_addr_cells, &reg);
 		size = dt_mem_next_cell(dt_root_size_cells, &reg);
+
+#ifdef CONFIG_ARM64_VA_BITS_36
+		/* Hack to relocate the kernel to the upper 32GB RAM region.
+		 * This skips the low memory.*/
+		if (base < 0x880000000ULL)
+			continue;
+#endif
 
 		if (size == 0)
 			continue;
