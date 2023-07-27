@@ -234,7 +234,7 @@ static int kvm_arm_smmu_domain_finalize(struct kvm_arm_smmu_domain *kvm_smmu_dom
 		return 0;
 	}
 
-	ret = ida_alloc_range(&kvm_arm_smmu_domain_ida, 0, 1 << smmu->vmid_bits,
+	ret = ida_alloc_range(&kvm_arm_smmu_domain_ida, 0, KVM_IOMMU_MAX_DOMAINS,
 			      GFP_KERNEL);
 	if (ret < 0)
 		return ret;
@@ -284,8 +284,7 @@ static void kvm_arm_smmu_domain_free(struct iommu_domain *domain)
 	if (smmu) {
 		struct host_arm_smmu_device *host_smmu = smmu_to_host(smmu);
 
-		ret = kvm_call_hyp_nvhe(__pkvm_host_iommu_free_domain,
-					host_smmu->id, kvm_smmu_domain->id);
+		ret = kvm_call_hyp_nvhe(__pkvm_host_iommu_free_domain, kvm_smmu_domain->id);
 		/*
 		 * On failure, leak the pgd because it probably hasn't been
 		 * reclaimed by the host.
@@ -382,12 +381,11 @@ static int kvm_arm_smmu_map_pages(struct iommu_domain *domain,
 	size_t size = pgsize * pgcount;
 	struct kvm_arm_smmu_domain *kvm_smmu_domain = to_kvm_smmu_domain(domain);
 	struct arm_smmu_device *smmu = kvm_smmu_domain->smmu;
-	struct host_arm_smmu_device *host_smmu = smmu_to_host(smmu);
 
 	local_lock_irqsave(&memcache_lock, irqflags);
 	do {
 		mapped = kvm_call_hyp_nvhe(__pkvm_host_iommu_map_pages,
-					   host_smmu->id, kvm_smmu_domain->id,
+					   kvm_smmu_domain->id,
 					   iova, paddr, pgsize, pgcount, prot);
 		iova += mapped;
 		paddr += mapped;
@@ -415,12 +413,11 @@ static size_t kvm_arm_smmu_unmap_pages(struct iommu_domain *domain,
 	size_t size = pgsize * pgcount;
 	struct kvm_arm_smmu_domain *kvm_smmu_domain = to_kvm_smmu_domain(domain);
 	struct arm_smmu_device *smmu = kvm_smmu_domain->smmu;
-	struct host_arm_smmu_device *host_smmu = smmu_to_host(smmu);
 
 	local_lock_irqsave(&memcache_lock, irqflags);
 	do {
 		unmapped = kvm_call_hyp_nvhe(__pkvm_host_iommu_unmap_pages,
-					     host_smmu->id, kvm_smmu_domain->id,
+					     kvm_smmu_domain->id,
 					     iova, pgsize, pgcount);
 		total_unmapped += unmapped;
 		iova += unmapped;
@@ -445,10 +442,8 @@ static phys_addr_t kvm_arm_smmu_iova_to_phys(struct iommu_domain *domain,
 					     dma_addr_t iova)
 {
 	struct kvm_arm_smmu_domain *kvm_smmu_domain = to_kvm_smmu_domain(domain);
-	struct host_arm_smmu_device *host_smmu = smmu_to_host(kvm_smmu_domain->smmu);
 
-	return kvm_call_hyp_nvhe(__pkvm_host_iommu_iova_to_phys, host_smmu->id,
-				 kvm_smmu_domain->id, iova);
+	return kvm_call_hyp_nvhe(__pkvm_host_iommu_iova_to_phys, kvm_smmu_domain->id, iova);
 }
 
 static struct iommu_ops kvm_arm_smmu_ops = {
@@ -623,12 +618,6 @@ static int kvm_arm_probe_power_domain(struct device *dev,
 	return ret;
 }
 
-static void *kvm_arm_smmu_alloc_domains(struct arm_smmu_device *smmu)
-{
-	return (void *)devm_get_free_pages(smmu->dev, GFP_KERNEL | __GFP_ZERO,
-					   get_order(KVM_IOMMU_DOMAINS_ROOT_SIZE));
-}
-
 static int kvm_arm_smmu_probe(struct platform_device *pdev)
 {
 	int ret;
@@ -726,12 +715,6 @@ static int kvm_arm_smmu_probe(struct platform_device *pdev)
 	ret = kvm_arm_smmu_device_reset(host_smmu);
 	if (ret)
 		return ret;
-
-	hyp_smmu->iommu.domains = kvm_arm_smmu_alloc_domains(smmu);
-	if (!hyp_smmu->iommu.domains)
-		return -ENOMEM;
-
-	hyp_smmu->iommu.nr_domains = 1 << smmu->vmid_bits;
 
 	ret = arm_smmu_register_iommu(smmu, &kvm_arm_smmu_ops, mmio_addr);
 	if (ret)

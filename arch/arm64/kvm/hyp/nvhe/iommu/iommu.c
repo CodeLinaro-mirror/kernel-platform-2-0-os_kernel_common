@@ -12,6 +12,7 @@
 #include <nvhe/mm.h>
 
 struct kvm_hyp_iommu_memcache *kvm_hyp_iommu_memcaches;
+void **kvm_hyp_iommu_domains;
 
 void *kvm_iommu_donate_page(void)
 {
@@ -42,17 +43,17 @@ void kvm_iommu_reclaim_page(void *p)
 }
 
 static struct kvm_hyp_iommu_domain *
-handle_to_domain(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id)
+handle_to_domain(pkvm_handle_t domain_id)
 {
 	int idx;
 	struct kvm_hyp_iommu_domain *domains;
 
-	if (domain_id >= iommu->nr_domains)
+	if (domain_id >= KVM_IOMMU_MAX_DOMAINS)
 		return NULL;
-	domain_id = array_index_nospec(domain_id, iommu->nr_domains);
+	domain_id = array_index_nospec(domain_id, KVM_IOMMU_MAX_DOMAINS);
 
 	idx = domain_id >> KVM_IOMMU_DOMAIN_ID_SPLIT;
-	domains = READ_ONCE(iommu->domains[idx]);
+	domains = (struct kvm_hyp_iommu_domain *)READ_ONCE(kvm_hyp_iommu_domains[idx]);
 	if (!domains) {
 		domains = kvm_iommu_donate_page();
 		if (!domains)
@@ -65,7 +66,8 @@ handle_to_domain(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id)
 		 * lock. Races are therefore a host bug and we don't need to be
 		 * delicate about it.
 		 */
-		if (WARN_ON(cmpxchg64_relaxed(&iommu->domains[idx], 0, domains) != 0))
+		if (WARN_ON(cmpxchg64_relaxed(&kvm_hyp_iommu_domains[idx], 0,
+					      (void *)domains) != 0))
 			return NULL;
 	}
 
@@ -100,7 +102,7 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 		return -EINVAL;
 
 	hyp_spin_lock(&iommu->lock);
-	domain = handle_to_domain(iommu, domain_id);
+	domain = handle_to_domain(domain_id);
 	if (!domain)
 		goto out_unlock;
 
@@ -111,26 +113,26 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (ret)
 		goto out_unlock;
 	atomic_set_release(&domain->refs, 1);
+	domain->iommu = iommu;
 out_unlock:
 	hyp_spin_unlock(&iommu->lock);
 	return ret;
 }
 
-int kvm_iommu_free_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id)
+int kvm_iommu_free_domain(pkvm_handle_t domain_id)
 {
 	int ret = -EINVAL;
 	struct io_pgtable iopt;
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
-	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
-	if (!iommu)
-		return -EINVAL;
-
-	hyp_spin_lock(&iommu->lock);
-	domain = handle_to_domain(iommu, domain_id);
+	domain = handle_to_domain(domain_id);
 	if (!domain)
-		goto out_unlock;
+		return -EINVAL;
+	iommu = domain->iommu;
+
+	BUG_ON(!iommu);
+	hyp_spin_lock(&iommu->lock);
 
 	if (WARN_ON(atomic_cmpxchg_release(&domain->refs, 1, 0) != 1))
 		goto out_unlock;
@@ -164,7 +166,7 @@ int kvm_iommu_attach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 		return -EINVAL;
 
 	hyp_spin_lock(&iommu->lock);
-	domain = handle_to_domain(iommu, domain_id);
+	domain = handle_to_domain(domain_id);
 	if (!domain || domain_get(domain))
 		goto out_unlock;
 
@@ -192,7 +194,7 @@ int kvm_iommu_detach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 		return -EINVAL;
 
 	hyp_spin_lock(&iommu->lock);
-	domain = handle_to_domain(iommu, domain_id);
+	domain = handle_to_domain(domain_id);
 	if (!domain || atomic_read(&domain->refs) <= 1)
 		goto out_unlock;
 
@@ -209,8 +211,8 @@ out_unlock:
 #define IOMMU_PROT_MASK (IOMMU_READ | IOMMU_WRITE | IOMMU_CACHE |\
 			 IOMMU_NOEXEC | IOMMU_MMIO | IOMMU_PRIV)
 
-size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
-			   unsigned long iova, phys_addr_t paddr, size_t pgsize,
+size_t kvm_iommu_map_pages(pkvm_handle_t domain_id, unsigned long iova,
+			   phys_addr_t paddr, size_t pgsize,
 			   size_t pgcount, int prot)
 {
 	size_t size;
@@ -232,10 +234,6 @@ size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	    iova + size < iova || paddr + size < paddr)
 		return 0;
 
-	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
-	if (!iommu)
-		return 0;
-
 	/*
 	 * TODO: check whether it is safe here to call io-pgtable without a
 	 * lock. Does the driver make assumptions that don't hold for the
@@ -245,7 +243,8 @@ size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	 * Command queue and iommu->power_is_off are also protected by the
 	 * iommu_lock, taken by the TLB invalidation callbacks.
 	 */
-	domain = handle_to_domain(iommu, domain_id);
+
+	domain = handle_to_domain(domain_id);
 	if (!domain || domain_get(domain))
 		return 0;
 
@@ -257,6 +256,7 @@ size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (ret)
 		goto out_put_domain;
 
+	iommu = domain->iommu;
 	iopt = domain_to_iopt(iommu, domain, domain_id);
 	while (pgcount && !ret) {
 		mapped = 0;
@@ -283,7 +283,7 @@ out_put_domain:
 	return total_mapped;
 }
 
-size_t kvm_iommu_unmap_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
+size_t kvm_iommu_unmap_pages(pkvm_handle_t domain_id,
 			     unsigned long iova, size_t pgsize, size_t pgcount)
 {
 	int ret;
@@ -306,11 +306,7 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	    iova + size < iova)
 		return 0;
 
-	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
-	if (!iommu)
-		return 0;
-
-	domain = handle_to_domain(iommu, domain_id);
+	domain = handle_to_domain(domain_id);
 	if (!domain || domain_get(domain))
 		return 0;
 
@@ -318,6 +314,7 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (!IS_ALIGNED(iova | pgsize, granule))
 		goto out_put_domain;
 
+	iommu = domain->iommu;
 	iopt = domain_to_iopt(iommu, domain, domain_id);
 
 	while (total_unmapped < size) {
@@ -343,22 +340,18 @@ out_put_domain:
 	return total_unmapped;
 }
 
-phys_addr_t kvm_iommu_iova_to_phys(pkvm_handle_t iommu_id,
-				   pkvm_handle_t domain_id, unsigned long iova)
+phys_addr_t kvm_iommu_iova_to_phys(pkvm_handle_t domain_id, unsigned long iova)
 {
 	phys_addr_t phys = 0;
 	struct io_pgtable iopt;
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
-	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
-	if (!iommu)
-		return 0;
-
-	domain = handle_to_domain(iommu, domain_id);
+	domain = handle_to_domain(domain_id);
 	if (!domain || domain_get(domain))
 		return 0;
 
+	iommu = domain->iommu;
 	iopt = domain_to_iopt(iommu, domain, domain_id);
 	phys = iopt_iova_to_phys(&iopt, iova);
 
@@ -400,17 +393,7 @@ static const struct kvm_power_domain_ops iommu_power_ops = {
 
 int kvm_iommu_init_device(struct kvm_hyp_iommu *iommu)
 {
-	int ret;
-	void *domains;
-
-	ret = pkvm_init_power_domain(&iommu->power_domain, &iommu_power_ops);
-	if (ret)
-		return ret;
-
-	domains = iommu->domains;
-	iommu->domains = kern_hyp_va(domains);
-	return pkvm_create_mappings(iommu->domains, iommu->domains +
-				    KVM_IOMMU_DOMAINS_ROOT_ENTRIES, PAGE_HYP);
+	return pkvm_init_power_domain(&iommu->power_domain, &iommu_power_ops);
 }
 
 int kvm_iommu_init(struct kvm_iommu_ops *ops, struct kvm_hyp_iommu_memcache *mc,
@@ -427,6 +410,11 @@ int kvm_iommu_init(struct kvm_iommu_ops *ops, struct kvm_hyp_iommu_memcache *mc,
 		return -ENODEV;
 
 	ret = ops->init ? ops->init(init_arg) : 0;
+	if (ret)
+		return ret;
+
+	ret = pkvm_create_mappings(kvm_hyp_iommu_domains, kvm_hyp_iommu_domains +
+				   KVM_IOMMU_DOMAINS_ROOT_ENTRIES, PAGE_HYP);
 	if (ret)
 		return ret;
 
