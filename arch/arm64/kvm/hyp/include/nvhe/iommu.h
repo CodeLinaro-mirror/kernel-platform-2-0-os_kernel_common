@@ -90,8 +90,8 @@ static inline int kvm_iommu_init(struct kvm_iommu_ops *ops, struct kvm_hyp_iommu
 #endif /* CONFIG_KVM_IOMMU */
 
 struct kvm_iommu_tlb_cookie {
-	struct kvm_hyp_iommu	*iommu;
 	pkvm_handle_t		domain_id;
+	struct kvm_hyp_iommu_domain *domain;
 };
 
 struct kvm_iommu_ops {
@@ -108,13 +108,13 @@ struct kvm_iommu_ops {
 
 extern struct kvm_iommu_ops *kvm_iommu_ops;
 
-#define domain_to_iopt(_iommu, _domain, _domain_id)		\
+#define domain_to_iopt(_domain, _domain_id)		\
 	(struct io_pgtable) {					\
 		.ops = &(_domain)->pgtable->ops,		\
 		.pgd = (_domain)->pgd,				\
 		.cookie = &(struct kvm_iommu_tlb_cookie) {	\
-			.iommu		= (_iommu),		\
 			.domain_id	= (_domain_id),		\
+			.domain		= (_domain),		\
 		},						\
 	}
 

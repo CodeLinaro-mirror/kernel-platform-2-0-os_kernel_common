@@ -395,7 +395,8 @@ static struct hyp_arm_smmu_v3_device *to_smmu(struct kvm_hyp_iommu *iommu)
 static void smmu_tlb_flush_all(void *cookie)
 {
 	struct kvm_iommu_tlb_cookie *data = cookie;
-	struct hyp_arm_smmu_v3_device *smmu = to_smmu(data->iommu);
+	struct kvm_hyp_iommu_domain *domain = data->domain;
+	struct hyp_arm_smmu_v3_device *smmu = to_smmu(domain->iommu);
 	struct arm_smmu_cmdq_ent cmd = {
 		.opcode = CMDQ_OP_TLBI_S12_VMALL,
 		.tlbi.vmid = data->domain_id,
@@ -415,7 +416,8 @@ static void smmu_tlb_inv_range(struct kvm_iommu_tlb_cookie *data,
 			       unsigned long iova, size_t size, size_t granule,
 			       bool leaf)
 {
-	struct hyp_arm_smmu_v3_device *smmu = to_smmu(data->iommu);
+	struct kvm_hyp_iommu_domain *domain = data->domain;
+	struct hyp_arm_smmu_v3_device *smmu = to_smmu(domain->iommu);
 	unsigned long end = iova + size;
 	struct arm_smmu_cmdq_ent cmd = {
 		.opcode = CMDQ_OP_TLBI_S2_IPA,
@@ -619,7 +621,7 @@ int smmu_alloc_domain(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *
 
 	domain->pgtable = &smmu->pgtable.iop;
 
-	iopt = domain_to_iopt(iommu, domain, domain_id);
+	iopt = domain_to_iopt(domain, domain_id);
 	ret = kvm_arm_io_pgtable_alloc(&iopt, pgd_hva);
 	if (ret)
 		return ret;
