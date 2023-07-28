@@ -137,7 +137,7 @@ int kvm_iommu_free_domain(pkvm_handle_t domain_id)
 	if (WARN_ON(atomic_cmpxchg_release(&domain->refs, 1, 0) != 1))
 		goto out_unlock;
 
-	iopt = domain_to_iopt(iommu, domain, domain_id);
+	iopt = domain_to_iopt(domain, domain_id);
 	/*
 	 * iop points to the iommu, the pgd and the domain_id but not the
 	 * domain, so it's safe to free the domain now and the pgtables outside
@@ -221,7 +221,6 @@ size_t kvm_iommu_map_pages(pkvm_handle_t domain_id, unsigned long iova,
 	int ret;
 	struct io_pgtable iopt;
 	size_t total_mapped = 0;
-	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
 	if (!kvm_iommu_ops)
@@ -256,8 +255,7 @@ size_t kvm_iommu_map_pages(pkvm_handle_t domain_id, unsigned long iova,
 	if (ret)
 		goto out_put_domain;
 
-	iommu = domain->iommu;
-	iopt = domain_to_iopt(iommu, domain, domain_id);
+	iopt = domain_to_iopt(domain, domain_id);
 	while (pgcount && !ret) {
 		mapped = 0;
 		ret = iopt_map_pages(&iopt, iova, paddr, pgsize, pgcount, prot,
@@ -293,7 +291,6 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t domain_id,
 	phys_addr_t paddr = 0;
 	struct io_pgtable iopt;
 	size_t total_unmapped = 0;
-	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
 	if (!kvm_iommu_ops)
@@ -314,8 +311,7 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t domain_id,
 	if (!IS_ALIGNED(iova | pgsize, granule))
 		goto out_put_domain;
 
-	iommu = domain->iommu;
-	iopt = domain_to_iopt(iommu, domain, domain_id);
+	iopt = domain_to_iopt(domain, domain_id);
 
 	while (total_unmapped < size) {
 		/*
@@ -344,15 +340,13 @@ phys_addr_t kvm_iommu_iova_to_phys(pkvm_handle_t domain_id, unsigned long iova)
 {
 	phys_addr_t phys = 0;
 	struct io_pgtable iopt;
-	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
 	domain = handle_to_domain(domain_id);
 	if (!domain || domain_get(domain))
 		return 0;
 
-	iommu = domain->iommu;
-	iopt = domain_to_iopt(iommu, domain, domain_id);
+	iopt = domain_to_iopt(domain, domain_id);
 	phys = iopt_iova_to_phys(&iopt, iova);
 
 	domain_put(domain);
