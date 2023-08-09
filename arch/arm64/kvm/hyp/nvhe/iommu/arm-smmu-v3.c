@@ -610,11 +610,21 @@ static int smmu_detach_dev(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 	return smmu_sync_ste(smmu, sid);
 }
 
-int smmu_alloc_domain(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *domain)
+int smmu_alloc_domain(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *domain,
+		      pkvm_handle_t domain_id, unsigned long pgd_hva)
 {
 	struct hyp_arm_smmu_v3_device *smmu = to_smmu(iommu);
+	int ret;
+	struct io_pgtable iopt;
 
 	domain->pgtable = &smmu->pgtable.iop;
+
+	iopt = domain_to_iopt(iommu, domain, domain_id);
+	ret = kvm_arm_io_pgtable_alloc(&iopt, pgd_hva);
+	if (ret)
+		return ret;
+
+	domain->pgd = iopt.pgd;
 
 	return 0;
 }
@@ -622,7 +632,6 @@ int smmu_alloc_domain(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *
 struct kvm_iommu_ops smmu_ops = {
 	.init				= smmu_init,
 	.get_iommu_by_id		= smmu_id_to_iommu,
-	.alloc_iopt			= kvm_arm_io_pgtable_alloc,
 	.free_iopt			= kvm_arm_io_pgtable_free,
 	.attach_dev			= smmu_attach_dev,
 	.detach_dev			= smmu_detach_dev,
