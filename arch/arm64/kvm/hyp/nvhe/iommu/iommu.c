@@ -11,7 +11,7 @@
 #include <nvhe/mem_protect.h>
 #include <nvhe/mm.h>
 
-struct kvm_hyp_iommu_memcache __ro_after_init *kvm_hyp_iommu_memcaches;
+struct kvm_hyp_iommu_memcache *kvm_hyp_iommu_memcaches;
 
 #define domain_to_iopt(_iommu, _domain, _domain_id)		\
 	(struct io_pgtable) {					\
@@ -427,19 +427,30 @@ int kvm_iommu_init_device(struct kvm_hyp_iommu *iommu)
 				    KVM_IOMMU_DOMAINS_ROOT_ENTRIES, PAGE_HYP);
 }
 
-int kvm_iommu_init(void)
+int kvm_iommu_init(struct kvm_iommu_ops *ops, struct kvm_hyp_iommu_memcache *mc,
+		   unsigned long init_arg)
 {
 	enum kvm_pgtable_prot prot;
+	int ret;
 
-	if (WARN_ON(!kvm_iommu_ops->get_iommu_by_id ||
-		    !kvm_iommu_ops->alloc_iopt ||
-		    !kvm_iommu_ops->free_iopt ||
-		    !kvm_iommu_ops->attach_dev ||
-		    !kvm_iommu_ops->detach_dev))
+	if (WARN_ON(!ops->get_iommu_by_id ||
+		    !ops->alloc_iopt ||
+		    !ops->free_iopt ||
+		    !ops->attach_dev ||
+		    !ops->detach_dev))
 		return -ENODEV;
+
+	ret = ops->init ? ops->init(init_arg) : 0;
+	if (ret)
+		return ret;
 
 	/* The memcache is shared with the host */
 	prot = pkvm_mkstate(PAGE_HYP, PKVM_PAGE_SHARED_OWNED);
-	return pkvm_create_mappings(kvm_hyp_iommu_memcaches,
-				    kvm_hyp_iommu_memcaches + NR_CPUS, prot);
+	ret = pkvm_create_mappings(mc, mc + NR_CPUS, prot);
+	if (ret)
+		return ret;
+
+	kvm_iommu_ops = ops;
+	kvm_hyp_iommu_memcaches = mc;
+	return 0;
 }
