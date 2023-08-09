@@ -502,14 +502,10 @@ static int smmu_init_device(struct hyp_arm_smmu_v3_device *smmu)
 	return kvm_iommu_init_device(&smmu->iommu);
 }
 
-static int smmu_init(void)
+static int smmu_init(unsigned long init_arg)
 {
 	int ret;
 	struct hyp_arm_smmu_v3_device *smmu;
-
-	ret = kvm_iommu_init();
-	if (ret)
-		return ret;
 
 	ret = pkvm_create_mappings(kvm_hyp_arm_smmu_v3_smmus,
 				   kvm_hyp_arm_smmu_v3_smmus +

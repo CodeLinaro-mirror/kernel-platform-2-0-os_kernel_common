@@ -1359,6 +1359,15 @@ static void handle___pkvm_host_iommu_iova_to_phys(struct kvm_cpu_context *host_c
 	cpu_reg(host_ctxt, 1) = kvm_iommu_iova_to_phys(iommu, domain, iova);
 }
 
+static void handle___pkvm_iommu_init(struct kvm_cpu_context *host_ctxt)
+{
+	DECLARE_REG(struct kvm_iommu_ops *, ops, host_ctxt, 1);
+	DECLARE_REG(struct kvm_hyp_iommu_memcache *, memcache, host_ctxt, 2);
+	DECLARE_REG(unsigned long, init_arg, host_ctxt, 3);
+
+	cpu_reg(host_ctxt, 1) = kvm_iommu_init(ops, memcache, init_arg);
+}
+
 typedef void (*hcall_t)(struct kvm_cpu_context *);
 
 #define HANDLE_FUNC(x)	[__KVM_HOST_SMCCC_FUNC_##x] = (hcall_t)handle_##x
@@ -1416,6 +1425,7 @@ static const hcall_t host_hcall[] = {
 	HANDLE_FUNC(__pkvm_host_iommu_map_pages),
 	HANDLE_FUNC(__pkvm_host_iommu_unmap_pages),
 	HANDLE_FUNC(__pkvm_host_iommu_iova_to_phys),
+	HANDLE_FUNC(__pkvm_iommu_init),
 };
 
 static void handle_host_hcall(struct kvm_cpu_context *host_ctxt)
