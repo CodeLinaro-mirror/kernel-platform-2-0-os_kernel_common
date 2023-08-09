@@ -13,16 +13,6 @@
 
 struct kvm_hyp_iommu_memcache *kvm_hyp_iommu_memcaches;
 
-#define domain_to_iopt(_iommu, _domain, _domain_id)		\
-	(struct io_pgtable) {					\
-		.ops = &(_domain)->pgtable->ops,		\
-		.pgd = (_domain)->pgd,				\
-		.cookie = &(struct kvm_iommu_tlb_cookie) {	\
-			.iommu		= (_iommu),		\
-			.domain_id	= (_domain_id),		\
-		},						\
-	}
-
 void *kvm_iommu_donate_page(void)
 {
 	void *p;
@@ -102,7 +92,6 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 			   unsigned long pgd_hva)
 {
 	int ret = -EINVAL;
-	struct io_pgtable iopt;
 	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
 
@@ -118,16 +107,9 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (atomic_read(&domain->refs))
 		goto out_unlock;
 
-	ret = kvm_iommu_ops->alloc_domain(iommu, domain);
+	ret = kvm_iommu_ops->alloc_domain(iommu, domain, domain_id, pgd_hva);
 	if (ret)
 		goto out_unlock;
-
-	iopt = domain_to_iopt(iommu, domain, domain_id);
-	ret = kvm_iommu_ops->alloc_iopt(&iopt, pgd_hva);
-	if (ret)
-		goto out_unlock;
-
-	domain->pgd = iopt.pgd;
 	atomic_set_release(&domain->refs, 1);
 out_unlock:
 	hyp_spin_unlock(&iommu->lock);
@@ -438,7 +420,6 @@ int kvm_iommu_init(struct kvm_iommu_ops *ops, struct kvm_hyp_iommu_memcache *mc,
 	int ret;
 
 	if (WARN_ON(!ops->get_iommu_by_id ||
-		    !ops->alloc_iopt ||
 		    !ops->free_iopt ||
 		    !ops->alloc_domain ||
 		    !ops->attach_dev ||
