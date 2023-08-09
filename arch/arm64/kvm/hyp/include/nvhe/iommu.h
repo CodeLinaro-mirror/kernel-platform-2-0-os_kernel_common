@@ -102,15 +102,25 @@ struct kvm_iommu_tlb_cookie {
 struct kvm_iommu_ops {
 	int (*init)(unsigned long arg);
 	struct kvm_hyp_iommu *(*get_iommu_by_id)(pkvm_handle_t smmu_id);
-	int (*alloc_iopt)(struct io_pgtable *iopt, unsigned long pgd_hva);
 	int (*free_iopt)(struct io_pgtable *iopt);
 	int (*attach_dev)(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 			  struct kvm_hyp_iommu_domain *domain, u32 endpoint_id);
 	int (*detach_dev)(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 			  struct kvm_hyp_iommu_domain *domain, u32 endpoint_id);
-	int (*alloc_domain)(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *domain);
+	int (*alloc_domain)(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *domain,
+			    pkvm_handle_t domain_id, unsigned long pgd_hva);
 };
 
 extern struct kvm_iommu_ops *kvm_iommu_ops;
+
+#define domain_to_iopt(_iommu, _domain, _domain_id)		\
+	(struct io_pgtable) {					\
+		.ops = &(_domain)->pgtable->ops,		\
+		.pgd = (_domain)->pgd,				\
+		.cookie = &(struct kvm_iommu_tlb_cookie) {	\
+			.iommu		= (_iommu),		\
+			.domain_id	= (_domain_id),		\
+		},						\
+	}
 
 #endif /* __ARM64_KVM_NVHE_IOMMU_H__ */
