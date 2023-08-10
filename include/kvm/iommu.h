@@ -42,7 +42,7 @@ struct kvm_hyp_iommu_domain {
 	void			*pgd;
 	atomic_t		refs;
 	struct io_pgtable_params	*pgtable;
-	struct kvm_hyp_iommu *iommu;
+	void				*priv;
 };
 
 /*
