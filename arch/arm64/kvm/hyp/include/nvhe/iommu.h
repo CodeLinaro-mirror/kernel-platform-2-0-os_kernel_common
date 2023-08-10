@@ -12,6 +12,7 @@ int kvm_arm_io_pgtable_init(struct io_pgtable_cfg *cfg,
 			    struct arm_lpae_io_pgtable *data);
 int kvm_arm_io_pgtable_alloc(struct io_pgtable *iop, unsigned long pgd_hva);
 int kvm_arm_io_pgtable_free(struct io_pgtable *iop);
+size_t kvm_arm_io_pgtable_size(struct io_pgtable *iopt);
 #endif /* CONFIG_ARM_SMMU_V3_PKVM */
 
 #if IS_ENABLED(CONFIG_KVM_IOMMU)
