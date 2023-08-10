@@ -8,6 +8,7 @@
 #include <asm/kvm_hyp.h>
 #include <kvm/arm_smmu_v3.h>
 #include <nvhe/iommu.h>
+#include <nvhe/alloc.h>
 #include <nvhe/mm.h>
 #include <nvhe/pkvm.h>
 
@@ -15,6 +16,12 @@
 
 size_t __ro_after_init kvm_hyp_arm_smmu_v3_count;
 struct hyp_arm_smmu_v3_device __ro_after_init *kvm_hyp_arm_smmu_v3_smmus;
+
+struct hyp_arm_smmu_v3_domain {
+	struct kvm_hyp_iommu_domain	*domain;
+	struct kvm_hyp_iommu		*iommu;
+	unsigned long			pgd_size;
+};
 
 #define for_each_smmu(smmu) \
 	for ((smmu) = kvm_hyp_arm_smmu_v3_smmus; \
@@ -396,7 +403,8 @@ static void smmu_tlb_flush_all(void *cookie)
 {
 	struct kvm_iommu_tlb_cookie *data = cookie;
 	struct kvm_hyp_iommu_domain *domain = data->domain;
-	struct hyp_arm_smmu_v3_device *smmu = to_smmu(domain->iommu);
+	struct hyp_arm_smmu_v3_domain *smmu_domain = domain->priv;
+	struct hyp_arm_smmu_v3_device *smmu = to_smmu(smmu_domain->iommu);
 	struct arm_smmu_cmdq_ent cmd = {
 		.opcode = CMDQ_OP_TLBI_S12_VMALL,
 		.tlbi.vmid = data->domain_id,
@@ -417,7 +425,8 @@ static void smmu_tlb_inv_range(struct kvm_iommu_tlb_cookie *data,
 			       bool leaf)
 {
 	struct kvm_hyp_iommu_domain *domain = data->domain;
-	struct hyp_arm_smmu_v3_device *smmu = to_smmu(domain->iommu);
+	struct hyp_arm_smmu_v3_domain *smmu_domain = domain->priv;
+	struct hyp_arm_smmu_v3_device *smmu = to_smmu(smmu_domain->iommu);
 	unsigned long end = iova + size;
 	struct arm_smmu_cmdq_ent cmd = {
 		.opcode = CMDQ_OP_TLBI_S2_IPA,
@@ -535,7 +544,8 @@ static struct kvm_hyp_iommu *smmu_id_to_iommu(pkvm_handle_t smmu_id)
 int smmu_domain_finalise(struct kvm_hyp_iommu_domain *domain,
 			 pkvm_handle_t domain_id)
 {
-	struct hyp_arm_smmu_v3_device *smmu = to_smmu(domain->iommu);
+	struct hyp_arm_smmu_v3_domain *smmu_domain = domain->priv;
+	struct hyp_arm_smmu_v3_device *smmu = to_smmu(smmu_domain->iommu);
 	int ret;
 	struct io_pgtable iopt;
 
@@ -562,6 +572,7 @@ static int smmu_attach_dev(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 	u64 ts, sl, ic, oc, sh, tg, ps;
 	u64 ent[STRTAB_STE_DWORDS] = {};
 	struct hyp_arm_smmu_v3_device *smmu = to_smmu(iommu);
+	struct hyp_arm_smmu_v3_domain *smmu_domain = domain->priv;
 
 	hyp_spin_lock(&iommu->lock);
 	dst = smmu_get_ste_ptr(smmu, sid);
@@ -574,13 +585,13 @@ static int smmu_attach_dev(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 	 * However, as this operation is rare, it should be fine.
 	 */
 	if (!domain->pgtable) {
-		domain->iommu = iommu;
+		smmu_domain->iommu = iommu;
 		ret = smmu_domain_finalise(domain, domain_id);
 		if (ret)
 			goto out_unlock;
 	}
 
-	if (domain->iommu != iommu)
+	if (smmu_domain->iommu != iommu)
 		return -EBUSY;
 
 	cfg = &domain->pgtable->cfg;
@@ -657,8 +668,18 @@ out_unlock:
 int smmu_alloc_domain(struct kvm_hyp_iommu_domain *domain, pkvm_handle_t domain_id,
 		      unsigned long pgd_hva, unsigned long pgd_size)
 {
-	/* pgd_size not used now as there is now where to save it. */
+	struct hyp_arm_smmu_v3_domain *smmu_domain;
+
+	smmu_domain = hyp_zalloc(sizeof(struct hyp_arm_smmu_v3_domain));
+	if (!smmu_domain)
+		return hyp_alloc_errno();
+
+	smmu_domain->domain = domain;
 	domain->pgd = (void *)pgd_hva;
+	smmu_domain->pgd_size = pgd_size;
+
+	domain->priv = (void *)smmu_domain;
+
 	return 0;
 }
 
