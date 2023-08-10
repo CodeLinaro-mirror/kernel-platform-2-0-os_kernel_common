@@ -224,7 +224,7 @@ static int kvm_arm_smmu_domain_finalize(struct kvm_arm_smmu_domain *kvm_smmu_dom
 {
 	int ret = 0;
 	struct page *p;
-	unsigned long pgd;
+	unsigned long pgd, pgd_size;
 	struct arm_smmu_device *smmu = master->smmu;
 	struct host_arm_smmu_device *host_smmu = smmu_to_host(smmu);
 
@@ -252,10 +252,11 @@ static int kvm_arm_smmu_domain_finalize(struct kvm_arm_smmu_domain *kvm_smmu_dom
 	}
 
 	pgd = (unsigned long)page_to_virt(p);
+	pgd_size = (1 << host_smmu->pgd_order) << PAGE_SHIFT;
 
 	local_lock_irq(&memcache_lock);
 	ret = kvm_call_hyp_nvhe_mc(smmu, __pkvm_host_iommu_alloc_domain,
-				   host_smmu->id, kvm_smmu_domain->id, pgd);
+				   kvm_smmu_domain->id, pgd, pgd_size);
 	local_unlock_irq(&memcache_lock);
 	if (ret)
 		goto err_free_pgd;
