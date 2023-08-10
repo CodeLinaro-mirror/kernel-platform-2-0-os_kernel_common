@@ -96,16 +96,11 @@ static void domain_put(struct kvm_hyp_iommu_domain *domain)
 	BUG_ON(!atomic_dec_return_release(&domain->refs));
 }
 
-int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
-			   unsigned long pgd_hva)
+int kvm_iommu_alloc_domain(pkvm_handle_t domain_id, unsigned long pgd_hva,
+			   unsigned long pgd_size)
 {
 	int ret = -EINVAL;
-	struct kvm_hyp_iommu *iommu;
 	struct kvm_hyp_iommu_domain *domain;
-
-	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
-	if (!iommu)
-		return -EINVAL;
 
 	hyp_spin_lock(&iommu_domains_lock);
 	domain = handle_to_domain(domain_id);
@@ -115,11 +110,10 @@ int kvm_iommu_alloc_domain(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 	if (atomic_read(&domain->refs))
 		goto out_unlock;
 
-	ret = kvm_iommu_ops->alloc_domain(iommu, domain, domain_id, pgd_hva);
+	ret = kvm_iommu_ops->alloc_domain(domain, domain_id, pgd_hva, pgd_size);
 	if (ret)
 		goto out_unlock;
 	atomic_set_release(&domain->refs, 1);
-	domain->iommu = iommu;
 out_unlock:
 	hyp_spin_unlock(&iommu_domains_lock);
 	return ret;
@@ -142,7 +136,14 @@ int kvm_iommu_free_domain(pkvm_handle_t domain_id)
 	iopt = domain_to_iopt(domain, domain_id);
 
 	memset(domain, 0, sizeof(*domain));
-	ret = kvm_iommu_ops->free_iopt(&iopt);
+	/*
+	 * A domain can be freed without being attached.
+	 * this is SMMUv3 specific and will improved next.
+	 */
+	if (domain->pgtable)
+		ret = kvm_iommu_ops->free_iopt(&iopt);
+	else
+		ret = 0;
 
 out_unlock:
 	hyp_spin_unlock(&iommu_domains_lock);
