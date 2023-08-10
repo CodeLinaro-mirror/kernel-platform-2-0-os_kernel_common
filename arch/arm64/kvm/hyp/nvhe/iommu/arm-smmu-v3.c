@@ -532,6 +532,26 @@ static struct kvm_hyp_iommu *smmu_id_to_iommu(pkvm_handle_t smmu_id)
 	return &kvm_hyp_arm_smmu_v3_smmus[smmu_id].iommu;
 }
 
+int smmu_domain_finalise(struct kvm_hyp_iommu_domain *domain,
+			 pkvm_handle_t domain_id)
+{
+	struct hyp_arm_smmu_v3_device *smmu = to_smmu(domain->iommu);
+	int ret;
+	struct io_pgtable iopt;
+
+	domain->pgtable = &smmu->pgtable.iop;
+
+	iopt = domain_to_iopt(domain, domain_id);
+	ret = kvm_arm_io_pgtable_alloc(&iopt, (unsigned long)domain->pgd);
+	if (ret) {
+		domain->pgtable = NULL;
+		return ret;
+	}
+	/* TODO: validate PGD SIZE. */
+	domain->pgd = iopt.pgd;
+	return 0;
+}
+
 static int smmu_attach_dev(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 			   struct kvm_hyp_iommu_domain *domain, u32 sid)
 {
@@ -547,6 +567,21 @@ static int smmu_attach_dev(struct kvm_hyp_iommu *iommu, pkvm_handle_t domain_id,
 	dst = smmu_get_ste_ptr(smmu, sid);
 	if (!dst || dst[0])
 		goto out_unlock;
+
+	/*
+	 * First attach to the domain, this is over protected by the all domain locks,
+	 * as there is no per-domain lock now, this can be improved later.
+	 * However, as this operation is rare, it should be fine.
+	 */
+	if (!domain->pgtable) {
+		domain->iommu = iommu;
+		ret = smmu_domain_finalise(domain, domain_id);
+		if (ret)
+			goto out_unlock;
+	}
+
+	if (domain->iommu != iommu)
+		return -EBUSY;
 
 	cfg = &domain->pgtable->cfg;
 	ps = cfg->arm_lpae_s2_cfg.vtcr.ps;
@@ -619,22 +654,11 @@ out_unlock:
 	return ret;
 }
 
-int smmu_alloc_domain(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *domain,
-		      pkvm_handle_t domain_id, unsigned long pgd_hva)
+int smmu_alloc_domain(struct kvm_hyp_iommu_domain *domain, pkvm_handle_t domain_id,
+		      unsigned long pgd_hva, unsigned long pgd_size)
 {
-	struct hyp_arm_smmu_v3_device *smmu = to_smmu(iommu);
-	int ret;
-	struct io_pgtable iopt;
-
-	domain->pgtable = &smmu->pgtable.iop;
-
-	iopt = domain_to_iopt(domain, domain_id);
-	ret = kvm_arm_io_pgtable_alloc(&iopt, pgd_hva);
-	if (ret)
-		return ret;
-
-	domain->pgd = iopt.pgd;
-
+	/* pgd_size not used now as there is now where to save it. */
+	domain->pgd = (void *)pgd_hva;
 	return 0;
 }
 
