@@ -548,6 +548,7 @@ int smmu_domain_finalise(struct kvm_hyp_iommu_domain *domain,
 	struct hyp_arm_smmu_v3_device *smmu = to_smmu(smmu_domain->iommu);
 	int ret;
 	struct io_pgtable iopt;
+	size_t pgd_size;
 
 	domain->pgtable = &smmu->pgtable.iop;
 
@@ -557,7 +558,15 @@ int smmu_domain_finalise(struct kvm_hyp_iommu_domain *domain,
 		domain->pgtable = NULL;
 		return ret;
 	}
-	/* TODO: validate PGD SIZE. */
+
+	pgd_size = kvm_arm_io_pgtable_size(&iopt);
+	/*
+	 * The pgd size sent in alloc domain is smaller than what
+	 * we need for this device
+	 */
+	if (pgd_size < smmu_domain->pgd_size)
+		return -EINVAL;
+
 	domain->pgd = iopt.pgd;
 	return 0;
 }

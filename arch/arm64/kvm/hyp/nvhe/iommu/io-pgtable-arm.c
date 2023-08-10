@@ -95,3 +95,10 @@ int kvm_arm_io_pgtable_free(struct io_pgtable *iopt)
 	pkvm_unmap_donated_memory(iopt->pgd, pgd_size);
 	return 0;
 }
+
+size_t kvm_arm_io_pgtable_size(struct io_pgtable *iopt)
+{
+	struct arm_lpae_io_pgtable *data = io_pgtable_ops_to_data(iopt->ops);
+
+	return ARM_LPAE_PGD_SIZE(data);
+}
