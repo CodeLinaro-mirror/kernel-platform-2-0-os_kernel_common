@@ -1587,6 +1587,12 @@ static void handle___pkvm_iommu_init(struct kvm_cpu_context *host_ctxt)
 	cpu_reg(host_ctxt, 1) = kvm_iommu_init(ops, &mc, init_arg);
 }
 
+static void handle___pkvm_devices_init(struct kvm_cpu_context *host_ctxt)
+{
+	/* Devices must be initialized after the IOMMUs driver is initialized. */
+	cpu_reg(host_ctxt, 1) = pkvm_init_devices();
+}
+
 static void handle___pkvm_host_hvc_pd(struct kvm_cpu_context *host_ctxt)
 {
 	DECLARE_REG(u64, device_id, host_ctxt, 1);
@@ -1632,6 +1638,7 @@ static const hcall_t host_hcall[] = {
 	HANDLE_FUNC(__pkvm_init_module),
 	HANDLE_FUNC(__pkvm_register_hcall),
 	HANDLE_FUNC(__pkvm_iommu_init),
+	HANDLE_FUNC(__pkvm_devices_init),
 	HANDLE_FUNC(__pkvm_prot_finalize),
 
 	HANDLE_FUNC(__pkvm_host_share_hyp),

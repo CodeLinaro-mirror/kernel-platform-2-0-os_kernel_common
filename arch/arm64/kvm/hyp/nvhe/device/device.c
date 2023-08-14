@@ -6,5 +6,25 @@
 
 #include <kvm/device.h>
 
+#include <nvhe/mem_protect.h>
+
 struct pkvm_device *registered_devices;
 unsigned long registered_devices_nr;
+
+int pkvm_init_devices(void)
+{
+	size_t dev_sz;
+	int ret;
+
+	if (!registered_devices_nr)
+		return -ENODEV;
+	registered_devices = kern_hyp_va(registered_devices);
+	dev_sz = PAGE_ALIGN(size_mul(sizeof(struct pkvm_device),
+				     registered_devices_nr));
+	ret = __pkvm_host_donate_hyp(hyp_virt_to_phys(registered_devices) >> PAGE_SHIFT,
+				     dev_sz >> PAGE_SHIFT);
+	if (ret)
+		registered_devices_nr = 0;
+
+	return ret;
+}
