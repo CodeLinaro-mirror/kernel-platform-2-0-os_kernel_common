@@ -634,7 +634,8 @@ static int pkvm_init_devices(void)
 	}
 
 	dump_pkvm_devices();
-	return ret;
+
+	return kvm_call_hyp_nvhe(__pkvm_devices_init);
 }
 
 static void __init _kvm_host_prot_finalize(void *arg)
