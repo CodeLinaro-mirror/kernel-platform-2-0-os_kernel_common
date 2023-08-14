@@ -573,6 +573,26 @@ static int pkvm_register_device(struct of_phandle_args *args,
 	return 0;
 }
 
+static void dump_pkvm_devices(void)
+{
+	int i, j;
+
+	for (i = 0 ; i < registered_devices_nr ; ++i) {
+		kvm_info("Device[%d]:", i);
+		for (j = 0 ; j < registered_devices[i].nr_resources ; ++j) {
+			kvm_info("Resource[%d] 0x%llx - 0x%llx", j,
+				 registered_devices[i].resources[j].base,
+				 registered_devices[i].resources[j].size);
+		}
+
+		for (j = 0 ; j < kvm_nvhe_sym(registered_devices)[i].nr_iommus ; ++j) {
+			kvm_info("IOMMU[%d] %lld - %lld", j,
+				 registered_devices[i].iommus[j].id,
+				 registered_devices[i].iommus[j].endpoint);
+		}
+	}
+}
+
 static int pkvm_init_devices(void)
 {
 	struct device_node *np;
@@ -613,6 +633,7 @@ static int pkvm_init_devices(void)
 		}
 	}
 
+	dump_pkvm_devices();
 	return ret;
 }
 
