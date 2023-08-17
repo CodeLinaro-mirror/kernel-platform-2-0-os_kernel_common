@@ -16,11 +16,14 @@ hyp-obj-y += $(lib-objs)
 
 hyp-obj-$(CONFIG_KVM_IOMMU) += iommu/iommu.o
 
-# There is no way to compile these separately as calling Makefile.nvhe again would
+#Only for built-in, not modules
+ifeq ($(CONFIG_ARM_SMMU_V3_PKVM),y)
+# There is no way to compile this separately as calling Makefile.nvhe again would
 # create duplicate sections
 hyp-obj-$(CONFIG_ARM_SMMU_V3_PKVM) += ../../../../../drivers/iommu/arm/arm-smmu-v3/pkvm/arm-smmu-v3.o
 hyp-obj-$(CONFIG_ARM_SMMU_V3_PKVM) += ../../../../../drivers/iommu/arm/arm-smmu-v3/pkvm/io-pgtable-arm.o
 hyp-obj-$(CONFIG_ARM_SMMU_V3_PKVM) += ../../../../../drivers/iommu/io-pgtable-arm-common.o
+endif
 
 
 hyp-obj-y += power/hvc.o
