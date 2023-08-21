@@ -45,7 +45,7 @@ int gzvm_arch_set_memregion(u16 vm_id, size_t buf_size,
 				    buf_size, region, 0, 0, 0, 0, &res);
 }
 
-static int gzvm_cap_arm_vm_ipa_size(void __user *argp)
+static int gzvm_cap_vm_gpa_size(void __user *argp)
 {
 	__u64 value = CONFIG_ARM64_PA_BITS;
 
@@ -60,7 +60,7 @@ int gzvm_arch_check_extension(struct gzvm *gzvm, __u64 cap, void __user *argp)
 	int ret = -EOPNOTSUPP;
 
 	switch (cap) {
-	case GZVM_CAP_ARM_PROTECTED_VM: {
+	case GZVM_CAP_PROTECTED_VM: {
 		__u64 success = 1;
 
 		if (copy_to_user(argp, &success, sizeof(__u64)))
@@ -68,8 +68,8 @@ int gzvm_arch_check_extension(struct gzvm *gzvm, __u64 cap, void __user *argp)
 		ret = 0;
 		break;
 	}
-	case GZVM_CAP_ARM_VM_IPA_SIZE: {
-		ret = gzvm_cap_arm_vm_ipa_size(argp);
+	case GZVM_CAP_VM_GPA_SIZE: {
+		ret = gzvm_cap_vm_gpa_size(argp);
 		break;
 	}
 	default:
@@ -283,7 +283,7 @@ static int populate_mem_region(struct gzvm *gzvm)
 }
 
 /**
- * gzvm_vm_ioctl_cap_pvm() - Proceed GZVM_CAP_ARM_PROTECTED_VM's subcommands
+ * gzvm_vm_ioctl_cap_pvm() - Proceed GZVM_CAP_PROTECTED_VM's subcommands
  * @gzvm: Pointer to struct gzvm.
  * @cap: Pointer to struct gzvm_enable_cap.
  * @argp: Pointer to struct gzvm_enable_cap in user space.
@@ -300,9 +300,9 @@ static int gzvm_vm_ioctl_cap_pvm(struct gzvm *gzvm,
 	struct arm_smccc_res res = {0};
 
 	switch (cap->args[0]) {
-	case GZVM_CAP_ARM_PVM_SET_PVMFW_IPA:
+	case GZVM_CAP_PVM_SET_PVMFW_GPA:
 		fallthrough;
-	case GZVM_CAP_ARM_PVM_SET_PROTECTED_VM:
+	case GZVM_CAP_PVM_SET_PROTECTED_VM:
 		/*
 		 * To improve performance for protected VM, we have to populate VM's memory
 		 * before VM booting
@@ -310,7 +310,7 @@ static int gzvm_vm_ioctl_cap_pvm(struct gzvm *gzvm,
 		populate_mem_region(gzvm);
 		ret = gzvm_vm_arch_enable_cap(gzvm, cap, &res);
 		break;
-	case GZVM_CAP_ARM_PVM_GET_PVMFW_SIZE:
+	case GZVM_CAP_PVM_GET_PVMFW_SIZE:
 		ret = gzvm_vm_ioctl_get_pvmfw_size(gzvm, cap, argp);
 		break;
 	default:
@@ -328,7 +328,7 @@ int gzvm_vm_ioctl_arch_enable_cap(struct gzvm *gzvm,
 	int ret = -EINVAL;
 
 	switch (cap->cap) {
-	case GZVM_CAP_ARM_PROTECTED_VM:
+	case GZVM_CAP_PROTECTED_VM:
 		ret = gzvm_vm_ioctl_cap_pvm(gzvm, cap, argp);
 		break;
 	default:
