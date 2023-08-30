@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8065f244_c058c6e4",
+        "filename": "Documentation/networking/ip-sysctl.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 2298,
+      "author": {
+        "id": 1003247
+      },
+      "writtenOn": "2023-08-30T23:30:06Z",
+      "side": 1,
+      "message": "ra_pinfo... ?\n\nor maybe ra_pinfo_rfc4862_5_5_3e",
+      "range": {
+        "startLine": 2298,
+        "startChar": 0,
+        "endLine": 2298,
+        "endChar": 23
+      },
+      "revId": "4358c4491aa65c11797db4ea674bda9f03f421eb",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
