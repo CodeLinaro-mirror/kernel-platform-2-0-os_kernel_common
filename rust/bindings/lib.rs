@@ -51,3 +51,7 @@ pub use bindings_raw::*;
 pub const GFP_KERNEL: gfp_t = BINDINGS_GFP_KERNEL;
 pub const __GFP_ZERO: gfp_t = BINDINGS___GFP_ZERO;
 pub const __GFP_HIGHMEM: gfp_t = ___GFP_HIGHMEM;
+
+pub const PAGE_SIZE: usize = BINDINGS_PAGE_SIZE;
+pub const PAGE_SHIFT: usize = bindings_raw::PAGE_SHIFT as _;
+pub const PAGE_MASK: usize = (1 << PAGE_SHIFT) - 1;

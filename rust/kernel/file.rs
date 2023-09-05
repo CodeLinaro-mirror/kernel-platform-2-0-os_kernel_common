@@ -510,11 +510,11 @@ impl<A: OpenAdapter<T::OpenData>, T: Operations> OperationsVtable<A, T> {
 
             // SAFETY: The C API guarantees that `vma` is valid for the duration of this call.
             // `area` only lives within this call, so it is guaranteed to be valid.
-            let mut area = unsafe { mm::virt::Area::from_ptr(vma) };
+            let area = unsafe { mm::virt::Area::from_ptr_mut(vma) };
 
             // SAFETY: The C API guarantees that `file` is valid for the duration of this call,
             // which is longer than the lifetime of the file reference.
-            T::mmap(f, unsafe { File::from_ptr(file) }, &mut area)?;
+            T::mmap(f, unsafe { File::from_ptr(file) }, area)?;
             Ok(0)
         })
     }

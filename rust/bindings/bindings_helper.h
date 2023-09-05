@@ -18,6 +18,8 @@
 #include <linux/security.h>
 #include <linux/poll.h>
 #include <linux/workqueue.h>
+#include <linux/shrinker.h>
+#include <linux/list_lru.h>
 
 /* `bindgen` gets confused at certain things. */
 const gfp_t BINDINGS_GFP_KERNEL = GFP_KERNEL;
@@ -26,3 +28,5 @@ const __poll_t BINDINGS_EPOLLIN = EPOLLIN;
 const __poll_t BINDINGS_EPOLLOUT = EPOLLOUT;
 const __poll_t BINDINGS_EPOLLERR = EPOLLERR;
 const __poll_t BINDINGS_EPOLLHUP = EPOLLHUP;
+
+const size_t BINDINGS_PAGE_SIZE = PAGE_SIZE;

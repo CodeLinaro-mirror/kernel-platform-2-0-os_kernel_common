@@ -8,7 +8,7 @@ use crate::{
     bindings, error::code::*, error::Result, io_buffer::IoBufferReader,
     user_ptr::UserSlicePtrReader, PAGE_SIZE,
 };
-use core::{marker::PhantomData, ptr};
+use core::{marker::PhantomData, ptr::{self, NonNull}};
 
 /// A set of physical pages.
 ///
@@ -19,7 +19,7 @@ use core::{marker::PhantomData, ptr};
 ///
 /// The pointer `Pages::pages` is valid and points to 2^ORDER pages.
 pub struct Pages<const ORDER: u32> {
-    pub(crate) pages: *mut bindings::page,
+    pub(crate) pages: NonNull<bindings::page>,
 }
 
 impl<const ORDER: u32> Pages<ORDER> {
@@ -33,11 +33,17 @@ impl<const ORDER: u32> Pages<ORDER> {
                 ORDER,
             )
         };
-        if pages.is_null() {
-            return Err(ENOMEM);
+
+        match NonNull::new(pages) {
+            // INVARIANTS: We checked that the allocation above succeeded.
+            Some(pages) => Ok(Self { pages }),
+            None => Err(ENOMEM),
         }
-        // INVARIANTS: We checked that the allocation above succeeded.
-        Ok(Self { pages })
+    }
+
+    /// Get the inner raw pointer.
+    pub fn as_ptr(&self) -> *mut bindings::page {
+        self.pages.as_ptr()
     }
 
     /// Copies data from the given [`UserSlicePtrReader`] into the pages.
@@ -119,7 +125,7 @@ impl<const ORDER: u32> Pages<ORDER> {
         }
 
         // SAFETY: We checked above that `index` is within range.
-        let page = unsafe { self.pages.add(index) };
+        let page = unsafe { self.pages.as_ptr().add(index) };
 
         // SAFETY: `page` is valid based on the checks above.
         let ptr = unsafe { bindings::kmap(page) };
@@ -138,7 +144,7 @@ impl<const ORDER: u32> Pages<ORDER> {
 impl<const ORDER: u32> Drop for Pages<ORDER> {
     fn drop(&mut self) {
         // SAFETY: By the type invariants, we know the pages are allocated with the given order.
-        unsafe { bindings::__free_pages(self.pages, ORDER) };
+        unsafe { bindings::__free_pages(self.pages.as_ptr(), ORDER) };
     }
 }
 
