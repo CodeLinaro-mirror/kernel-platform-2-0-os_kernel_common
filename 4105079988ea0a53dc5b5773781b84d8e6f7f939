@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45ba9ae2_fdbaa199",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1499410
+      },
+      "writtenOn": "2023-09-05T20:59:42Z",
+      "side": 1,
+      "message": "Hi Charan, Divya,\n\nCan you verify that this is what works best for you case please.\n\nThanks,\nKalesh",
+      "revId": "4105079988ea0a53dc5b5773781b84d8e6f7f939",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
