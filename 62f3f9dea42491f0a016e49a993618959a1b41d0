@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa790dc1_2388f940",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 2020955
+      },
+      "writtenOn": "2023-09-08T16:13:23Z",
+      "side": 1,
+      "message": "HI Qais\n\nCould you please add the respin bug b/299626289 in the commit message",
+      "revId": "62f3f9dea42491f0a016e49a993618959a1b41d0",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
