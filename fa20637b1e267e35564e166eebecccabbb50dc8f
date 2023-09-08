@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6183b16a_8bec852d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2023-09-08T09:51:48Z",
+      "side": 1,
+      "message": "Any chance we can take this from `UPSTREAM` or at least `FROMGIT` ?",
+      "revId": "fa20637b1e267e35564e166eebecccabbb50dc8f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
