@@ -16,6 +16,23 @@
       "message": "HI Qais\n\nCould you please add the respin bug b/299626289 in the commit message",
       "revId": "62f3f9dea42491f0a016e49a993618959a1b41d0",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae1ec9c7_de9b6019",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 2020955
+      },
+      "writtenOn": "2023-09-08T17:15:32Z",
+      "side": 1,
+      "message": "Respin Bug: b/299626289",
+      "revId": "62f3f9dea42491f0a016e49a993618959a1b41d0",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
