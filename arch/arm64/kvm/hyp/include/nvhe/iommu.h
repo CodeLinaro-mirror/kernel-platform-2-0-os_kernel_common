@@ -39,6 +39,7 @@ size_t kvm_iommu_map_pages(pkvm_handle_t domain_id,
 size_t kvm_iommu_unmap_pages(pkvm_handle_t domain_id,
 			     unsigned long iova, size_t pgsize, size_t pgcount);
 phys_addr_t kvm_iommu_iova_to_phys(pkvm_handle_t domain_id, unsigned long iova);
+bool kvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt, u64 esr, u64 addr);
 #else /* !CONFIG_KVM_IOMMU */
 static inline int kvm_iommu_alloc_domain(pkvm_handle_t domain_id)
 {
@@ -89,6 +90,12 @@ static inline int kvm_iommu_init(struct kvm_iommu_ops *ops,
 {
 	return -ENODEV;
 }
+
+static inline bool kvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt,
+					       u64 esr, u64 addr)
+{
+	return false;
+}
 #endif /* CONFIG_KVM_IOMMU */
 
 struct kvm_iommu_ops {
@@ -100,6 +107,7 @@ struct kvm_iommu_ops {
 			  u32 endpoint_id);
 	int (*detach_dev)(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_domain *domain,
 			  u32 endpoint_id);
+	bool (*dabt_handler)(struct kvm_cpu_context *host_ctxt, u64 esr, u64 addr);
 	int (*suspend)(struct kvm_hyp_iommu *iommu);
 	int (*resume)(struct kvm_hyp_iommu *iommu);
 };
