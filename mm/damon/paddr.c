@@ -180,8 +180,7 @@ static void __damon_pa_check_access(struct damon_region *r)
 	}
 
 	last_accessed = damon_pa_young(r->sampling_addr, &last_page_sz);
-	if (last_accessed)
-		r->nr_accesses++;
+	damon_update_region_access_rate(r, last_accessed);
 
 	last_addr = r->sampling_addr;
 }

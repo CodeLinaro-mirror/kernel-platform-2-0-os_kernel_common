@@ -561,8 +561,7 @@ static void __damon_va_check_access(struct mm_struct *mm,
 	}
 
 	last_accessed = damon_va_young(mm, r->sampling_addr, &last_page_sz);
-	if (last_accessed)
-		r->nr_accesses++;
+	damon_update_region_access_rate(r, last_accessed);
 
 	last_addr = r->sampling_addr;
 }
