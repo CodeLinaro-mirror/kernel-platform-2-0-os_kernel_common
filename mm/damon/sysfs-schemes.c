@@ -1212,7 +1212,7 @@ static struct damos *damon_sysfs_mk_scheme(
 		.low = sysfs_wmarks->low,
 	};
 
-	return damon_new_scheme(&pattern, sysfs_scheme->action, &quota,
+	return damon_new_scheme(&pattern, sysfs_scheme->action, 0, &quota,
 			&wmarks);
 }
 
