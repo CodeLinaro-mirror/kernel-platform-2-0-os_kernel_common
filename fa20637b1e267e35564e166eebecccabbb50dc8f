@@ -16,6 +16,24 @@
       "message": "Any chance we can take this from `UPSTREAM` or at least `FROMGIT` ?",
       "revId": "fa20637b1e267e35564e166eebecccabbb50dc8f",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1ced929_9c3bc3f5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1176763
+      },
+      "writtenOn": "2023-09-20T15:52:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6183b16a_8bec852d",
+      "revId": "fa20637b1e267e35564e166eebecccabbb50dc8f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
