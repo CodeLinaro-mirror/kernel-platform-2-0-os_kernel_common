@@ -221,7 +221,7 @@ out_unlock:
 }
 
 #define IOMMU_PROT_MASK (IOMMU_READ | IOMMU_WRITE | IOMMU_CACHE |\
-			 IOMMU_NOEXEC | IOMMU_MMIO)
+			 IOMMU_NOEXEC | IOMMU_MMIO | IOMMU_PRIV)
 
 size_t kvm_iommu_map_pages(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 			   unsigned long iova, phys_addr_t paddr, size_t pgsize,
