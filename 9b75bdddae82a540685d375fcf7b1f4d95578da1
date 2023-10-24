@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "750eb39d_5f276fbf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-10-24T15:18:26Z",
+      "side": 1,
+      "message": "checkpatch can be ignored here, it\u0027s a revert to fix the ABI, so it\u0027s not relevant.",
+      "revId": "9b75bdddae82a540685d375fcf7b1f4d95578da1",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
