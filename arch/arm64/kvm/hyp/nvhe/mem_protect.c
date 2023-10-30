@@ -2853,11 +2853,13 @@ void destroy_hyp_vm_pgt(struct pkvm_hyp_vm *vm)
 void drain_hyp_pool(struct hyp_pool *pool, struct kvm_hyp_memcache *mc)
 {
 	void *addr = hyp_alloc_pages(pool, 0);
+	struct hyp_page *p;
 
 	while (addr) {
-		hyp_page_ref_dec(hyp_virt_to_page(addr));
-		push_hyp_memcache(mc, addr, hyp_virt_to_phys, 0);
-		WARN_ON(__pkvm_hyp_donate_host(hyp_virt_to_pfn(addr), 1));
+		p = hyp_virt_to_page(addr);
+		hyp_page_ref_dec(p);
+		push_hyp_memcache(mc, addr, hyp_virt_to_phys, p->order);
+		WARN_ON(__pkvm_hyp_donate_host(hyp_virt_to_pfn(addr), 1 << p->order));
 		addr = hyp_alloc_pages(pool, 0);
 	}
 }
