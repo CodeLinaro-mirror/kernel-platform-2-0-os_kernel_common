@@ -14,6 +14,7 @@
  */
 
 #include <linux/align.h>
+#include <linux/mman.h>
 
 #include <asm/page_types.h>
 
@@ -31,5 +32,27 @@
 #define __PAGE_ALIGNED(addr)	IS_ALIGNED((unsigned long)(addr), __PAGE_SIZE)
 
 #define __offset_in_page(p)	((unsigned long)(p) & ~__PAGE_MASK)
+
+#define __VM_SPECIAL	0x00000800	/* VMA is exempt from emulated page align requirements */
+#define __MAP_SPECIAL   0x8000		/* VMA is exempt from emulated page align requirements */
+
+#ifdef CONFIG_EMULATE_16K_PAGE_SIZE
+/*
+ * Combine the mmap "flags" argument into "vm_flags" add translation
+ * of the special flag.
+ */
+static inline unsigned long
+__calc_vm_flag_bits(unsigned long flags)
+{
+    return calc_vm_flag_bits(flags) |
+           _calc_vm_trans(flags, __MAP_SPECIAL,  __VM_SPECIAL );
+}
+#else   /* !CONFIG_EMULATE_16K_PAGE_SIZE */
+static inline unsigned long
+__calc_vm_flag_bits(unsigned long flags)
+{
+    return calc_vm_flag_bits(flags);
+}
+#endif  /* CONFIG_EMULATE_16K_PAGE_SIZE */
 
 #endif /* __LINUX_PAGE16_H */
