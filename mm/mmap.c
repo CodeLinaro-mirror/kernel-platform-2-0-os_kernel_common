@@ -40,6 +40,7 @@
 #include <linux/uprobes.h>
 #include <linux/notifier.h>
 #include <linux/memory.h>
+#include <linux/page16.h>
 #include <linux/printk.h>
 #include <linux/userfaultfd_k.h>
 #include <linux/moduleparam.h>
@@ -1620,6 +1621,8 @@ static unsigned long unmapped_area(struct vm_unmapped_area_info *info)
 
 	/* Adjust search length to account for worst case alignment overhead */
 	length = info->length + info->align_mask;
+	/* Adjust search length to account for 16K alignment */
+	length += ((1 << (__PAGE_SHIFT - PAGE_SHIFT)) - 1) << PAGE_SHIFT;
 	if (length < info->length)
 		return -ENOMEM;
 
@@ -1646,7 +1649,7 @@ retry:
 		}
 	}
 
-	return gap;
+	return __PAGE_ALIGN(gap);
 }
 
 /**
@@ -1667,6 +1670,8 @@ static unsigned long unmapped_area_topdown(struct vm_unmapped_area_info *info)
 	MA_STATE(mas, &current->mm->mm_mt, 0, 0);
 	/* Adjust search length to account for worst case alignment overhead */
 	length = info->length + info->align_mask;
+	/* Adjust search length to account for 16K alignment */
+	length += ((1 << (__PAGE_SHIFT - PAGE_SHIFT)) - 1) << PAGE_SHIFT;
 	if (length < info->length)
 		return -ENOMEM;
 
@@ -1695,7 +1700,7 @@ retry:
 		}
 	}
 
-	return gap;
+	return __PAGE_ALIGN(gap);
 }
 
 /*
