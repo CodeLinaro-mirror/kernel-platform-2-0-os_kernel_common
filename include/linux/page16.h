@@ -15,8 +15,24 @@
 
 #include <linux/align.h>
 #include <linux/mman.h>
+#include <linux/sched.h>
 
 #include <asm/page_types.h>
+
+#ifdef  CONFIG_DEBUG_16K
+#define LOG_16K(fmt, ...) \
+	pr_debug("DEBUG 16K: [%i]: " fmt, task_pid_nr(current), ## __VA_ARGS__)
+
+#define LOG_16K_IF(condition, fmt, ...) \
+    do {                                \
+        if (condition)                  \
+            pr_debug("DEBUG 16K: [%i]: " fmt, task_pid_nr(current), ## __VA_ARGS__); \
+    } while(0)
+
+#else   /* !CONFIG_DEBUG_16K */
+#define LOG_16K(fmt, ...) do {} while(0)
+#define LOG_16K_IF(condition, fmt, ...) do {} while(0)
+#endif  /* CONFIG_DEBUG_16K */
 
 #ifdef CONFIG_EMULATE_16K_PAGE_SIZE
 #define __PAGE_SHIFT		14
