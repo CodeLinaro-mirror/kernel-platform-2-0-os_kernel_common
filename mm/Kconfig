@@ -1209,6 +1209,13 @@ config EMULATE_16K_PAGE_SIZE
 	  hood the kernel still uses 4K pages but presents to userspace an
 	  emulated 16K page size.
 
+config DEBUG_16K
+	bool "Emulated 16KB page size"
+	default n
+	depends on EMULATE_16K_PAGE_SIZE && ANON_VMA_NAME
+	help
+	  This option enables debugging information for emulated 16K page size.
+
 source "mm/damon/Kconfig"
 
 endmenu
