@@ -83,6 +83,24 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b6c20e5_f5ae93b7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1957137
+      },
+      "writtenOn": "2023-11-07T12:03:40Z",
+      "side": 1,
+      "message": "Apologies. I use patchwork sometimes and so I missed the lore link and your SOB. Only Alan\u0027s Reviewed-By tag came along. Will fix the missing lines. Sorry to have bothered you on this.",
+      "parentUuid": "1c23629e_71670473",
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "61604579_c06afde1",
