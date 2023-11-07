@@ -416,6 +416,9 @@ static __always_inline bool
 mutex_optimistic_spin(struct mutex *lock, struct ww_acquire_ctx *ww_ctx,
 		      struct mutex_waiter *waiter)
 {
+	if (sched_proxy_exec())
+		return false;
+
 	if (!waiter) {
 		/*
 		 * The purpose of the mutex_can_spin_on_owner() function is
