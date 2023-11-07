@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "130d418a_4e5edec0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1957137
+      },
+      "writtenOn": "2023-11-07T11:55:05Z",
+      "side": 1,
+      "message": "This isn\u0027t present on linux mainline. Only on linux-next and usb-next. So mentioned FROMGIT. And the patch applies directly without any modifications. So didn\u0027t mention BACKPORT.",
+      "parentUuid": "36a7c2ef_3f073d3f",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 7
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "20bac52b_12f48a45",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -43,6 +67,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1c23629e_71670473",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1957137
+      },
+      "writtenOn": "2023-11-07T11:55:05Z",
+      "side": 1,
+      "message": "This is the actual commit on upstream. I added the Bug ID, cherry-picked from, signed off by and change ID.\n\nhttps://patchwork.kernel.org/project/linux-usb/patch/20230927073027.27952-1-quic_kriskura@quicinc.com/\n\nAre you referring to cherry picked from commit ID of other ACK branches ?",
+      "parentUuid": "20bac52b_12f48a45",
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "61604579_c06afde1",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -54,6 +96,30 @@
       "writtenOn": "2023-11-07T11:32:36Z",
       "side": 1,
       "message": "wrong bug id.",
+      "range": {
+        "startLine": 20,
+        "startChar": 5,
+        "endLine": 20,
+        "endChar": 14
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0acc024_8e0f791d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1957137
+      },
+      "writtenOn": "2023-11-07T11:55:05Z",
+      "side": 1,
+      "message": "Hi Greg. I am using this Bug for porting the upstream series. I see that previously on other android14 branches as well, the same bug was used. Like the following:\n\nhttps://android-review.googlesource.com/c/kernel/common/+/2638913\n\nAny other reason why bug ID is wrong ?",
+      "parentUuid": "61604579_c06afde1",
       "range": {
         "startLine": 20,
         "startChar": 5,
