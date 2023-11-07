@@ -96,6 +96,30 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b85dde1d_21cae5e5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1957137
+      },
+      "writtenOn": "2023-11-07T15:31:01Z",
+      "side": 1,
+      "message": "resolved in patchset-2A",
+      "parentUuid": "bc7ef695_e4b8db7e",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 7
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "20bac52b_12f48a45",
@@ -163,6 +187,24 @@
       "side": 1,
       "message": "Not yet resolved.",
       "parentUuid": "2b6c20e5_f5ae93b7",
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "281bb818_7540c3e4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1957137
+      },
+      "writtenOn": "2023-11-07T15:31:01Z",
+      "side": 1,
+      "message": "resolved in patchset-2A",
+      "parentUuid": "742124e6_303993fa",
       "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
@@ -252,6 +294,30 @@
       "side": 1,
       "message": "The one merged before was the same but had a mutex imbalance. So it was reverted. I fixed it in upstream and got the new patch to ACK. So assumed we can re-use the same bug.",
       "parentUuid": "8e5f2181_51dbf8d0",
+      "range": {
+        "startLine": 20,
+        "startChar": 5,
+        "endLine": 20,
+        "endChar": 14
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d892505_1ecd745a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1957137
+      },
+      "writtenOn": "2023-11-07T15:31:01Z",
+      "side": 1,
+      "message": "Can I mark it resolved in this case ? As it is the same fix.",
+      "parentUuid": "64ac91b9_b4438d85",
       "range": {
         "startLine": 20,
         "startChar": 5,
