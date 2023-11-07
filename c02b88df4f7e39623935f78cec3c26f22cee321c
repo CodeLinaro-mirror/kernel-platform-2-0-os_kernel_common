@@ -127,6 +127,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "742124e6_303993fa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-11-07T14:26:44Z",
+      "side": 1,
+      "message": "Not yet resolved.",
+      "parentUuid": "2b6c20e5_f5ae93b7",
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "61604579_c06afde1",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
