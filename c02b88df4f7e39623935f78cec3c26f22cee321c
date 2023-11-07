@@ -74,6 +74,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "bc7ef695_e4b8db7e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1957137
+      },
+      "writtenOn": "2023-11-07T15:15:26Z",
+      "side": 1,
+      "message": "My bad. I saw it in https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/usb/gadget/udc/core.c?h\u003dv6.6#n1613 and thought it wasn\u0027t added yet. \n\nBut I see it in commit 0ea39e030a80be2b1b5f98d6b330a8b97dcf3342 of Linus\u0027s tree. Will change the tag. Thanks for pointing it out. Sorry for the hiccup.",
+      "parentUuid": "7b55b6ff_080d2afc",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 7
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "20bac52b_12f48a45",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -204,6 +228,30 @@
       "side": 1,
       "message": "This is a new issue/bug, please create a new bug report for it, it is not the same as this much older bug, which was already resolved, right?",
       "parentUuid": "a0acc024_8e0f791d",
+      "range": {
+        "startLine": 20,
+        "startChar": 5,
+        "endLine": 20,
+        "endChar": 14
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "64ac91b9_b4438d85",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1957137
+      },
+      "writtenOn": "2023-11-07T15:15:26Z",
+      "side": 1,
+      "message": "The one merged before was the same but had a mutex imbalance. So it was reverted. I fixed it in upstream and got the new patch to ACK. So assumed we can re-use the same bug.",
+      "parentUuid": "8e5f2181_51dbf8d0",
       "range": {
         "startLine": 20,
         "startChar": 5,
