@@ -39,6 +39,29 @@
       "message": "changelog is missing a lot of text 😞",
       "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "61604579_c06afde1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-11-07T11:32:36Z",
+      "side": 1,
+      "message": "wrong bug id.",
+      "range": {
+        "startLine": 20,
+        "startChar": 5,
+        "endLine": 20,
+        "endChar": 14
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
