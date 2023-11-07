@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "36a7c2ef_3f073d3f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-11-07T11:31:46Z",
+      "side": 1,
+      "message": "incorrect tag now.",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 7
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20bac52b_12f48a45",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-11-07T11:31:46Z",
+      "side": 1,
+      "message": "changelog is missing a lot of text 😞",
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
