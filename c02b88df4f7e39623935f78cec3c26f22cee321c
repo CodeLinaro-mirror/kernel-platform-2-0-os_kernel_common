@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7b55b6ff_080d2afc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-11-07T14:26:10Z",
+      "side": 1,
+      "message": "I see it in Linus\u0027s tree, do you not?",
+      "parentUuid": "130d418a_4e5edec0",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 7
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "20bac52b_12f48a45",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -138,6 +162,30 @@
       "side": 1,
       "message": "Hi Greg. I am using this Bug for porting the upstream series. I see that previously on other android14 branches as well, the same bug was used. Like the following:\n\nhttps://android-review.googlesource.com/c/kernel/common/+/2638913\n\nAny other reason why bug ID is wrong ?",
       "parentUuid": "61604579_c06afde1",
+      "range": {
+        "startLine": 20,
+        "startChar": 5,
+        "endLine": 20,
+        "endChar": 14
+      },
+      "revId": "c02b88df4f7e39623935f78cec3c26f22cee321c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e5f2181_51dbf8d0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2023-11-07T14:26:10Z",
+      "side": 1,
+      "message": "This is a new issue/bug, please create a new bug report for it, it is not the same as this much older bug, which was already resolved, right?",
+      "parentUuid": "a0acc024_8e0f791d",
       "range": {
         "startLine": 20,
         "startChar": 5,
