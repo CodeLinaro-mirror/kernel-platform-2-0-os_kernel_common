@@ -70,6 +70,14 @@ pkvm_handle_t kvm_get_iommu_id(struct device *dev)
 	return iommu_driver->get_iommu_id(dev);
 }
 
+pkvm_handle_t kvm_get_iommu_id_by_of(struct device_node *np)
+{
+	if (!smp_load_acquire(&iommu_driver) || !iommu_driver->get_iommu_id_by_of)
+		return 0;
+
+	return iommu_driver->get_iommu_id_by_of(np);
+}
+
 int pkvm_iommu_suspend(struct device *dev)
 {
 	int device_id = kvm_get_iommu_id(dev);
