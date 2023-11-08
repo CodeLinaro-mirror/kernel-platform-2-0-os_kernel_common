@@ -28,9 +28,13 @@
 #include <uapi/linux/mount.h>
 #include <linux/init_syscalls.h>
 
+#include <kvm/device.h>
+
 #include "hyp_constants.h"
 #include "kvm_ptdump.h"
 #include "hyp_trace.h"
+
+#define PKVM_DEVICE_ASSIGN_COMPAT	"pkvm,device-assignment"
 
 DEFINE_STATIC_KEY_FALSE(kvm_protected_mode_initialized);
 
@@ -44,6 +48,12 @@ static unsigned int *hyp_memblock_nr_ptr = &kvm_nvhe_sym(hyp_memblock_nr);
 
 phys_addr_t hyp_mem_base;
 phys_addr_t hyp_mem_size;
+
+extern struct pkvm_device *kvm_nvhe_sym(registered_devices);
+extern u32 kvm_nvhe_sym(registered_devices_nr);
+
+#define registered_devices	kvm_nvhe_sym(registered_devices)
+#define registered_devices_nr	kvm_nvhe_sym(registered_devices_nr)
 
 static int cmp_hyp_memblock(const void *p1, const void *p2)
 {
@@ -464,6 +474,118 @@ int pkvm_init_host_vm(struct kvm *host_kvm, unsigned long type)
 	return 0;
 }
 
+static int pkvm_register_device(struct of_phandle_args *args,
+				struct pkvm_device *dev)
+{
+	struct device_node *np = args->np;
+	struct of_phandle_args iommu_spec;
+	u32 group_id = args->args[0];
+	struct resource res;
+	u64 base, size, iommu_id;
+	unsigned int count, j = 0;
+	int ret;
+
+	/* Parse regs */
+	while (of_get_address(np, j++, NULL, NULL))
+		;
+
+	count = j - 1;
+	if (count > PKVM_DEVICE_MAX_RESOURCE)
+		return -E2BIG;
+
+	for (j = 0; j < count; ++j) {
+		ret = of_address_to_resource(np, j, &res);
+		if (ret)
+			return ret;
+
+		base = res.start;
+		size = resource_size(&res);
+		if (!PAGE_ALIGNED(base) || !PAGE_ALIGNED(size))
+			return -EINVAL;
+
+		dev->resources[j].base = base;
+		dev->resources[j].size = size;
+	}
+	dev->nr_resources = count;
+
+	/* Parse iommus */
+	j = 0;
+	while (!of_parse_phandle_with_args(np, "iommus",
+					   "#iommu-cells",
+					   j++, &iommu_spec))
+		;
+
+	count = j - 1;
+	if (count > PKVM_DEVICE_MAX_IOMMU)
+		return -E2BIG;
+
+	for (j = 0 ; j < count ; ++j) {
+		of_parse_phandle_with_args(np, "iommus",
+					   "#iommu-cells",
+					   j, &iommu_spec);
+		if (iommu_spec.args_count != 1) {
+			kvm_err("[Devices] Unsupported binding for %s, expected <&iommu id>",
+				np->full_name);
+			return -EINVAL;
+		}
+
+		iommu_id = kvm_get_iommu_id_by_of(iommu_spec.np);
+
+		dev->iommus[j].id = iommu_id;
+		dev->iommus[j].endpoint = iommu_spec.args[0];
+		of_node_put(iommu_spec.np);
+	}
+
+	dev->nr_iommus = count;
+	dev->ctxt = NULL;
+	dev->group_id = group_id;
+
+	return 0;
+}
+
+static int pkvm_init_devices(void)
+{
+	struct device_node *np;
+	int idx = 0, ret = 0;
+	size_t dev_sz;
+
+	for_each_compatible_node(np, NULL, PKVM_DEVICE_ASSIGN_COMPAT) {
+		struct of_phandle_args args;
+
+		while (!of_parse_phandle_with_fixed_args(np, "devices", 1, idx, &args)) {
+			idx++;
+			of_node_put(np);
+		}
+	}
+
+	if (!idx)
+		return 0;
+
+	kvm_info("Found %d assignable devices", idx);
+
+	dev_sz = PAGE_ALIGN(size_mul(sizeof(struct pkvm_device), idx));
+
+	registered_devices = alloc_pages_exact(dev_sz, GFP_KERNEL_ACCOUNT);
+	if (!registered_devices)
+		return -ENOMEM;
+
+	registered_devices_nr = idx;
+	idx = 0;
+	for_each_compatible_node(np, NULL, PKVM_DEVICE_ASSIGN_COMPAT) {
+		struct of_phandle_args args;
+
+		while (!of_parse_phandle_with_fixed_args(np, "devices", 1, idx, &args)) {
+			ret = pkvm_register_device(&args, &registered_devices[idx]);
+			of_node_put(np);
+			if (ret)
+				return ret;
+			idx++;
+		}
+	}
+
+	return ret;
+}
+
 static void __init _kvm_host_prot_finalize(void *arg)
 {
 	int *err = arg;
@@ -508,6 +630,10 @@ static int __init finalize_pkvm(void)
 		pr_err("Failed to init KVM IOMMU driver: %d\n", ret);
 		pkvm_firmware_rmem_clear();
 	}
+
+	ret = pkvm_init_devices();
+	if (ret)
+		pr_err("Failed to init kvm devices %d\n", ret);
 
 	/*
 	 * Exclude HYP sections from kmemleak so that they don't get peeked
