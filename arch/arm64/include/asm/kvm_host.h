@@ -502,6 +502,7 @@ struct kvm_iommu_driver {
 	int (*init_driver)(void);
 	void (*remove_driver)(void);
 	pkvm_handle_t (*get_iommu_id)(struct device *dev);
+	pkvm_handle_t (*get_iommu_id_by_of)(struct device_node *np);
 	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
@@ -1330,6 +1331,7 @@ void kvm_iommu_remove_driver(void);
 
 int pkvm_iommu_suspend(struct device *dev);
 int pkvm_iommu_resume(struct device *dev);
+pkvm_handle_t kvm_get_iommu_id_by_of(struct device_node *np);
 
 struct kvm_iommu_ops;
 
