@@ -4,6 +4,7 @@
  * Author: Mostafa Saleh <smostafa@google.com>
  */
 
+#include <kvm/arm_hypercalls.h>
 #include <kvm/device.h>
 
 #include <nvhe/mem_protect.h>
@@ -207,4 +208,67 @@ int pkvm_host_map_guest_mmio(struct pkvm_hyp_vcpu *hyp_vcpu, u64 pfn, u64 gfn)
 out_ret:
 	hyp_spin_unlock(&device_spinlock);
 	return ret;
+}
+
+static int pkvm_get_device_pa(struct pkvm_hyp_vcpu *hyp_vcpu, u64 ipa, u64 *pa, u64 *exit_code)
+{
+	struct kvm_hyp_req *req;
+	int ret;
+	u64 pte;
+	u32 level;
+	struct pkvm_hyp_vm *vm = pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu);
+
+	ret = kvm_pgtable_get_leaf(&vm->pgt, ipa, &pte, &level);
+	if (ret || !kvm_pte_valid(pte)) {
+		/* Page not mapped, create a request*/
+		req = pkvm_hyp_req_reserve(hyp_vcpu, KVM_HYP_REQ_TYPE_MAP);
+		if (!req)
+			return -ENOMEM;
+
+		req->map.guest_ipa = ipa;
+		req->map.size = PAGE_SIZE;
+		*exit_code = ARM_EXCEPTION_HYP_REQ;
+		/* Repeat next time. */
+		write_sysreg_el2(read_sysreg_el2(SYS_ELR) - 4, SYS_ELR);
+		return -ENODEV;
+	}
+
+	*pa = kvm_pte_to_phys(pte);
+	*pa |= (ipa & kvm_granule_size(level) - 1) & PAGE_MASK;
+	return 0;
+}
+
+bool pkvm_device_request_mmio(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code)
+{
+	int i, j, ret;
+	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
+	struct pkvm_hyp_vm *vm = pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu);
+	struct pkvm_dev_resource *res;
+	struct pkvm_device *dev;
+	u64 ipa = smccc_get_arg1(vcpu);
+	u64 token;
+
+	ret = pkvm_get_device_pa(hyp_vcpu, ipa, &token, exit_code);
+	if (ret)
+		return false;
+
+	hyp_spin_lock(&device_spinlock);
+	for (i = 0 ; i < registered_devices_nr ; ++i) {
+		dev = &registered_devices[i];
+		if (dev->ctxt != vm)
+			continue;
+
+		for (j = 0 ; j < dev->nr_resources; ++j) {
+			res = &dev->resources[j];
+			if ((token >= res->base) && (token + PAGE_SIZE <= res->base + res->size)) {
+				smccc_set_retval(vcpu, SMCCC_RET_SUCCESS, token, 0, 0);
+				goto out_ret;
+			}
+		}
+	}
+
+	smccc_set_retval(vcpu, SMCCC_RET_INVALID_PARAMETER, 0, 0, 0);
+out_ret:
+	hyp_spin_unlock(&device_spinlock);
+	return true;
 }
