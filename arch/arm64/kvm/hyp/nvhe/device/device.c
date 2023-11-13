@@ -301,3 +301,57 @@ void pkvm_devices_teardown(struct pkvm_hyp_vm *vm)
 	}
 	hyp_spin_unlock(&device_spinlock);
 }
+
+static struct pkvm_device *pkvm_get_device_by_iommu(u64 id, u64 endpoint)
+{
+	struct pkvm_device *dev = NULL;
+	struct pkvm_dev_iommu *iommu;
+	int i, j;
+
+	for (i = 0 ; i < registered_devices_nr ; ++i) {
+		dev = &registered_devices[i];
+		for (j = 0 ; j < dev->nr_iommus; ++j) {
+			iommu = &dev->iommus[j];
+			if ((id == iommu->id) && (endpoint == iommu->endpoint))
+				return dev;
+		}
+	}
+
+	return NULL;
+}
+
+/*
+ * Check if the host or a VM allowed to access a device and keep the device lock
+ * held to avoid races with ctxt changes that includes blocking the device.
+ * In case of 0 returned, the caller is expected to call pkvm_devices_iommu_unlock()
+ */
+int pkvm_devices_iommu_lock(u64 id, u64 endpoint, struct pkvm_hyp_vcpu *vcpu)
+{
+	struct pkvm_device *dev = pkvm_get_device_by_iommu(id, endpoint);
+	struct pkvm_hyp_vm *vm = NULL;
+
+	/* Non assignable device, only allowed to host */
+	if (!dev) {
+		if (vcpu)
+			return -EPERM;
+		else
+			return 0;
+	}
+
+	if (vcpu)
+		vm = pkvm_hyp_vcpu_to_hyp_vm(vcpu);
+
+	hyp_spin_lock(&device_spinlock);
+	if (dev->ctxt == vm)
+		return 0;
+	hyp_spin_unlock(&device_spinlock);
+	return -EPERM;
+}
+
+void pkvm_devices_iommu_unlock(u64 id, u64 endpoint)
+{
+	struct pkvm_device *dev = pkvm_get_device_by_iommu(id, endpoint);
+
+	if (dev)
+		hyp_spin_unlock(&device_spinlock);
+}
