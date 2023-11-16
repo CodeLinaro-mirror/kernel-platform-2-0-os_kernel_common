@@ -506,6 +506,8 @@ struct kvm_iommu_driver {
 	int (*get_device_iommu_num_ids)(struct device *dev);
 	int (*get_device_iommu_id)(struct device *dev, u32 id,
 				   pkvm_handle_t *out_iommu, u32 *out_sid);
+	void *(*guest_alloc)(void *flags, unsigned long order);
+	void (*guest_free)(void *addr, void *flags, unsigned long order);
 	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
@@ -695,6 +697,9 @@ struct kvm_vcpu_arch {
 
 	/* Per-vcpu CCSIDR override or NULL */
 	u32 *ccsidr;
+
+	/* mem cache for pvIOMMU usage in guests. */
+	struct kvm_hyp_memcache iommu_mc;
 
 	/* PAGE_SIZE bound list of requests from the hypervisor to the host. */
 	struct kvm_hyp_req *hyp_reqs;
@@ -1339,6 +1344,8 @@ pkvm_handle_t kvm_get_iommu_id_by_of(struct device_node *np);
 int kvm_iommu_device_num_ids(struct device *dev);
 int kvm_iommu_device_id(struct device *dev, u32 idx,
 			pkvm_handle_t *out_iommu, u32 *out_sid);
+int kvm_iommu_guest_alloc_mc(struct kvm_hyp_memcache *mc, u32 pgsize, u32 nr_pages);
+void kvm_iommu_guest_free_mc(struct kvm_hyp_memcache *mc);
 
 struct kvm_iommu_ops;
 
@@ -1358,4 +1365,13 @@ int __pkvm_topup_hyp_alloc_mgt(unsigned long id, unsigned long nr_pages,
 
 #define __KVM_HAVE_ARCH_ASSIGNED_DEVICE_GROUP
 
+static inline phys_addr_t kvm_host_pa(void *addr)
+{
+	return __pa(addr);
+}
+
+static inline void *kvm_host_va(phys_addr_t phys)
+{
+	return __va(phys);
+}
 #endif /* __ARM64_KVM_HOST_H__ */
