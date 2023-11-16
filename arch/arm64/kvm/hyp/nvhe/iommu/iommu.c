@@ -51,16 +51,24 @@ static inline bool kvm_iommu_is_ready(void)
 	return atomic_read_acquire(&kvm_iommu_idmap_initialized) == 1;
 }
 
-void *__kvm_iommu_donate_pages(struct hyp_pool *pool, u8 order, bool request)
+struct pkvm_hyp_vcpu *__get_ctxt(void)
+{
+	struct kvm_vcpu *vcpu = this_cpu_ptr(&kvm_host_data)->host_ctxt.__hyp_running_vcpu;
+
+	if (vcpu)
+		return container_of(vcpu, struct pkvm_hyp_vcpu, vcpu);
+	return NULL;
+}
+
+void *__kvm_iommu_donate_pages(struct hyp_pool *pool, u8 order, struct kvm_hyp_req *req)
 {
 	void *p;
-	struct kvm_hyp_req *req = this_cpu_ptr(&host_hyp_reqs);
 
 	p = hyp_alloc_pages(pool, order);
 	if (p)
 		return p;
 
-	if (request) {
+	if (req) {
 		req->type = KVM_HYP_REQ_TYPE_MEM;
 		req->mem.dest = REQ_MEM_DEST_HYP_IOMMU;
 		req->mem.sz_alloc = (1 << order) * PAGE_SIZE;
@@ -82,17 +90,41 @@ void __kvm_iommu_reclaim_pages(struct hyp_pool *pool, void *p, u8 order)
 
 void *kvm_iommu_donate_pages(u8 order, bool request)
 {
-	return __kvm_iommu_donate_pages(&iommu_host_pool, order, request);
+	struct kvm_hyp_req *req = NULL;
+	struct pkvm_hyp_vcpu *ctxt = __get_ctxt();
+	struct hyp_pool *pool;
+
+	if (ctxt) {
+		pool = &pkvm_hyp_vcpu_to_hyp_vm(ctxt)->iommu_pool;
+		if (request) {
+			req = pkvm_hyp_req_reserve(ctxt, KVM_HYP_REQ_TYPE_MEM);
+			if(WARN_ON(!req))
+				return NULL;
+		}
+	} else {
+		pool = &iommu_host_pool;
+		if (request)
+			req = this_cpu_ptr(&host_hyp_reqs);
+	}
+	return __kvm_iommu_donate_pages(pool, order, req);
 }
 
 void kvm_iommu_reclaim_pages(void *p, u8 order)
 {
-	__kvm_iommu_reclaim_pages(&iommu_host_pool, p, order);
+	struct pkvm_hyp_vcpu *ctxt = __get_ctxt();
+	struct pkvm_hyp_vm *vm;
+
+	if (ctxt) {
+		vm = pkvm_hyp_vcpu_to_hyp_vm(ctxt);
+		__kvm_iommu_reclaim_pages(&vm->iommu_pool, p, order);
+	} else {
+		__kvm_iommu_reclaim_pages(&iommu_host_pool, p, order);
+	}
 }
 
 void *kvm_iommu_donate_pages_atomic(u8 order)
 {
-	return __kvm_iommu_donate_pages(&iommu_atomic_pool, order, false);
+	return __kvm_iommu_donate_pages(&iommu_atomic_pool, order, NULL);
 }
 
 void kvm_iommu_reclaim_pages_atomic(void *p, u8 order)
@@ -103,9 +135,15 @@ void kvm_iommu_reclaim_pages_atomic(void *p, u8 order)
 /* Request to hypervisor. */
 int kvm_iommu_request(struct kvm_hyp_req *req)
 {
-	struct kvm_hyp_req *cur_req = this_cpu_ptr(&host_hyp_reqs);
+	struct kvm_hyp_req *cur_req;
+	struct pkvm_hyp_vcpu *ctxt = __get_ctxt();
 
-	if (cur_req->type != KVM_HYP_LAST_REQ)
+	if (ctxt)
+		cur_req = pkvm_hyp_req_reserve(ctxt, KVM_HYP_REQ_TYPE_MEM);
+	else
+		cur_req = this_cpu_ptr(&host_hyp_reqs);
+
+	if (!cur_req || (cur_req->type != KVM_HYP_LAST_REQ))
 		return -EBUSY;
 
 	memcpy(cur_req, req, sizeof(struct kvm_hyp_req));
