@@ -21,6 +21,10 @@ static DEFINE_PER_CPU(struct kvm_iommu_paddr_cache, kvm_iommu_unmap_cache);
 
 void **kvm_hyp_iommu_domains;
 
+/* Hypervisor is non-preemptable, so cur_context can be per cpu. */
+DEFINE_PER_CPU(struct pkvm_hyp_vcpu *, __cur_context);
+#define cur_context (*this_cpu_ptr(&__cur_context))
+
 static struct hyp_pool iommu_host_pool;
 static struct hyp_pool iommu_atomic_pool;
 
@@ -57,7 +61,8 @@ struct pkvm_hyp_vcpu *__get_ctxt(void)
 
 	if (vcpu)
 		return container_of(vcpu, struct pkvm_hyp_vcpu, vcpu);
-	return NULL;
+	/* Maybe guest is not loaded but we are in teardown context. */
+	return cur_context;
 }
 
 void *__kvm_iommu_donate_pages(struct hyp_pool *pool, u8 order, struct kvm_hyp_req *req)
