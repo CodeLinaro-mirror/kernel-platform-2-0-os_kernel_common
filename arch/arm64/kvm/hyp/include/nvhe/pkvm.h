@@ -190,6 +190,7 @@ int pkvm_init_hvc_pd(struct kvm_power_domain *pd,
 int pkvm_host_hvc_pd(u64 device_id, u64 on);
 
 bool pkvm_device_request_mmio(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code);
+bool pkvm_device_request_dma(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code);
 void pkvm_devices_teardown(struct pkvm_hyp_vm *vm);
 int pkvm_devices_iommu_lock(u64 id, u64 endpoint, struct pkvm_hyp_vcpu *vcpu);
 void pkvm_devices_iommu_unlock(u64 id, u64 endpoint);
