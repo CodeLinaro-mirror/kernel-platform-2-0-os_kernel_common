@@ -767,6 +767,16 @@ static struct kvm_hyp_iommu *smmu_id_to_iommu(pkvm_handle_t smmu_id)
 	return &kvm_hyp_arm_smmu_v3_smmus[smmu_id].iommu;
 }
 
+static int smmu_id_to_token(pkvm_handle_t smmu_id, u64 *out_token)
+{
+	if (smmu_id >= kvm_hyp_arm_smmu_v3_count)
+		return -EINVAL;
+
+	smmu_id = array_index_nospec(smmu_id, kvm_hyp_arm_smmu_v3_count);
+	*out_token = kvm_hyp_arm_smmu_v3_smmus[smmu_id].mmio_addr;
+	return 0;
+}
+
 int smmu_domain_config_s2(struct kvm_hyp_iommu_domain *domain, u64 *ent)
 {
 	struct io_pgtable_cfg *cfg;
@@ -1508,6 +1518,7 @@ struct kvm_iommu_ops smmu_ops = {
 	.map_pages			= smmu_map_pages,
 	.unmap_pages			= smmu_unmap_pages,
 	.iova_to_phys			= smmu_iova_to_phys,
+	.get_iommu_token_by_id		= smmu_id_to_token,
 	.block_dev			= smmu_block_dev,
 };
 

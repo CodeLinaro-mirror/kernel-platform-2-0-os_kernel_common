@@ -9,6 +9,7 @@
 
 #include <nvhe/iommu.h>
 #include <nvhe/mem_protect.h>
+#include <nvhe/pviommu-host.h>
 
 struct pkvm_device *registered_devices;
 unsigned long registered_devices_nr;
@@ -399,4 +400,53 @@ int pkvm_device_register_reset(u64 phys, int (*cb)(struct pkvm_device *))
 	hyp_spin_unlock(&device_spinlock);
 
 	return 0;
+}
+
+bool pkvm_device_request_dma(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code)
+{
+	int ret;
+	struct pkvm_hyp_vm *vm = pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu);
+	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
+	u64 pviommu = smccc_get_arg1(vcpu);
+	u64 vsid = smccc_get_arg2(vcpu);
+	u64 token1, token2;
+	struct pviommu_route route;
+	struct pkvm_device *dev;
+
+	ret = pkvm_pviommu_route(vm, pviommu, vsid, &route);
+	if (ret)
+		goto out_ret;
+	token2 = route.sid;
+	/*
+	 * route.iommu is the host-hyp iommu ID that has no meaning for guest.
+	 * It needs to be converted to IOMMU token as in the firmware(usually
+	 * based address).
+	 */
+	ret = kvm_iommu_id_to_token(route.iommu, &token1);
+	if (ret)
+		goto out_ret;
+
+	dev = pkvm_get_device_by_iommu(route.iommu, route.sid);
+	if (!dev)
+		goto out_ret;
+
+	hyp_spin_lock(&device_spinlock);
+	if (dev->ctxt == NULL) {
+		/*
+		 * First time device is assigned to guest, make sure it's resources
+		 * have been donated.
+		 */
+		ret = __pkvm_group_assign(dev->group_id, vm);
+	} else if (dev->ctxt != vm) {
+		ret = -EPERM;
+	}
+	hyp_spin_unlock(&device_spinlock);
+	if (ret)
+		goto out_ret;
+
+	smccc_set_retval(vcpu, SMCCC_RET_SUCCESS, token1, token2, 0);
+	return true;
+out_ret:
+	smccc_set_retval(vcpu, SMCCC_RET_INVALID_PARAMETER, 0, 0, 0);
+	return true;
 }
