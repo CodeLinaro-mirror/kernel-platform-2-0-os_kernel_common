@@ -10,9 +10,13 @@ use crate::{
 };
 use core::{
     cmp::{Eq, PartialEq},
+    ffi::c_long,
     ops::Deref,
     ptr,
 };
+
+/// A sentinal value used for infinite timeouts.
+pub const MAX_SCHEDULE_TIMEOUT: c_long = c_long::MAX;
 
 /// Returns the currently running task.
 #[macro_export]
