@@ -102,14 +102,16 @@ filegroup(
     name = "aarch64_additional_kmi_symbol_lists",
     srcs = [
         # keep sorted
+        "android/abi_gki_aarch64_unisoc",
     ],
     visibility = ["//visibility:public"],
 )
 
 define_common_kernels(target_configs = {
     "kernel_aarch64": {
-        "kmi_symbol_list_strict_mode": False,
+        "kmi_symbol_list_strict_mode": True,
         "kmi_symbol_list": "android/abi_gki_aarch64",
+        "kmi_symbol_list_add_only": True,
         "additional_kmi_symbol_lists": [":aarch64_additional_kmi_symbol_lists"],
         "trim_nonlisted_kmi": False,
         "protected_exports_list": "android/abi_gki_protected_exports_aarch64",
