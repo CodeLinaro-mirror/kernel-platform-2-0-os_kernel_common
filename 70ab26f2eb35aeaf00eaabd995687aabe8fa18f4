@@ -33,6 +33,24 @@
       "message": ".stg file is not needed here yet, AND you have marked it as executable 😞",
       "revId": "70ab26f2eb35aeaf00eaabd995687aabe8fa18f4",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bdf88169_99002019",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1961338
+      },
+      "writtenOn": "2024-01-03T14:11:42Z",
+      "side": 1,
+      "message": "delet the stg file, and just add unisoc in aarch64_additional_kmi_symbol_lists",
+      "parentUuid": "a65410ea_7ef1d814",
+      "revId": "70ab26f2eb35aeaf00eaabd995687aabe8fa18f4",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
