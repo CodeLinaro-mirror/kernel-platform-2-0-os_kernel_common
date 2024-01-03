@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "911c890f_bb98f678",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2024-01-03T10:43:57Z",
+      "side": 1,
+      "message": ".stg file is not needed here yet, AND you have marked it as executable 😞",
+      "revId": "70ab26f2eb35aeaf00eaabd995687aabe8fa18f4",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a65410ea_7ef1d814",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2024-01-03T10:43:57Z",
+      "side": 1,
+      "message": ".stg file is not needed here yet, AND you have marked it as executable 😞",
+      "revId": "70ab26f2eb35aeaf00eaabd995687aabe8fa18f4",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
