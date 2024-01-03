@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b04bb0a_adedb37d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2024-01-03T15:49:46Z",
+      "side": 1,
+      "message": "This is much too large of an initial symbol list for us to properly review, sorry.  Please split it up into a much smaller one to start with, and then add the new symbols as a patch series that is reviewable.",
+      "revId": "4b737f009253d86a4cdff746a666050945e5bb35",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
