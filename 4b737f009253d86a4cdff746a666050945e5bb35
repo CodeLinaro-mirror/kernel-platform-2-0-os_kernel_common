@@ -33,6 +33,24 @@
       "message": "Also, why add a symbol list to this branch already?  Isn\u0027t it too early?",
       "revId": "4b737f009253d86a4cdff746a666050945e5bb35",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b90c404_7bd0ea62",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1961338
+      },
+      "writtenOn": "2024-01-04T01:30:54Z",
+      "side": 1,
+      "message": "we have some VH/VD to sumbit this branch, and these commit was comment to add symbol at same time.",
+      "parentUuid": "aa16ca7f_6d4dc191",
+      "revId": "4b737f009253d86a4cdff746a666050945e5bb35",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
