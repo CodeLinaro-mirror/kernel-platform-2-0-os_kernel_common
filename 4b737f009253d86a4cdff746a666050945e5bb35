@@ -51,6 +51,24 @@
       "parentUuid": "aa16ca7f_6d4dc191",
       "revId": "4b737f009253d86a4cdff746a666050945e5bb35",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05bf9d95_b078e6e3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2024-01-08T15:16:18Z",
+      "side": 1,
+      "message": "trimming is not yet active done on this branch, hence not strictly required yet, but we can allow adding symbol lists at this stage to spread out the review. Though, please split it up in review-friendly pieces.",
+      "parentUuid": "7b90c404_7bd0ea62",
+      "revId": "4b737f009253d86a4cdff746a666050945e5bb35",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
