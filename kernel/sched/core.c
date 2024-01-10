@@ -4848,6 +4848,7 @@ static inline void sched_submit_work(struct task_struct *tsk)
 	if (tsk_is_pi_blocked(tsk))
 		return;
 
+	trace_android_rvh_blk_needs_flush_plug(tsk);
 	/*
 	 * If we are going to sleep and we have plugged IO queued,
 	 * make sure to submit it to avoid deadlocks.
