@@ -563,6 +563,7 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_blk_queue_split);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_elv_iosched_show);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_blk_mq_sched_insert_request);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_blk_register_queue);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_blk_needs_flush_plug);
 
 /*
  * For type visibility

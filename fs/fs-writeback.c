@@ -2137,6 +2137,8 @@ void wakeup_flusher_threads_bdi(struct backing_dev_info *bdi,
 	rcu_read_unlock();
 }
 
+#undef CREATE_TRACE_POINTS
+#include <trace/hooks/sched.h>
 /*
  * Wakeup the flusher threads to start writeback of all currently dirty pages
  */
@@ -2144,6 +2146,7 @@ void wakeup_flusher_threads(enum wb_reason reason)
 {
 	struct backing_dev_info *bdi;
 
+	trace_android_rvh_blk_needs_flush_plug(current);
 	/*
 	 * If we are expecting writeback progress we must submit plugged IO.
 	 */
