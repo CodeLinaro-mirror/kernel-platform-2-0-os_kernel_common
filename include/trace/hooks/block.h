@@ -273,6 +273,10 @@ DECLARE_HOOK(android_vh_blk_register_queue,
 	TP_PROTO(struct request_queue *q, struct gendisk *disk),
 	TP_ARGS(q, disk));
 
+DECLARE_HOOK(android_vh_blk_add_partitions,
+	TP_PROTO(struct gendisk *disk),
+	TP_ARGS(disk));
+
 #endif /* _TRACE_HOOK_BLOCK_H */
 
 /* This part must be outside protection */
