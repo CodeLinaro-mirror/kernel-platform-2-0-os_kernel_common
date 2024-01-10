@@ -512,6 +512,12 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_compl_rsp_check_done);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_err_handler);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_err_check_ctrl);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_err_print_ctrl);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_bio_free);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_bio_uninit);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_bio_clone_fast);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_bio_try_merge_page);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_bio_endio);
+
 /*
  * For type visibility
  */
