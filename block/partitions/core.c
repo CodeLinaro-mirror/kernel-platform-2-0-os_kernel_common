@@ -10,6 +10,8 @@
 #include <linux/vmalloc.h>
 #include <linux/blktrace_api.h>
 #include <linux/raid/detect.h>
+#include <trace/hooks/block.h>
+
 #include "check.h"
 
 static int (*check_part[])(struct parsed_partitions *) = {
@@ -738,6 +740,8 @@ int blk_add_partitions(struct gendisk *disk, struct block_device *bdev)
 		ret = 0;
 		goto out_free_state;
 	}
+
+	trace_android_vh_blk_add_partitions(disk);
 
 	/*
 	 * If we read beyond EOD, try unlocking native capacity even if the
