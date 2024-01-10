@@ -23,6 +23,7 @@
 #include <asm/tlbflush.h>
 
 #include <trace/events/block.h>
+#include <trace/hooks/block.h>
 #include "blk.h"
 
 #define POOL_SIZE	64
@@ -252,6 +253,7 @@ static struct bio *bounce_clone_bio(struct bio *bio_src, gfp_t gfp_mask,
 	bio->bi_write_hint	= bio_src->bi_write_hint;
 	bio->bi_iter.bi_sector	= bio_src->bi_iter.bi_sector;
 	bio->bi_iter.bi_size	= bio_src->bi_iter.bi_size;
+	trace_android_vh_blk_bounce_clone_bio(bio, bio_src);
 
 	switch (bio_op(bio)) {
 	case REQ_OP_DISCARD:
