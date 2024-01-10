@@ -21,6 +21,7 @@
 #include <linux/blk-crypto.h>
 
 #include <trace/events/block.h>
+#include <trace/hooks/block.h>
 #include "blk.h"
 #include "blk-rq-qos.h"
 
@@ -234,6 +235,13 @@ fallback:
 
 void bio_uninit(struct bio *bio)
 {
+	bool skip = false;
+
+	trace_android_vh_bio_uninit(&skip, bio);
+	if (skip) {
+		bio_crypt_free_ctx(bio);
+		return;
+	}
 #ifdef CONFIG_BLK_CGROUP
 	if (bio->bi_blkg) {
 		blkg_put(bio->bi_blkg);
@@ -252,6 +260,7 @@ static void bio_free(struct bio *bio)
 	struct bio_set *bs = bio->bi_pool;
 	void *p;
 
+	trace_android_rvh_bio_free(bio);
 	bio_uninit(bio);
 
 	if (bs) {
@@ -691,6 +700,8 @@ void __bio_clone_fast(struct bio *bio, struct bio *bio_src)
 	bio->bi_iter = bio_src->bi_iter;
 	bio->bi_io_vec = bio_src->bi_io_vec;
 
+	trace_android_vh_bio_clone_fast(bio, bio_src);
+
 	bio_clone_blkg_association(bio, bio_src);
 	blkcg_bio_issue_init(bio);
 }
@@ -871,11 +882,19 @@ EXPORT_SYMBOL(bio_add_pc_page);
 bool __bio_try_merge_page(struct bio *bio, struct page *page,
 		unsigned int len, unsigned int off, bool *same_page)
 {
+	bool skip = false;
+	bool status = false;
+
 	if (WARN_ON_ONCE(bio_flagged(bio, BIO_CLONED)))
 		return false;
 
 	if (bio->bi_vcnt > 0) {
 		struct bio_vec *bv = &bio->bi_io_vec[bio->bi_vcnt - 1];
+
+		trace_android_vh_bio_try_merge_page(&skip, &status, bio, bv,
+						    page, len, off, same_page);
+		if (skip)
+			return status;
 
 		if (page_is_mergeable(bv, page, len, off, same_page)) {
 			if (bio->bi_iter.bi_size > UINT_MAX - len) {
@@ -1425,6 +1444,7 @@ static inline bool bio_remaining_done(struct bio *bio)
  **/
 void bio_endio(struct bio *bio)
 {
+	trace_android_rvh_bio_endio(bio);
 again:
 	if (!bio_remaining_done(bio))
 		return;
