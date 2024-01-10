@@ -258,6 +258,10 @@ DECLARE_RESTRICTED_HOOK(android_rvh_blk_queue_split,
 		 struct bio *split, unsigned int *nr_segs),
 	TP_ARGS(q, bio, split, nr_segs), 1);
 
+DECLARE_HOOK(android_vh_elv_iosched_show,
+	TP_PROTO(bool *skip, int *len, char *name, struct request_queue *q),
+	TP_ARGS(skip, len, name, q));
+
 #endif /* _TRACE_HOOK_BLOCK_H */
 
 /* This part must be outside protection */
