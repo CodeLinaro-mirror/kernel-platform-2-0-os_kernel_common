@@ -517,6 +517,7 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_bio_uninit);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_bio_clone_fast);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_bio_try_merge_page);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_bio_endio);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_blk_bounce_clone_bio);
 
 /*
  * For type visibility

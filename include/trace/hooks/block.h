@@ -64,6 +64,10 @@ DECLARE_RESTRICTED_HOOK(android_rvh_bio_endio,
 	TP_PROTO(struct bio *bio),
 	TP_ARGS(bio), 1);
 
+DECLARE_HOOK(android_vh_blk_bounce_clone_bio,
+	TP_PROTO(struct bio *bio, struct bio *bio_src),
+	TP_ARGS(bio, bio_src));
+
 #endif /* _TRACE_HOOK_BLOCK_H */
 
 /* This part must be outside protection */
