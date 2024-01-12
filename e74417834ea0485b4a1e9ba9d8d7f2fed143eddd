@@ -1,5 +1,23 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8a3f674_d1adb37b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1869780
+      },
+      "writtenOn": "2024-01-12T15:53:36Z",
+      "side": 1,
+      "message": "The bug number seems wrong to me. How could a symbol list change fix a kernel crash?",
+      "revId": "e74417834ea0485b4a1e9ba9d8d7f2fed143eddd",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
