@@ -16,6 +16,24 @@
       "message": "The bug number seems wrong to me. How could a symbol list change fix a kernel crash?",
       "revId": "e74417834ea0485b4a1e9ba9d8d7f2fed143eddd",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86739082_dc71f60e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1385444
+      },
+      "writtenOn": "2024-01-15T02:15:27Z",
+      "side": 1,
+      "message": "For the kernel crash, a fix using a new API from upstream needs this symbol list change.",
+      "parentUuid": "f8a3f674_d1adb37b",
+      "revId": "e74417834ea0485b4a1e9ba9d8d7f2fed143eddd",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ],
   "submitRequirementResults": [
