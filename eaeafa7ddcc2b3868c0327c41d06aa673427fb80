@@ -1,0 +1,24 @@
+{
+  "comments": [
+    {
+      "robotId": "ayeaye",
+      "robotRunId": "AR00000000000065937862",
+      "url": "https://android-build.googleplex.com/builds/treetop/android-review/2926200?revision\u003d1",
+      "fixSuggestions": [],
+      "key": {
+        "uuid": "2fdbcfc4_f37f2c85",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1757831
+      },
+      "writtenOn": "2024-01-24T09:55:54Z",
+      "side": 1,
+      "message": "Cherry pick is not clean. These are the differences between the original change and this cherry-pick:\nChecked against UPSTREAM commit: [googlesource](https://android.googlesource.com/kernel/common/+/78fbfb155d204428119310d1b9df665ab88da6e8) [kernel.org](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id\u003d78fbfb155d204428119310d1b9df665ab88da6e8)\n\n```\n      ## include/linux/damon.h ##\n     @@ include/linux/damon.h: struct damon_addr_range {\n       *\n    @@ include/linux/damon.h: void damon_add_region(struct damon_region *r, struct damo\n      \t\tunsigned int nr_ranges);\n     +void damon_update_region_access_rate(struct damon_region *r, bool accessed);\n      \n    - struct damos_filter *damos_new_filter(enum damos_filter_type type,\n    - \t\tbool matching);\n    + struct damos *damon_new_scheme(struct damos_access_pattern *pattern,\n    + \t\t\tenum damos_action action, struct damos_quota *quota,\n     \n      ## mm/damon/core.c ##\n     @@ mm/damon/core.c: int damon_set_region_biggest_system_ram_default(struct damon_target *t,\n    @@ mm/damon/core.c: int damon_set_region_biggest_system_ram_default(struct damon_ta\n     \n      ## mm/damon/paddr.c ##\n     @@ mm/damon/paddr.c: static void __damon_pa_check_access(struct damon_region *r)\n    - \t/* If the region is in the last checked page, reuse the result */\n    - \tif (ALIGN_DOWN(last_addr, last_folio_sz) \u003d\u003d\n    - \t\t\t\tALIGN_DOWN(r-\u003esampling_addr, last_folio_sz)) {\n    --\t\tif (last_accessed)\n    --\t\t\tr-\u003enr_accesses++;\n    -+\t\tdamon_update_region_access_rate(r, last_accessed);\n    - \t\treturn;\n      \t}\n      \n    - \tlast_accessed \u003d damon_pa_young(r-\u003esampling_addr, \u0026last_folio_sz);\n    + \tlast_accessed \u003d damon_pa_young(r-\u003esampling_addr, \u0026last_page_sz);\n     -\tif (last_accessed)\n     -\t\tr-\u003enr_accesses++;\n     +\tdamon_update_region_access_rate(r, last_accessed);\n    @@ mm/damon/paddr.c: static void __damon_pa_check_access(struct damon_region *r)\n     \n      ## mm/damon/vaddr.c ##\n     @@ mm/damon/vaddr.c: static void __damon_va_check_access(struct mm_struct *mm,\n    - \t/* If the region is in the last checked page, reuse the result */\n    - \tif (same_target \u0026\u0026 (ALIGN_DOWN(last_addr, last_folio_sz) \u003d\u003d\n    - \t\t\t\tALIGN_DOWN(r-\u003esampling_addr, last_folio_sz))) {\n    --\t\tif (last_accessed)\n    --\t\t\tr-\u003enr_accesses++;\n    -+\t\tdamon_update_region_access_rate(r, last_accessed);\n    - \t\treturn;\n      \t}\n      \n    - \tlast_accessed \u003d damon_va_young(mm, r-\u003esampling_addr, \u0026last_folio_sz);\n    + \tlast_accessed \u003d damon_va_young(mm, r-\u003esampling_addr, \u0026last_page_sz);\n     -\tif (last_accessed)\n     -\t\tr-\u003enr_accesses++;\n     +\tdamon_update_region_access_rate(r, last_accessed);\n```\n\nPlease refer to the contribution guidelines for details:\nhttps://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/README.md",
+      "revId": "eaeafa7ddcc2b3868c0327c41d06aa673427fb80",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
