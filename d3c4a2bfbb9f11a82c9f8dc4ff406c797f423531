@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d528fb52_9f704df5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2024-02-02T04:05:19Z",
+      "side": 1,
+      "message": "I am not opposed to this change here. I just want to point out that for each out-of-tree patch we have in Android, if gen_kheaders.sh is updated upstream, then it is some maintenance cost for the Android kernel team.",
+      "parentUuid": "1515cd31_4bbd03fc",
+      "range": {
+        "startLine": 9,
+        "startChar": 59,
+        "endLine": 10,
+        "endChar": 65
+      },
+      "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "24b2af92_3bf29329",
         "filename": "/COMMIT_MSG",
         "patchSetId": 3
