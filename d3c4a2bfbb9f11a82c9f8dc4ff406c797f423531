@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "80deaf20_a11c2423",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 3272971
+      },
+      "writtenOn": "2024-02-02T10:55:37Z",
+      "side": 1,
+      "message": "Hi Yifan Hong,\n\n\u003e patch may cause future merge conflicts \u0026 needs to be reverted at some unspecified time later\nI am not opposed to this change here. I just want to point out that for each out-of-tree patch we have in Android, if gen_kheaders.sh is updated upstream, then it is some maintenance cost for the Android kernel team.\n\nIf there are no intentions to incorporate the patch into the mainline Android, it would be acceptable to reference this patch directly rather than relying on the `--workaround_btrfs_b292212788` option.\n\n\u003e The official suggestion from the Kleaf team is actually to update your host machine kernel.\n\n1. Upgrading the host machine, particularly within an organization that distributes its own version of Ubuntu, presents significant challenges. This process requires careful consideration and coordination to ensure compatibility and system integrity.\n2. According \"Ubuntu kernel support lifecycle\" (https://ubuntu.com/about/release-cycle#ubuntu-kernel-release-cycle) Ubuntu 22.04 will use LTS kernel 5.15 until 2030, kernel 5.19 and kernel 6.2 are no longer supported by Ubuntu.\n3. There is ongoing backport for LTS kernel 5.15 - \nhttps://lore.kernel.org/linux-btrfs/cover.1706183427.git.fdmanana@suse.com/\nNot yet integrated into mainline the latest kernel 5.15.148 - https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/fs/btrfs?h\u003dv5.15.148\n4. Patches already backported into LTS kernel 6.1.76 - https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/fs/btrfs?h\u003dlinux-6.1.y\u0026id\u003da045b6b1974005678e29ab8cbbbb2b03e1d05932",
+      "parentUuid": "d528fb52_9f704df5",
+      "range": {
+        "startLine": 9,
+        "startChar": 59,
+        "endLine": 10,
+        "endChar": 65
+      },
+      "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "24b2af92_3bf29329",
         "filename": "/COMMIT_MSG",
         "patchSetId": 3
@@ -61,6 +85,24 @@
       "writtenOn": "2024-02-02T04:03:01Z",
       "side": 1,
       "message": "Could you please also add `Bug: 292212788` (the bug number in the flag)?\n\nThanks!",
+      "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "537e7eb3_65eb4feb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 3272971
+      },
+      "writtenOn": "2024-02-02T10:55:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24b2af92_3bf29329",
       "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
