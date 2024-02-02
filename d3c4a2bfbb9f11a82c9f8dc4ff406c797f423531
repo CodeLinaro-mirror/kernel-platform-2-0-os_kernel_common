@@ -63,6 +63,23 @@
       "message": "Could you please also add `Bug: 292212788` (the bug number in the flag)?\n\nThanks!",
       "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c2cae5e_13761bdd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2024-02-02T10:08:53Z",
+      "side": 1,
+      "message": "Have you considered sending this upstream?\n\nhttps://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/README.md",
+      "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
