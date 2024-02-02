@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1515cd31_4bbd03fc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2024-02-02T04:03:01Z",
+      "side": 1,
+      "message": "The official suggestion from the Kleaf team is actually to update your host machine kernel. This is why we provided a flag as a workaround instead of adding an \"ANDROID:\" patch; an \"ANDROID:\" patch may cause future merge conflicts \u0026 needs to be reverted at some unspecified time later).\n\nSo... perhaps just wait for your host kernel to get updated?",
+      "range": {
+        "startLine": 9,
+        "startChar": 59,
+        "endLine": 10,
+        "endChar": 65
+      },
+      "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24b2af92_3bf29329",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2024-02-02T04:03:01Z",
+      "side": 1,
+      "message": "Could you please also add `Bug: 292212788` (the bug number in the flag)?\n\nThanks!",
+      "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
