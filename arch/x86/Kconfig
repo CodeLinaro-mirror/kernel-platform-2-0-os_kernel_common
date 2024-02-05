@@ -2972,6 +2972,16 @@ config HAVE_ATOMIC_IOMAP
 	def_bool y
 	depends on X86_32
 
+config PAGE_SHIFT_COMPAT
+	int "Compat page-size as a power of 2"
+	depends on X86_64
+	range 12 16
+	default 12
+	help
+	  This option specifies the compat page-size presented to userspace
+	  as a power of 2. This value must be at least as large as PAGE_SHIFT.
+	  A PAGE_SHIFT_COMPAT == PAGE_SHIFT effectively disables the feature.
+
 source "arch/x86/kvm/Kconfig"
 
 source "arch/x86/Kconfig.assembler"
