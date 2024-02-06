@@ -146,6 +146,24 @@
       "message": "Have you considered sending this upstream?\n\nhttps://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/README.md",
       "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4b95bdb3_7e6fe5c0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 3272971
+      },
+      "writtenOn": "2024-02-06T06:51:38Z",
+      "side": 1,
+      "message": "It is an Android-specific bug related to BTRFS when using toybox\u0027s \"find\" command. This issue has already been addressed in GNU findutils [1].\n\nThe problem has been documented in several discussions [2][3], highlighting its significance and its primary relation to Google and Android [4]. Specifically, Google employs and provides a built version of toybox as the default host toolchain for building the Android Kernel for vendors such as NXP and Qualcomm [5].\n\nEven if toybox receives a patch, there is no opportunity to apply it, and we must not forget about older releases such as Android 13 and earlier. These versions may face the same issue due to the lack of ongoing maintenance.\n\n[1] https://github.com/landley/toybox/issues/306#issuecomment-1638031454\n[2] https://github.com/landley/toybox/issues/306#issuecomment-1640854930\n[3] https://github.com/landley/toybox/issues/306#issuecomment-1640886516\n[4] https://github.com/landley/toybox/issues/306#issuecomment-1641009233\n[5] https://github.com/landley/toybox/issues/306#issuecomment-1640959835",
+      "parentUuid": "9c2cae5e_13761bdd",
+      "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
