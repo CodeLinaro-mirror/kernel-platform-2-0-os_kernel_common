@@ -34,6 +34,12 @@ static inline unsigned long __calc_vm_flag_bits(unsigned long flags)
 {
     return calc_vm_flag_bits(flags) | _calc_vm_trans(flags, __MAP_NO_COMPAT,  __VM_NO_COMPAT );
 }
+
+extern void __filemap_len(struct inode *inode, unsigned long pgoff, unsigned long *len,
+                          bool is_16k);
+
+extern void __filemap_fixup(unsigned long addr, unsigned long prot, unsigned long old_len,
+                            unsigned long new_len);
 #else /* !defined(CONFIG_PAGE_SHIFT_COMPAT) || CONFIG_PAGE_SHIFT_COMPAT <= PAGE_SHIFT */
 #define __PAGE_SHIFT 			PAGE_SHIFT
 
@@ -41,6 +47,12 @@ static inline unsigned long __calc_vm_flag_bits(unsigned long flags)
 #define __MAP_NO_COMPAT   0x0
 
 #define __calc_vm_flag_bits     calc_vm_flag_bits
+
+static inline void __filemap_len(struct inode *inode, unsigned long pgoff, unsigned long *len,
+				                 bool is_16k) { }
+
+static inline void __filemap_fixup(unsigned long addr, unsigned long prot, unsigned long old_len,
+                                   unsigned long new_len) { }
 #endif /* defined(CONFIG_PAGE_SHIFT_COMPAT) && CONFIG_PAGE_SHIFT_COMPAT > PAGE_SHIFT */
 
 #define __PAGE_SIZE 			(_AC(1,UL) << __PAGE_SHIFT)
