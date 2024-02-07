@@ -17,6 +17,7 @@
 #include <linux/shm.h>
 #include <linux/mman.h>
 #include <linux/pagemap.h>
+#include <linux/page_size_compat.h>
 #include <linux/swap.h>
 #include <linux/syscalls.h>
 #include <linux/capability.h>
@@ -1627,6 +1628,8 @@ static unsigned long unmapped_area(struct vm_unmapped_area_info *info)
 
 	/* Adjust search length to account for worst case alignment overhead */
 	length = info->length + info->align_mask;
+	/* Adjust search length to account for page-compat alignment */
+	length += ((1 << (__PAGE_SHIFT - PAGE_SHIFT)) - 1) << PAGE_SHIFT;
 	if (length < info->length)
 		return -ENOMEM;
 
@@ -1653,7 +1656,7 @@ retry:
 		}
 	}
 
-	return gap;
+	return __PAGE_ALIGN(gap);
 }
 
 /**
@@ -1674,6 +1677,8 @@ static unsigned long unmapped_area_topdown(struct vm_unmapped_area_info *info)
 	MA_STATE(mas, &current->mm->mm_mt, 0, 0);
 	/* Adjust search length to account for worst case alignment overhead */
 	length = info->length + info->align_mask;
+	/* Adjust search length to account for page-compat alignment */
+	length += ((1 << (__PAGE_SHIFT - PAGE_SHIFT)) - 1) << PAGE_SHIFT;
 	if (length < info->length)
 		return -ENOMEM;
 
@@ -1702,7 +1707,7 @@ retry:
 		}
 	}
 
-	return gap;
+	return __PAGE_ALIGN(gap);
 }
 
 /*
