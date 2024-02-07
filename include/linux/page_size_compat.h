@@ -19,13 +19,25 @@
 #include <asm/page.h>
 
 #include <linux/align.h>
+#include <linux/mman.h>
 
 #if defined(CONFIG_PAGE_SHIFT_COMPAT) && CONFIG_PAGE_SHIFT_COMPAT > PAGE_SHIFT
 extern unsigned __page_shift(void);
 
 #define __PAGE_SHIFT 			__page_shift()
+
+#define __VM_NO_COMPAT	0x00000800  /* VMA is exempt from emulated page align requirements */
+#define __MAP_NO_COMPAT   0x8000
+
+/* Combine the mmap "flags" argument into "vm_flags" add translation of the no-compat flag. */
+static inline unsigned long __calc_vm_flag_bits(unsigned long flags)
+{
+    return calc_vm_flag_bits(flags) | _calc_vm_trans(flags, __MAP_NO_COMPAT,  __VM_NO_COMPAT );
+}
 #else /* !defined(CONFIG_PAGE_SHIFT_COMPAT) || CONFIG_PAGE_SHIFT_COMPAT <= PAGE_SHIFT */
 #define __PAGE_SHIFT 			PAGE_SHIFT
+
+#define __calc_vm_flag_bits     calc_vm_flag_bits
 #endif /* defined(CONFIG_PAGE_SHIFT_COMPAT) && CONFIG_PAGE_SHIFT_COMPAT > PAGE_SHIFT */
 
 #define __PAGE_SIZE 			(_AC(1,UL) << __PAGE_SHIFT)
