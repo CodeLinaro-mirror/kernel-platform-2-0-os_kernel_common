@@ -182,6 +182,24 @@
       "parentUuid": "4b95bdb3_7e6fe5c0",
       "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0be247f1_37713e6a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 3272971
+      },
+      "writtenOn": "2024-02-08T12:58:16Z",
+      "side": 1,
+      "message": "\u003e This patch addresses the issue two layers up (not in the kernel, not in toybox, but in the integration code) and only at one single location. Who knows how many more triggers are in the code?\n\u003e I am not willing to accrue an out-of-tree difference with performance implications for several branches (android-mainline is not enough) to work around an underlying issue while another workaround is already available.\n\nIndeed (toybox \"find\" + BTRFS), and as I already mentioned in another discussion thread:\n\n\u003e If there are no intentions to incorporate the patch into the mainline Android, it would be acceptable to reference this patch directly rather than relying on the --workaround_btrfs_b292212788 option.\n\nAnd therefore this combination (toybox \"find\" + BTRFS) is like a time bomb in the source code and should be highlighted, but using the host\u0027s `find` to build Android might lead to side effects during the building process and brings false bugs.\n\n\u003e The fix for 5.15 LTS is queued up for 5.15.149 and a release candidate has been posted.\n\nThanks for sharing the updates.\n\n\u003e Please upgrade as soon as your distribution adopts the LTS version containing the proper fix.\n\nIt depends on Ubuntu, currently only LTS 5.15.92 is available.\n\n\u003e I am sure you will understand.\n\nI\u0027m fine with that. No worries.",
+      "parentUuid": "81ba622b_770a57d7",
+      "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
