@@ -164,6 +164,24 @@
       "parentUuid": "9c2cae5e_13761bdd",
       "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81ba622b_770a57d7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2024-02-08T10:35:02Z",
+      "side": 1,
+      "message": "The issue is confirmed to be a bug in the kernel. As it stands, there is no known bug around this in the Android kernel tree or in toybox. The bug being exposed by the combination Android+BTRFS+buggy kernel does not make this an Android specific bug. You as well confirmed that you can trigger the issue from Arch Linux in an independent script.\n\nThis patch addresses the issue two layers up (not in the kernel, not in toybox, but in the integration code) and only at one single location. Who knows how many more triggers are in the code?\n\nI am not willing to accrue an out-of-tree difference with performance implications for several branches (android-mainline is not enough) to work around an underlying issue while another workaround is already available.\n\nThe fix for 5.15 LTS is queued up for 5.15.149 and a release candidate has been posted.\n\nhttps://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git/commit/queue-5.15/btrfs-fix-infinite-directory-reads.patch?id\u003d564db2e197e1861fee968f43e38c1f7da901a97e\n\nPlease upgrade as soon as your distribution adopts the LTS version containing the proper fix.\n\nMeanwhile, we already provide `--workaround_btrfs_b292212788` for affected users and for all possible occurrences of this bug in the code.\n\nI am sure you will understand.",
+      "parentUuid": "4b95bdb3_7e6fe5c0",
+      "revId": "d3c4a2bfbb9f11a82c9f8dc4ff406c797f423531",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
