@@ -480,6 +480,27 @@ struct vcpu_reset_state {
 	bool		reset;
 };
 
+struct kvm_hyp_req {
+#define KVM_HYP_REQ_MEM		1
+#define KVM_HYP_REQ_MAP		2
+#define KVM_HYP_REQ_END	((u8)(~((u8)0)))
+	u8 type;
+	union {
+		struct {
+#define REQ_MEM_HYP_ALLOC	1
+#define REQ_MEM_VCPU_MEMCACHE	2
+#define REQ_MEM_IOMMU		3
+			u8	dest;
+			int	nr_pages;
+			int	sz_alloc; /* Size of the page. */
+		} mem;
+		struct {
+			unsigned long	guest_ipa;
+			size_t		size;
+		} map;
+	};
+};
+
 struct kvm_vcpu_arch {
 	struct kvm_cpu_context ctxt;
 
