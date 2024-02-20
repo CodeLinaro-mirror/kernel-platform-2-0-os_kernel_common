@@ -481,6 +481,7 @@ struct vcpu_reset_state {
 };
 
 struct kvm_hyp_req {
+#define KVM_HYP_REQ_EMP		0
 #define KVM_HYP_REQ_MEM		1
 #define KVM_HYP_REQ_MAP		2
 #define KVM_HYP_REQ_END	((u8)(~((u8)0)))
@@ -500,6 +501,24 @@ struct kvm_hyp_req {
 		} map;
 	};
 };
+
+/*
+ * De-serialize request from SMCCC return.
+ * See hyp-main.c for serialization.
+ */
+static inline void hyp_reqs_smccc_decode(struct arm_smccc_res *res,
+					 struct kvm_hyp_req *req)
+{
+	const size_t type_sz = sizeof(req->type) * 8;
+	const size_t nr_pages_sz = sizeof(req->mem.nr_pages) * 8;
+	const u64 type_sz_mask= GENMASK_ULL(type_sz - 1, 0);
+	const u64 nr_pages_mask = GENMASK_ULL(nr_pages_sz - 1, 0);
+
+	req->type = FIELD_GET(type_sz_mask, res->a2);
+	req->mem.dest = FIELD_GET(~type_sz_mask, res->a2);
+	req->mem.nr_pages = FIELD_GET(nr_pages_mask, res->a3);
+	req->mem.sz_alloc = FIELD_GET(~nr_pages_mask, res->a3);
+}
 
 struct kvm_vcpu_arch {
 	struct kvm_cpu_context ctxt;
