@@ -336,6 +336,16 @@ static void *map_donated_memory_noclear(unsigned long host_va, size_t size)
 	return va;
 }
 
+static void *map_donated_memory(unsigned long host_va, size_t size)
+{
+	void *va = map_donated_memory_noclear(host_va, size);
+
+	if (va)
+		memset(va, 0, size);
+
+	return va;
+}
+
 static void __unmap_donated_memory(void *va, size_t size)
 {
 	kvm_flush_dcache_to_poc(va, size);
@@ -358,6 +368,20 @@ static void unmap_donated_memory_noclear(void *va, size_t size)
 		return;
 
 	__unmap_donated_memory(va, size);
+}
+
+static void
+teardown_donated_memory(struct kvm_hyp_memcache *mc, void *addr, size_t size)
+{
+	void *start;
+
+	size = PAGE_ALIGN(size);
+	memset(addr, 0, size);
+
+	for (start = addr; start < addr + size; start += PAGE_SIZE)
+		push_hyp_memcache(mc, start, hyp_virt_to_phys);
+
+	unmap_donated_memory_noclear(addr, size);
 }
 
 /*
@@ -599,11 +623,15 @@ static void unpin_host_sve_state(struct pkvm_hyp_vcpu *hyp_vcpu)
 
 static void teardown_sve_state(struct pkvm_hyp_vcpu *hyp_vcpu)
 {
-	struct pkvm_hyp_vm *hyp_vm = pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu);
 	void *sve_state = hyp_vcpu->vcpu.arch.sve_state;
 
-	if (sve_state)
-		hyp_free_account(sve_state, hyp_vm->host_kvm);
+	if (sve_state) {
+		struct kvm_hyp_memcache *vcpu_mc;
+
+		vcpu_mc = &hyp_vcpu->vcpu.arch.stage2_mc;
+		teardown_donated_memory(vcpu_mc, sve_state,
+					vcpu_sve_state_size(&hyp_vcpu->vcpu));
+	}
 }
 
 static void unpin_host_vcpus(struct pkvm_hyp_vcpu *hyp_vcpus[],
@@ -652,23 +680,16 @@ static int init_pkvm_hyp_vcpu_sve(struct pkvm_hyp_vcpu *hyp_vcpu, struct kvm_vcp
 	size_t sve_state_size = _vcpu_sve_state_size(sve_max_vl);
 	int ret = 0;
 
-	if (!sve_state && !pkvm_hyp_vcpu_is_protected(hyp_vcpu)) {
-		ret = -EINVAL;
-		goto err;
-	}
-
-	if (!sve_state_size || (sve_max_vl > kvm_sve_max_vl)) {
+	if (!sve_state || !sve_state_size || (sve_max_vl > kvm_sve_max_vl)) {
 		ret = -EINVAL;
 		goto err;
 	}
 
 	if (pkvm_hyp_vcpu_is_protected(hyp_vcpu)) {
-		struct pkvm_hyp_vm *hyp_vm = pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu);
-
-		sve_state = hyp_alloc_account(sve_state_size,
-					      hyp_vm->host_kvm);
+		sve_state = map_donated_memory((unsigned long) sve_state,
+					        sve_state_size);
 		if (!sve_state) {
-			ret = hyp_alloc_errno();
+			ret = -ENOMEM;
 			goto err;
 		}
 	} else {
