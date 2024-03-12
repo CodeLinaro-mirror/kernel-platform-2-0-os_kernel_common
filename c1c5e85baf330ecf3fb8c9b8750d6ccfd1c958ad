@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "568c7701_b9de7745",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1870730
+      },
+      "writtenOn": "2024-03-12T07:52:44Z",
+      "side": 1,
+      "message": "Please upstream to the applicable Stable first (linux-6.1.y).",
+      "revId": "c1c5e85baf330ecf3fb8c9b8750d6ccfd1c958ad",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
