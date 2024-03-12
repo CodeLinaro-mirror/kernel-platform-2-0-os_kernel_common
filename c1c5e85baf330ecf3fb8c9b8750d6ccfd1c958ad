@@ -16,6 +16,23 @@
       "message": "Please upstream to the applicable Stable first (linux-6.1.y).",
       "revId": "c1c5e85baf330ecf3fb8c9b8750d6ccfd1c958ad",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "48007cc6_12505826",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1045980
+      },
+      "writtenOn": "2024-03-12T20:47:50Z",
+      "side": 1,
+      "message": "Risk assessment here: https://b.corp.google.com/issues/323236756#comment20",
+      "revId": "c1c5e85baf330ecf3fb8c9b8750d6ccfd1c958ad",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
