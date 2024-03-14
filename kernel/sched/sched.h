@@ -1612,6 +1612,7 @@ struct rq_flags {
 #ifdef CONFIG_SMP
 extern struct rq *__migrate_task(struct rq *rq, struct rq_flags *rf,
 				 struct task_struct *p, int dest_cpu);
+extern void __balance_callbacks(struct rq *rq);
 #endif
 
 extern struct balance_callback balance_push_callback;
