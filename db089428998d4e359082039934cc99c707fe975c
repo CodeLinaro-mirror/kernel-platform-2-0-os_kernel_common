@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a237af7_2546f24d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2024-03-21T20:06:01Z",
+      "side": 1,
+      "message": "This patch does several things:\n- introduces new vendor hooks\n- exports some private functions\n- adds __GFP_CMA to some allocations\n\nPlease separate each type of change into a separate patch.",
+      "revId": "db089428998d4e359082039934cc99c707fe975c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
