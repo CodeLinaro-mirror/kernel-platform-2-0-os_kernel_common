@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb51a5ad_65f756e8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2024-03-21T20:08:18Z",
+      "side": 1,
+      "message": "If you keep the same Change-Id as original, this would be obvious and you would not need this comment.",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 73
+      },
+      "revId": "db089428998d4e359082039934cc99c707fe975c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "5a237af7_2546f24d",
