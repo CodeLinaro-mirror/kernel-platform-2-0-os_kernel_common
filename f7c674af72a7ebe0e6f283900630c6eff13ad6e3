@@ -22,6 +22,30 @@
       },
       "revId": "f7c674af72a7ebe0e6f283900630c6eff13ad6e3",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47f575cc_f6301c8d",
+        "filename": "android/abi_gki_aarch64.stg",
+        "patchSetId": 4
+      },
+      "lineNbr": 346343,
+      "author": {
+        "id": 1986685
+      },
+      "writtenOn": "2024-03-22T10:59:00Z",
+      "side": 1,
+      "message": "Yes, this was caught by a presubmit check which was only flagging those branches. The check also proposed this fix.",
+      "parentUuid": "52da7074_e4d1dd5e",
+      "range": {
+        "startLine": 346335,
+        "startChar": 0,
+        "endLine": 346343,
+        "endChar": 12
+      },
+      "revId": "f7c674af72a7ebe0e6f283900630c6eff13ad6e3",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
