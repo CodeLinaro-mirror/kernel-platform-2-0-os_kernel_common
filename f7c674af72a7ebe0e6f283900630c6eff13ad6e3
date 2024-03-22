@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "52da7074_e4d1dd5e",
+        "filename": "android/abi_gki_aarch64.stg",
+        "patchSetId": 4
+      },
+      "lineNbr": 346343,
+      "author": {
+        "id": 1986660
+      },
+      "writtenOn": "2024-03-22T10:56:38Z",
+      "side": 1,
+      "message": "QQ: is it intentional that this change exists only in branches until android14-6.1-2023-09 and earlier, but not later ones?",
+      "range": {
+        "startLine": 346335,
+        "startChar": 0,
+        "endLine": 346343,
+        "endChar": 12
+      },
+      "revId": "f7c674af72a7ebe0e6f283900630c6eff13ad6e3",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
