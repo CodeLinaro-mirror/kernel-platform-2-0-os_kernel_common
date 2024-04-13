@@ -15,6 +15,7 @@
 #include <linux/maple_tree.h>
 #include <linux/irqdomain.h>
 #include <linux/sysfs.h>
+#include <trace/hooks/gic.h>
 
 #include "internals.h"
 
@@ -667,7 +668,9 @@ int handle_irq_desc(struct irq_desc *desc)
 	if (WARN_ON_ONCE(!in_hardirq() && handle_enforce_irqctx(data)))
 		return -EPERM;
 
+	trace_android_rvh_irq_enter(data->hwirq);
 	generic_handle_irq_desc(desc);
+	trace_android_rvh_irq_exit(data->hwirq);
 	return 0;
 }
 

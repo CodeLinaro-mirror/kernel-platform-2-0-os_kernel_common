@@ -15,6 +15,13 @@ DECLARE_HOOK(android_vh_gic_set_affinity,
 		 bool force, u8 *gic_cpu_map, void __iomem *reg),
 	TP_ARGS(d, mask_val, force, gic_cpu_map, reg));
 
+DECLARE_RESTRICTED_HOOK(android_rvh_irq_enter,
+	TP_PROTO(unsigned int irq),
+	TP_ARGS(irq), 1);
+DECLARE_RESTRICTED_HOOK(android_rvh_irq_exit,
+	TP_PROTO(unsigned int irq),
+	TP_ARGS(irq), 1);
+
 #endif /* _TRACE_HOOK_GIC_H */
 /* This part must be outside protection */
 #include <trace/define_trace.h>
