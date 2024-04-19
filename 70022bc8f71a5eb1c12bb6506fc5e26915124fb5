@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da64bf60_6081eb58",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1869395
+      },
+      "writtenOn": "2024-04-19T16:07:22Z",
+      "side": 1,
+      "message": "So we don\u0027t have a rate_limit for printk in Rust?",
+      "range": {
+        "startLine": 9,
+        "startChar": 19,
+        "endLine": 9,
+        "endChar": 26
+      },
+      "revId": "70022bc8f71a5eb1c12bb6506fc5e26915124fb5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b856d9a_a1b97b3c",
+        "filename": "drivers/android/binder/error.rs",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1869395
+      },
+      "writtenOn": "2024-04-19T16:07:22Z",
+      "side": 1,
+      "message": "It seems to me this will also skip BR_DEAD_REPLY, is this intentional?",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 27
+      },
+      "revId": "70022bc8f71a5eb1c12bb6506fc5e26915124fb5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
