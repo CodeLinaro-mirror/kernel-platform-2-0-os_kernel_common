@@ -50,6 +50,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d839025c_9336a6b9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1869395
+      },
+      "writtenOn": "2024-04-20T13:50:13Z",
+      "side": 1,
+      "message": "ok. I see how this would be a problem with frozen/dead processes.",
+      "parentUuid": "36f5fd85_72ddefcc",
+      "range": {
+        "startLine": 9,
+        "startChar": 19,
+        "endLine": 9,
+        "endChar": 26
+      },
+      "revId": "70022bc8f71a5eb1c12bb6506fc5e26915124fb5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "9b856d9a_a1b97b3c",
         "filename": "drivers/android/binder/error.rs",
         "patchSetId": 1
@@ -85,6 +109,30 @@
       "side": 1,
       "message": "Yeah, but maybe we should reconsider. What do you think?",
       "parentUuid": "9b856d9a_a1b97b3c",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 27
+      },
+      "revId": "70022bc8f71a5eb1c12bb6506fc5e26915124fb5",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "77b7b73d_2f081a11",
+        "filename": "drivers/android/binder/error.rs",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1869395
+      },
+      "writtenOn": "2024-04-20T13:50:13Z",
+      "side": 1,
+      "message": "Since we don\u0027t have ratelimited printk and we don\u0027t have the debug masking sysfs either I think you are correct and we also need to remove BR_DEAD_REPLY from pr_warn. This should probably be even more spammy than frozen reply.",
+      "parentUuid": "0b706823_b38c88af",
       "range": {
         "startLine": 41,
         "startChar": 20,
