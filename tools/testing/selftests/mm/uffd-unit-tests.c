@@ -1336,7 +1336,6 @@ int main(int argc, char *argv[])
 				continue;
 			}
 			test->uffd_fn(&args);
-			uffd_test_ctx_clear();
 		}
 	}
 

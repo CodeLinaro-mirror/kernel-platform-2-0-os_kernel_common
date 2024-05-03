@@ -607,11 +607,12 @@ static int queue_folios_hugetlb(pte_t *pte, unsigned long hmask,
 	 * With MPOL_MF_MOVE, we try to migrate only unshared folios. If it
 	 * is shared it is likely not worth migrating.
 	 *
-	 * See folio_likely_mapped_shared() on possible imprecision when we
-	 * cannot easily detect if a folio is shared.
+	 * To check if the folio is shared, ideally we want to make sure
+	 * every page is mapped to the same process. Doing that is very
+	 * expensive, so check the estimated mapcount of the folio instead.
 	 */
 	if (flags & (MPOL_MF_MOVE_ALL) ||
-	    (flags & MPOL_MF_MOVE && !folio_likely_mapped_shared(folio) &&
+	    (flags & MPOL_MF_MOVE && folio_estimated_sharers(folio) == 1 &&
 	     !hugetlb_pmd_shared(pte))) {
 		if (!isolate_hugetlb(folio, qp->pagelist) &&
 			(flags & MPOL_MF_STRICT))
@@ -1038,10 +1039,11 @@ static int migrate_folio_add(struct folio *folio, struct list_head *foliolist,
 	 * We try to migrate only unshared folios. If it is shared it
 	 * is likely not worth migrating.
 	 *
-	 * See folio_likely_mapped_shared() on possible imprecision when we
-	 * cannot easily detect if a folio is shared.
+	 * To check if the folio is shared, ideally we want to make sure
+	 * every page is mapped to the same process. Doing that is very
+	 * expensive, so check the estimated mapcount of the folio instead.
 	 */
-	if ((flags & MPOL_MF_MOVE_ALL) || !folio_likely_mapped_shared(folio)) {
+	if ((flags & MPOL_MF_MOVE_ALL) || folio_estimated_sharers(folio) == 1) {
 		if (folio_isolate_lru(folio)) {
 			list_add_tail(&folio->lru, foliolist);
 			node_stat_mod_folio(folio,
@@ -2568,25 +2570,24 @@ static void sp_free(struct sp_node *n)
 }
 
 /**
- * mpol_misplaced - check whether current folio node is valid in policy
+ * mpol_misplaced - check whether current page node is valid in policy
  *
- * @folio: folio to be checked
- * @vma: vm area where folio mapped
- * @addr: virtual address in @vma for shared policy lookup and interleave policy
+ * @page: page to be checked
+ * @vma: vm area where page mapped
+ * @addr: virtual address where page mapped
  *
- * Lookup current policy node id for vma,addr and "compare to" folio's
+ * Lookup current policy node id for vma,addr and "compare to" page's
  * node id.  Policy determination "mimics" alloc_page_vma().
  * Called from fault path where we know the vma and faulting address.
  *
  * Return: NUMA_NO_NODE if the page is in a node that is valid for this
- * policy, or a suitable node ID to allocate a replacement folio from.
+ * policy, or a suitable node ID to allocate a replacement page from.
  */
-int mpol_misplaced(struct folio *folio, struct vm_area_struct *vma,
-		   unsigned long addr)
+int mpol_misplaced(struct page *page, struct vm_area_struct *vma, unsigned long addr)
 {
 	struct mempolicy *pol;
 	struct zoneref *z;
-	int curnid = folio_nid(folio);
+	int curnid = page_to_nid(page);
 	unsigned long pgoff;
 	int thiscpu = raw_smp_processor_id();
 	int thisnid = cpu_to_node(thiscpu);
@@ -2642,12 +2643,11 @@ int mpol_misplaced(struct folio *folio, struct vm_area_struct *vma,
 		BUG();
 	}
 
-	/* Migrate the folio towards the node whose CPU is referencing it */
+	/* Migrate the page towards the node whose CPU is referencing it */
 	if (pol->flags & MPOL_F_MORON) {
 		polnid = thisnid;
 
-		if (!should_numa_migrate_memory(current, folio, curnid,
-						thiscpu))
+		if (!should_numa_migrate_memory(current, page, curnid, thiscpu))
 			goto out;
 	}
 

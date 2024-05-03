@@ -5667,7 +5667,7 @@ static int mem_cgroup_do_precharge(unsigned long count)
 }
 
 union mc_target {
-	struct folio	*folio;
+	struct page	*page;
 	swp_entry_t	ent;
 };
 
@@ -5759,22 +5759,23 @@ static struct page *mc_handle_file_pte(struct vm_area_struct *vma,
 }
 
 /**
- * mem_cgroup_move_account - move account of the folio
- * @folio: The folio.
+ * mem_cgroup_move_account - move account of the page
+ * @page: the page
  * @compound: charge the page as compound or small page
- * @from: mem_cgroup which the folio is moved from.
- * @to:	mem_cgroup which the folio is moved to. @from != @to.
+ * @from: mem_cgroup which the page is moved from.
+ * @to:	mem_cgroup which the page is moved to. @from != @to.
  *
- * The folio must be locked and not on the LRU.
+ * The page must be locked and not on the LRU.
  *
  * This function doesn't do "charge" to new cgroup and doesn't do "uncharge"
  * from old cgroup.
  */
-static int mem_cgroup_move_account(struct folio *folio,
+static int mem_cgroup_move_account(struct page *page,
 				   bool compound,
 				   struct mem_cgroup *from,
 				   struct mem_cgroup *to)
 {
+	struct folio *folio = page_folio(page);
 	struct lruvec *from_vec, *to_vec;
 	struct pglist_data *pgdat;
 	unsigned int nr_pages = compound ? folio_nr_pages(folio) : 1;
@@ -5889,7 +5890,7 @@ out:
  * Return:
  * * MC_TARGET_NONE - If the pte is not a target for move charge.
  * * MC_TARGET_PAGE - If the page corresponding to this pte is a target for
- *   move charge. If @target is not NULL, the folio is stored in target->folio
+ *   move charge. If @target is not NULL, the page is stored in target->page
  *   with extra refcnt taken (Caller should release it).
  * * MC_TARGET_SWAP - If the swap entry corresponding to this pte is a
  *   target for charge migration.  If @target is not NULL, the entry is
@@ -5903,7 +5904,6 @@ static enum mc_target_type get_mctgt_type(struct vm_area_struct *vma,
 		unsigned long addr, pte_t ptent, union mc_target *target)
 {
 	struct page *page = NULL;
-	struct folio *folio;
 	enum mc_target_type ret = MC_TARGET_NONE;
 	swp_entry_t ent = { .val = 0 };
 
@@ -5918,11 +5918,9 @@ static enum mc_target_type get_mctgt_type(struct vm_area_struct *vma,
 	else if (is_swap_pte(ptent))
 		page = mc_handle_swap_pte(vma, ptent, &ent);
 
-	if (page)
-		folio = page_folio(page);
 	if (target && page) {
-		if (!folio_trylock(folio)) {
-			folio_put(folio);
+		if (!trylock_page(page)) {
+			put_page(page);
 			return ret;
 		}
 		/*
@@ -5937,8 +5935,8 @@ static enum mc_target_type get_mctgt_type(struct vm_area_struct *vma,
 		 * Alas, skip moving the page in this case.
 		 */
 		if (!pte_present(ptent) && page_mapped(page)) {
-			folio_unlock(folio);
-			folio_put(folio);
+			unlock_page(page);
+			put_page(page);
 			return ret;
 		}
 	}
@@ -5951,18 +5949,18 @@ static enum mc_target_type get_mctgt_type(struct vm_area_struct *vma,
 		 * mem_cgroup_move_account() checks the page is valid or
 		 * not under LRU exclusion.
 		 */
-		if (folio_memcg(folio) == mc.from) {
+		if (page_memcg(page) == mc.from) {
 			ret = MC_TARGET_PAGE;
-			if (folio_is_device_private(folio) ||
-			    folio_is_device_coherent(folio))
+			if (is_device_private_page(page) ||
+			    is_device_coherent_page(page))
 				ret = MC_TARGET_DEVICE;
 			if (target)
-				target->folio = folio;
+				target->page = page;
 		}
 		if (!ret || !target) {
 			if (target)
-				folio_unlock(folio);
-			folio_put(folio);
+				unlock_page(page);
+			put_page(page);
 		}
 	}
 	/*
@@ -5988,7 +5986,6 @@ static enum mc_target_type get_mctgt_type_thp(struct vm_area_struct *vma,
 		unsigned long addr, pmd_t pmd, union mc_target *target)
 {
 	struct page *page = NULL;
-	struct folio *folio;
 	enum mc_target_type ret = MC_TARGET_NONE;
 
 	if (unlikely(is_swap_pmd(pmd))) {
@@ -5998,18 +5995,17 @@ static enum mc_target_type get_mctgt_type_thp(struct vm_area_struct *vma,
 	}
 	page = pmd_page(pmd);
 	VM_BUG_ON_PAGE(!page || !PageHead(page), page);
-	folio = page_folio(page);
 	if (!(mc.flags & MOVE_ANON))
 		return ret;
-	if (folio_memcg(folio) == mc.from) {
+	if (page_memcg(page) == mc.from) {
 		ret = MC_TARGET_PAGE;
 		if (target) {
-			folio_get(folio);
-			if (!folio_trylock(folio)) {
-				folio_put(folio);
+			get_page(page);
+			if (!trylock_page(page)) {
+				put_page(page);
 				return MC_TARGET_NONE;
 			}
-			target->folio = folio;
+			target->page = page;
 		}
 	}
 	return ret;
@@ -6229,7 +6225,7 @@ static int mem_cgroup_move_charge_pte_range(pmd_t *pmd,
 	spinlock_t *ptl;
 	enum mc_target_type target_type;
 	union mc_target target;
-	struct folio *folio;
+	struct page *page;
 
 	ptl = pmd_trans_huge_lock(pmd, vma);
 	if (ptl) {
@@ -6239,26 +6235,26 @@ static int mem_cgroup_move_charge_pte_range(pmd_t *pmd,
 		}
 		target_type = get_mctgt_type_thp(vma, addr, *pmd, &target);
 		if (target_type == MC_TARGET_PAGE) {
-			folio = target.folio;
-			if (folio_isolate_lru(folio)) {
-				if (!mem_cgroup_move_account(folio, true,
+			page = target.page;
+			if (isolate_lru_page(page)) {
+				if (!mem_cgroup_move_account(page, true,
 							     mc.from, mc.to)) {
 					mc.precharge -= HPAGE_PMD_NR;
 					mc.moved_charge += HPAGE_PMD_NR;
 				}
-				folio_putback_lru(folio);
+				putback_lru_page(page);
 			}
-			folio_unlock(folio);
-			folio_put(folio);
+			unlock_page(page);
+			put_page(page);
 		} else if (target_type == MC_TARGET_DEVICE) {
-			folio = target.folio;
-			if (!mem_cgroup_move_account(folio, true,
+			page = target.page;
+			if (!mem_cgroup_move_account(page, true,
 						     mc.from, mc.to)) {
 				mc.precharge -= HPAGE_PMD_NR;
 				mc.moved_charge += HPAGE_PMD_NR;
 			}
-			folio_unlock(folio);
-			folio_put(folio);
+			unlock_page(page);
+			put_page(page);
 		}
 		spin_unlock(ptl);
 		return 0;
@@ -6281,28 +6277,28 @@ retry:
 			device = true;
 			fallthrough;
 		case MC_TARGET_PAGE:
-			folio = target.folio;
+			page = target.page;
 			/*
 			 * We can have a part of the split pmd here. Moving it
 			 * can be done but it would be too convoluted so simply
 			 * ignore such a partial THP and keep it in original
 			 * memcg. There should be somebody mapping the head.
 			 */
-			if (folio_test_large(folio))
+			if (PageTransCompound(page))
 				goto put;
-			if (!device && !folio_isolate_lru(folio))
+			if (!device && !isolate_lru_page(page))
 				goto put;
-			if (!mem_cgroup_move_account(folio, false,
+			if (!mem_cgroup_move_account(page, false,
 						mc.from, mc.to)) {
 				mc.precharge--;
 				/* we uncharge from mc.from later. */
 				mc.moved_charge++;
 			}
 			if (!device)
-				folio_putback_lru(folio);
+				putback_lru_page(page);
 put:			/* get_mctgt_type() gets & locks the page */
-			folio_unlock(folio);
-			folio_put(folio);
+			unlock_page(page);
+			put_page(page);
 			break;
 		case MC_TARGET_SWAP:
 			ent = target.ent;

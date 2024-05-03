@@ -1148,9 +1148,8 @@ static int write_protect_page(struct vm_area_struct *vma, struct page *page,
 			goto out_unlock;
 		}
 
-		/* See folio_try_share_anon_rmap_pte(): clear PTE first. */
-		if (anon_exclusive &&
-		    folio_try_share_anon_rmap_pte(page_folio(page), page)) {
+		/* See page_try_share_anon_rmap(): clear PTE first. */
+		if (anon_exclusive && page_try_share_anon_rmap(page)) {
 			set_pte_at(mm, pvmw.address, pvmw.pte, entry);
 			goto out_unlock;
 		}
@@ -1187,7 +1186,6 @@ out:
 static int replace_page(struct vm_area_struct *vma, struct page *page,
 			struct page *kpage, pte_t orig_pte)
 {
-	struct folio *kfolio = page_folio(kpage);
 	struct mm_struct *mm = vma->vm_mm;
 	struct folio *folio;
 	pmd_t *pmd;
@@ -1227,16 +1225,15 @@ static int replace_page(struct vm_area_struct *vma, struct page *page,
 		goto out_mn;
 	}
 	VM_BUG_ON_PAGE(PageAnonExclusive(page), page);
-	VM_BUG_ON_FOLIO(folio_test_anon(kfolio) && PageAnonExclusive(kpage),
-			kfolio);
+	VM_BUG_ON_PAGE(PageAnon(kpage) && PageAnonExclusive(kpage), kpage);
 
 	/*
 	 * No need to check ksm_use_zero_pages here: we can only have a
 	 * zero_page here if ksm_use_zero_pages was enabled already.
 	 */
 	if (!is_zero_pfn(page_to_pfn(kpage))) {
-		folio_get(kfolio);
-		folio_add_anon_rmap_pte(kfolio, kpage, vma, addr, RMAP_NONE);
+		get_page(kpage);
+		page_add_anon_rmap(kpage, vma, addr, RMAP_NONE);
 		newpte = mk_pte(kpage, vma->vm_page_prot);
 	} else {
 		/*
@@ -1267,7 +1264,7 @@ static int replace_page(struct vm_area_struct *vma, struct page *page,
 	set_pte_at_notify(mm, addr, ptep, newpte);
 
 	folio = page_folio(page);
-	folio_remove_rmap_pte(folio, page, vma);
+	page_remove_rmap(page, vma, false);
 	if (!folio_mapped(folio))
 		folio_free_swap(folio);
 	folio_put(folio);
@@ -2794,51 +2791,48 @@ void __ksm_exit(struct mm_struct *mm)
 }
 
 struct page *ksm_might_need_to_copy(struct page *page,
-			struct vm_area_struct *vma, unsigned long addr)
+			struct vm_area_struct *vma, unsigned long address)
 {
 	struct folio *folio = page_folio(page);
 	struct anon_vma *anon_vma = folio_anon_vma(folio);
-	struct folio *new_folio;
+	struct page *new_page;
 
-	if (folio_test_large(folio))
-		return page;
-
-	if (folio_test_ksm(folio)) {
-		if (folio_stable_node(folio) &&
+	if (PageKsm(page)) {
+		if (page_stable_node(page) &&
 		    !(ksm_run & KSM_RUN_UNMERGE))
 			return page;	/* no need to copy it */
 	} else if (!anon_vma) {
 		return page;		/* no need to copy it */
-	} else if (folio->index == linear_page_index(vma, addr) &&
+	} else if (page->index == linear_page_index(vma, address) &&
 			anon_vma->root == vma->anon_vma->root) {
 		return page;		/* still no need to copy it */
 	}
 	if (PageHWPoison(page))
 		return ERR_PTR(-EHWPOISON);
-	if (!folio_test_uptodate(folio))
+	if (!PageUptodate(page))
 		return page;		/* let do_swap_page report the error */
 
-	new_folio = vma_alloc_folio(GFP_HIGHUSER_MOVABLE, 0, vma, addr, false);
-	if (new_folio &&
-	    mem_cgroup_charge(new_folio, vma->vm_mm, GFP_KERNEL)) {
-		folio_put(new_folio);
-		new_folio = NULL;
+	new_page = alloc_page_vma(GFP_HIGHUSER_MOVABLE, vma, address);
+	if (new_page &&
+	    mem_cgroup_charge(page_folio(new_page), vma->vm_mm, GFP_KERNEL)) {
+		put_page(new_page);
+		new_page = NULL;
 	}
-	if (new_folio) {
-		if (copy_mc_user_highpage(&new_folio->page, page, addr, vma)) {
-			folio_put(new_folio);
+	if (new_page) {
+		if (copy_mc_user_highpage(new_page, page, address, vma)) {
+			put_page(new_page);
 			memory_failure_queue(page_to_pfn(page), 0);
 			return ERR_PTR(-EHWPOISON);
 		}
-		folio_set_dirty(new_folio);
-		__folio_mark_uptodate(new_folio);
-		__folio_set_locked(new_folio);
+		SetPageDirty(new_page);
+		__SetPageUptodate(new_page);
+		__SetPageLocked(new_page);
 #ifdef CONFIG_SWAP
 		count_vm_event(KSM_SWPIN_COPY);
 #endif
 	}
 
-	return new_folio ? &new_folio->page : NULL;
+	return new_page;
 }
 
 void rmap_walk_ksm(struct folio *folio, struct rmap_walk_control *rwc)

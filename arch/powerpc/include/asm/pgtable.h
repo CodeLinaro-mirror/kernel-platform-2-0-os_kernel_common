@@ -41,8 +41,6 @@ struct mm_struct;
 
 #ifndef __ASSEMBLY__
 
-#define PFN_PTE_SHIFT		PTE_RPN_SHIFT
-
 void set_ptes(struct mm_struct *mm, unsigned long addr, pte_t *ptep,
 		pte_t pte, unsigned int nr);
 #define set_ptes set_ptes
