@@ -813,6 +813,8 @@ enum zone_type {
 	 * there can be false negatives).
 	 */
 	ZONE_MOVABLE,
+	ZONE_NOSPLIT,
+	ZONE_NOMERGE,
 #ifdef CONFIG_ZONE_DEVICE
 	ZONE_DEVICE,
 #endif
@@ -935,6 +937,8 @@ struct zone {
 	/* see spanned/present_pages for more description */
 	seqlock_t		span_seqlock;
 #endif
+
+	int order;
 
 	int initialized;
 
