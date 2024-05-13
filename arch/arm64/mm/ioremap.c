@@ -344,6 +344,12 @@ void iounmap_phys_range_hook(phys_addr_t phys_addr, size_t size)
 		if (refcount <= 1) {
 			if (WARN_ON(!mas_find(&mas, mas_end(phys_addr, sub_size))))
 				break;
+
+			if (WARN_ON(ioremap_unregister_phys_range(phys_addr, sub_size))) {
+				mas_store_refcount(&mas, refcount);
+				break;
+			}
+
 			mas_erase(&mas);
 		}
 next:
