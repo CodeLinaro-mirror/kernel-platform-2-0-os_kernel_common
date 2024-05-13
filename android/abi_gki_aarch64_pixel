@@ -1836,6 +1836,12 @@
   __seq_open_private
   seq_printf
   seq_putc
+<<<<<<< HEAD   (4f8080 FROMLIST: usb: typec: tcpm: Ignore received Hard Reset in TO)
+=======
+  seq_put_decimal_ll
+  seq_put_decimal_ull
+  seq_put_decimal_ull_width
+>>>>>>> CHANGE (6a730f ANDROID: export one function for mm metrics)
   seq_puts
   seq_read
   seq_read_iter
