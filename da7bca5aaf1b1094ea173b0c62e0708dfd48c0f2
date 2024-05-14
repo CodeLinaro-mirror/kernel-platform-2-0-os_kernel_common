@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a01172ff_1b1ef3bb",
+        "filename": "arch/arm64/mm/ioremap.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1951687
+      },
+      "writtenOn": "2024-05-14T17:02:03Z",
+      "side": 1,
+      "message": "Yeah, I tend to \"belt and braces\" my comparisons, but yeah the WARN_ON(!refcount) a couple of lines before makes it redundant.",
+      "parentUuid": "75e33181_4fa1decc",
+      "range": {
+        "startLine": 344,
+        "startChar": 15,
+        "endLine": 344,
+        "endChar": 17
+      },
+      "revId": "da7bca5aaf1b1094ea173b0c62e0708dfd48c0f2",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b98a6e8a_2a8d1183",
         "filename": "arch/arm64/mm/ioremap.c",
         "patchSetId": 1
@@ -37,6 +61,30 @@
       "writtenOn": "2024-05-14T15:18:21Z",
       "side": 1,
       "message": "Rather than re-adjust the refcount, can we defer the decrement until after we\u0027ve unregistered the range?",
+      "range": {
+        "startLine": 349,
+        "startChar": 4,
+        "endLine": 349,
+        "endChar": 22
+      },
+      "revId": "da7bca5aaf1b1094ea173b0c62e0708dfd48c0f2",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "12612c72_cdd511fb",
+        "filename": "arch/arm64/mm/ioremap.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1951687
+      },
+      "writtenOn": "2024-05-14T17:02:03Z",
+      "side": 1,
+      "message": "Yes, notice though I\u0027ll still have to keep the first store no matter what to ensure existing mas is deleted. I\u0027ll add a comment for that",
+      "parentUuid": "b98a6e8a_2a8d1183",
       "range": {
         "startLine": 349,
         "startChar": 4,
