@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75e33181_4fa1decc",
+        "filename": "arch/arm64/mm/ioremap.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1572468
+      },
+      "writtenOn": "2024-05-14T15:18:21Z",
+      "side": 1,
+      "message": "nit (in existing code): This has to be `\u003d\u003d 1`, right?",
+      "range": {
+        "startLine": 344,
+        "startChar": 15,
+        "endLine": 344,
+        "endChar": 17
+      },
+      "revId": "da7bca5aaf1b1094ea173b0c62e0708dfd48c0f2",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b98a6e8a_2a8d1183",
+        "filename": "arch/arm64/mm/ioremap.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1572468
+      },
+      "writtenOn": "2024-05-14T15:18:21Z",
+      "side": 1,
+      "message": "Rather than re-adjust the refcount, can we defer the decrement until after we\u0027ve unregistered the range?",
+      "range": {
+        "startLine": 349,
+        "startChar": 4,
+        "endLine": 349,
+        "endChar": 22
+      },
+      "revId": "da7bca5aaf1b1094ea173b0c62e0708dfd48c0f2",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
