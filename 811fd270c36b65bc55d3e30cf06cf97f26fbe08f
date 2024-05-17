@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d690a24_b9d5ac00",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1125653
+      },
+      "writtenOn": "2024-05-17T15:21:04Z",
+      "side": 1,
+      "message": "What filesystem are you using that requires these symbols?",
+      "revId": "811fd270c36b65bc55d3e30cf06cf97f26fbe08f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
