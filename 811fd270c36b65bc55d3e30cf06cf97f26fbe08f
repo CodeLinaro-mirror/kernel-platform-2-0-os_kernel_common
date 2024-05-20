@@ -16,6 +16,24 @@
       "message": "What filesystem are you using that requires these symbols?",
       "revId": "811fd270c36b65bc55d3e30cf06cf97f26fbe08f",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a410d9f3_532c7c8d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1083383
+      },
+      "writtenOn": "2024-05-20T01:12:06Z",
+      "side": 1,
+      "message": "Our customer just enabled CONFIG_ISO9660_FS\u003dm to use ISO9660 filesystem. The symbol page_symlink_inode_operations was used here https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/fs/isofs/inode.c?h\u003dv6.9#n1486",
+      "parentUuid": "3d690a24_b9d5ac00",
+      "revId": "811fd270c36b65bc55d3e30cf06cf97f26fbe08f",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
