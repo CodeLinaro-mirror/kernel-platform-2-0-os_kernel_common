@@ -148,7 +148,7 @@ static int __try_to_reclaim_swap(struct swap_info_struct *si,
 	struct folio *folio;
 	int ret = 0;
 
-	folio = filemap_get_folio(swap_address_space(entry), offset);
+	folio = filemap_get_folio(swap_address_space(entry), swap_cache_index(entry));
 	if (IS_ERR(folio))
 		return 0;
 	/*
@@ -2136,7 +2136,7 @@ retry:
 	       (i = find_next_to_unuse(si, i)) != 0) {
 
 		entry = swp_entry(type, i);
-		folio = filemap_get_folio(swap_address_space(entry), i);
+		folio = filemap_get_folio(swap_address_space(entry), swap_cache_index(entry));
 		if (IS_ERR(folio))
 			continue;
 
@@ -3481,7 +3481,7 @@ EXPORT_SYMBOL_GPL(swapcache_mapping);
 pgoff_t __page_file_index(struct page *page)
 {
 	swp_entry_t swap = page_swap_entry(page);
-	return swp_offset(swap);
+	return swap_cache_index(swap);
 }
 EXPORT_SYMBOL_GPL(__page_file_index);
 
