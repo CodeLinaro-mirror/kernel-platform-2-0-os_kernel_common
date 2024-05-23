@@ -300018,6 +300018,12 @@ function {
   parameter_id: 0x1d44326e
 }
 function {
+  id: 0x17c96337
+  return_type_id: 0x48b5725f
+  parameter_id: 0x1b36c7a2
+  parameter_id: 0x6720d32f
+}
+function {
   id: 0x17cb3906
   return_type_id: 0x48b5725f
   parameter_id: 0x1d4da256
@@ -316039,12 +316045,19 @@ function {
   parameter_id: 0x3185812b
 }
 function {
+<<<<<<< HEAD   (d1af89 ANDROID: GKI: Update symbol list for vivo)
   id: 0x92c30011
   return_type_id: 0x6720d32f
   parameter_id: 0x39c040d1
   parameter_id: 0x4585663f
   parameter_id: 0x914dbfdc
   parameter_id: 0x6d7f5ff6
+=======
+  id: 0x92c346f3
+  return_type_id: 0x3a1c763b
+  parameter_id: 0x18bd6530
+  parameter_id: 0x2dec91ef
+>>>>>>> CHANGE (5ec414 ANDROID: GKI: Update Honor abi symbol list)
 }
 function {
   id: 0x92c44c32
@@ -370491,6 +370504,36 @@ elf_symbol {
   full_name: "drop_nlink"
 }
 elf_symbol {
+<<<<<<< HEAD   (d1af89 ANDROID: GKI: Update symbol list for vivo)
+=======
+  id: 0x8003d904
+  name: "drop_reasons_register_subsys"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x78cc75d2
+  type_id: 0x2aed06ac
+  full_name: "drop_reasons_register_subsys"
+}
+elf_symbol {
+  id: 0x31eb9c5b
+  name: "drop_reasons_unregister_subsys"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xff2d565c
+  type_id: 0x2a009974
+  full_name: "drop_reasons_unregister_subsys"
+}
+elf_symbol {
+  id: 0x367672f6
+  name: "drop_super"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x32ed6d31
+  type_id: 0x1923cb99
+  full_name: "drop_super"
+}
+elf_symbol {
+>>>>>>> CHANGE (5ec414 ANDROID: GKI: Update Honor abi symbol list)
   id: 0xe2b96ffd
   name: "dst_cache_destroy"
   is_defined: true
@@ -383496,6 +383539,15 @@ elf_symbol {
   full_name: "mktime64"
 }
 elf_symbol {
+  id: 0x77577e05
+  name: "mm_trace_rss_stat"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xc831d0d1
+  type_id: 0x17c96337
+  full_name: "mm_trace_rss_stat"
+}
+elf_symbol {
   id: 0xd328c906
   name: "mmc_add_host"
   is_defined: true
@@ -385690,6 +385742,15 @@ elf_symbol {
   crc: 0x202d4ed6
   type_id: 0x9384f862
   full_name: "nvmem_cell_write"
+}
+elf_symbol {
+  id: 0x911b1286
+  name: "nvmem_device_find"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xed50de0a
+  type_id: 0x92c346f3
+  full_name: "nvmem_device_find"
 }
 elf_symbol {
   id: 0xd00eb623
@@ -417000,6 +417061,12 @@ interface {
   symbol_id: 0x1f1ab070
   symbol_id: 0x66dcfd31
   symbol_id: 0x4dae13e9
+<<<<<<< HEAD   (d1af89 ANDROID: GKI: Update symbol list for vivo)
+=======
+  symbol_id: 0x8003d904
+  symbol_id: 0x31eb9c5b
+  symbol_id: 0x367672f6
+>>>>>>> CHANGE (5ec414 ANDROID: GKI: Update Honor abi symbol list)
   symbol_id: 0xe2b96ffd
   symbol_id: 0x126bb89f
   symbol_id: 0x2e0e7810
@@ -418445,6 +418512,7 @@ interface {
   symbol_id: 0xe4059d72
   symbol_id: 0x842903b7
   symbol_id: 0x354e8904
+  symbol_id: 0x77577e05
   symbol_id: 0xd328c906
   symbol_id: 0x9a282ce3
   symbol_id: 0xd2482cd8
@@ -418689,6 +418757,7 @@ interface {
   symbol_id: 0x00111bab
   symbol_id: 0x1e629967
   symbol_id: 0xf1401602
+  symbol_id: 0x911b1286
   symbol_id: 0xd00eb623
   symbol_id: 0x23113228
   symbol_id: 0xc1013b0e
