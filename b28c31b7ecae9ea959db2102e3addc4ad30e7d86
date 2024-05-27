@@ -16,6 +16,24 @@
       "message": "Why can\u0027t you just do this in your mmc driver?",
       "revId": "b28c31b7ecae9ea959db2102e3addc4ad30e7d86",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3961ba2f_eca3c484",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 2010822
+      },
+      "writtenOn": "2024-05-27T08:48:42Z",
+      "side": 1,
+      "message": "Because mq-\u003etag_set.queue_depth is initialized here and will be used immediately, we should modify it before it is used.",
+      "parentUuid": "cc834d31_abab6f28",
+      "revId": "b28c31b7ecae9ea959db2102e3addc4ad30e7d86",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
