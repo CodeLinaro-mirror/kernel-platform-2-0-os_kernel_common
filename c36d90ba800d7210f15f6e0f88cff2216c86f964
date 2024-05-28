@@ -1,0 +1,64 @@
+{
+  "comments": [
+    {
+      "robotId": "ayeaye",
+      "robotRunId": "AR00000000000079341119",
+      "url": "https://android-build.googleplex.com/builds/treetop/android-review/3105200?revision\u003d1",
+      "key": {
+        "uuid": "32475abc_275c9b91",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1757831
+      },
+      "writtenOn": "2024-05-28T06:54:40Z",
+      "side": 1,
+      "message": "Can not find the original change on base branch (android14-5.15) for this change.\nPlease ensure that the Change-Id of this change is same as the original change on the base branch.\n\nPlease refer to the contribution guidelines for details:\nhttps://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/README.md",
+      "tag": "",
+      "revId": "c36d90ba800d7210f15f6e0f88cff2216c86f964",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "robotId": "ayeaye",
+      "robotRunId": "AR00000000000079341119",
+      "url": "https://android-build.googleplex.com/builds/treetop/android-review/3105200?revision\u003d1",
+      "key": {
+        "uuid": "c748a8f8_aff6b79e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1757831
+      },
+      "writtenOn": "2024-05-28T06:54:40Z",
+      "side": 1,
+      "message": "Please **attach an open respin request bug** to this change. Refer the following link for more information:\nhttps://source.android.com/docs/core/architecture/kernel/gki-releases#respin\n\nPlease refer to the contribution guidelines for details:\nhttps://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/README.md",
+      "tag": "",
+      "revId": "c36d90ba800d7210f15f6e0f88cff2216c86f964",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "robotId": "ayeaye",
+      "robotRunId": "AR00000000000079341119",
+      "url": "https://android-build.googleplex.com/builds/treetop/android-review/3105200?revision\u003d1",
+      "key": {
+        "uuid": "44b53c74_ddd959fa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1757831
+      },
+      "writtenOn": "2024-05-28T06:54:40Z",
+      "side": 1,
+      "message": "Cherry pick is not clean. Checked against Android commit.\nAndroid commit: [source](https://android.googlesource.com/kernel/common/+/274e3e96961da98fd615b0bac6b08c8cd06ad615).\n\n```\n      ## android/abi_gki_aarch64_pixel ##\n     @@\n    +   __seq_open_private\n    +   seq_printf\n        seq_putc\n    -   seq_put_decimal_ll\n    -   seq_put_decimal_ull\n    ++\u003c\u003c\u003c\u003c\u003c\u003c\u003c HEAD   (4f8080 FROMLIST: usb: typec: tcpm: Ignore received Hard Reset in TO)\n    ++\u003d\u003d\u003d\u003d\u003d\u003d\u003d\n    ++  seq_put_decimal_ll\n    ++  seq_put_decimal_ull\n     +  seq_put_decimal_ull_width\n    ++\u003e\u003e\u003e\u003e\u003e\u003e\u003e CHANGE (6a730f ANDROID: export one function for mm metrics)\n        seq_puts\n        seq_read\n    -   seq_release\n    +   seq_read_iter\n     \n      ## fs/seq_file.c ##\n     @@ fs/seq_file.c: void seq_put_decimal_ull_width(struct seq_file *m, const char *delimiter,\n```\n\n\nPlease refer to the contribution guidelines for details:\nhttps://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/README.md",
+      "tag": "",
+      "revId": "c36d90ba800d7210f15f6e0f88cff2216c86f964",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
