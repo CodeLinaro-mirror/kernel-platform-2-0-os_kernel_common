@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fdb418c7_5c8b0af5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2024-05-28T16:28:15Z",
+      "side": 1,
+      "message": "should be signed-off by author: 11154159@vivo.com. Can you change the author to match this SoB and the Owner? (yingzuxin@vivo.com)",
+      "revId": "b28c31b7ecae9ea959db2102e3addc4ad30e7d86",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cc834d31_abab6f28",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
