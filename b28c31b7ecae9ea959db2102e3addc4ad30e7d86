@@ -18,6 +18,24 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c5153ed_7280a01f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 2010822
+      },
+      "writtenOn": "2024-05-29T04:01:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fdb418c7_5c8b0af5",
+      "revId": "b28c31b7ecae9ea959db2102e3addc4ad30e7d86",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cc834d31_abab6f28",
