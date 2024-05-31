@@ -140,6 +140,24 @@
       "parentUuid": "a6578209_b2f68a8d",
       "revId": "e4d9e3a718a68bae5d41453892ace328e1870792",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0afcf3e_50e12c3c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2024-05-31T16:52:03Z",
+      "side": 1,
+      "message": "We\u0027re going to ask you about upstream progress in a few months and expect progress on this before you upload this patch next year to the android16 kernel.",
+      "parentUuid": "4380d130_9cec80f1",
+      "revId": "e4d9e3a718a68bae5d41453892ace328e1870792",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
