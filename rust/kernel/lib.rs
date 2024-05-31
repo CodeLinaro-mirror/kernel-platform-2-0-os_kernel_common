@@ -33,6 +33,7 @@ extern crate self as kernel;
 #[cfg(not(test))]
 #[cfg(not(testlib))]
 mod allocator;
+pub mod arch;
 mod build_assert;
 pub mod cred;
 pub mod error;
@@ -50,6 +51,7 @@ pub mod rbtree;
 pub mod security;
 pub mod seq_file;
 mod static_assert;
+pub mod static_key;
 #[doc(hidden)]
 pub mod std_vendor;
 pub mod str;
