@@ -608,7 +608,7 @@ scan_swap_map_ssd_cluster_conflict(struct swap_info_struct *si,
 		return false;
 
 	percpu_cluster = this_cpu_ptr(si->percpu_cluster);
-	percpu_cluster->next = SWAP_NEXT_INVALID;
+	cluster_set_null(&percpu_cluster->index);
 	return true;
 }
 
@@ -621,14 +621,14 @@ static bool scan_swap_map_try_ssd_cluster(struct swap_info_struct *si,
 {
 	struct percpu_cluster *cluster;
 	struct swap_cluster_info *ci;
-	unsigned int tmp, max;
+	unsigned long tmp, max;
 
 new_cluster:
 	cluster = this_cpu_ptr(si->percpu_cluster);
-	tmp = cluster->next;
-	if (tmp == SWAP_NEXT_INVALID) {
+	if (cluster_is_null(&cluster->index)) {
 		if (!cluster_list_empty(&si->free_clusters)) {
-			tmp = cluster_next(&si->free_clusters.head) *
+			cluster->index = si->free_clusters.head;
+			cluster->next = cluster_next(&cluster->index) *
 					SWAPFILE_CLUSTER;
 		} else if (!cluster_list_empty(&si->discard_clusters)) {
 			/*
@@ -648,7 +648,9 @@ new_cluster:
 	 * Other CPUs can use our cluster if they can't find a free cluster,
 	 * check if there is still free entry in the cluster
 	 */
-	max = min_t(unsigned long, si->max, ALIGN(tmp + 1, SWAPFILE_CLUSTER));
+	tmp = cluster->next;
+	max = min_t(unsigned long, si->max,
+		    (cluster_next(&cluster->index) + 1) * SWAPFILE_CLUSTER);
 	if (tmp < max) {
 		ci = lock_cluster(si, tmp);
 		while (tmp < max) {
@@ -659,13 +661,12 @@ new_cluster:
 		unlock_cluster(ci);
 	}
 	if (tmp >= max) {
-		cluster->next = SWAP_NEXT_INVALID;
+		cluster_set_null(&cluster->index);
 		goto new_cluster;
 	}
+	cluster->next = tmp + 1;
 	*offset = tmp;
 	*scan_base = tmp;
-	tmp += 1;
-	cluster->next = tmp < max ? tmp : SWAP_NEXT_INVALID;
 	return true;
 }
 
@@ -3151,9 +3152,8 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 		}
 		for_each_possible_cpu(cpu) {
 			struct percpu_cluster *cluster;
-
 			cluster = per_cpu_ptr(p->percpu_cluster, cpu);
-			cluster->next = SWAP_NEXT_INVALID;
+			cluster_set_null(&cluster->index);
 		}
 	} else {
 		atomic_inc(&nr_rotate_swap);
