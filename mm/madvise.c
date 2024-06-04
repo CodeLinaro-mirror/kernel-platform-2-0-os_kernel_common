@@ -527,8 +527,7 @@ regular_folio:
 			continue;
 
 		if (!pageout && pte_young(ptent)) {
-			clear_young_dirty_ptes(vma, addr, pte, nr,
-					       CYDP_CLEAR_YOUNG);
+			mkold_ptes(vma, addr, pte, nr);
 			tlb_remove_tlb_entries(tlb, pte, nr, addr);
 		}
 
