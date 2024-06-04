@@ -277,15 +277,15 @@ static void discard_swap_cluster(struct swap_info_struct *si,
 #ifdef CONFIG_THP_SWAP
 #define SWAPFILE_CLUSTER	HPAGE_PMD_NR
 
-#define swap_entry_order(order)	(order)
+#define swap_entry_size(size)	(size)
 #else
 #define SWAPFILE_CLUSTER	256
 
 /*
- * Define swap_entry_order() as constant to let compiler to optimize
+ * Define swap_entry_size() as constant to let compiler to optimize
  * out some code if !CONFIG_THP_SWAP
  */
-#define swap_entry_order(order)	0
+#define swap_entry_size(size)	1
 #endif
 #define LATENCY_LIMIT		256
 
@@ -1036,10 +1036,9 @@ static void swap_free_cluster(struct swap_info_struct *si, unsigned long idx)
 	swap_range_free(si, offset, SWAPFILE_CLUSTER);
 }
 
-int get_swap_pages(int n_goal, swp_entry_t swp_entries[], int entry_order)
+int get_swap_pages(int n_goal, swp_entry_t swp_entries[], int entry_size)
 {
-	int order = swap_entry_order(entry_order);
-	unsigned long size = 1 << order;
+	unsigned long size = swap_entry_size(entry_size);
 	struct swap_info_struct *si, *next;
 	long avail_pgs;
 	int n_ret = 0;
@@ -1344,7 +1343,7 @@ void put_swap_folio(struct folio *folio, swp_entry_t entry)
 	unsigned char *map;
 	unsigned int i, free_entries = 0;
 	unsigned char val;
-	int size = 1 << swap_entry_order(folio_order(folio));
+	int size = swap_entry_size(folio_nr_pages(folio));
 
 	si = _swap_info_get(entry);
 	if (!si)
