@@ -550,12 +550,10 @@ static void free_cluster(struct swap_info_struct *si, unsigned long idx)
 
 /*
  * The cluster corresponding to page_nr will be used. The cluster will be
- * removed from free cluster list and its usage counter will be increased by
- * count.
+ * removed from free cluster list and its usage counter will be increased.
  */
-static void add_cluster_info_page(struct swap_info_struct *p,
-	struct swap_cluster_info *cluster_info, unsigned long page_nr,
-	unsigned long count)
+static void inc_cluster_info_page(struct swap_info_struct *p,
+	struct swap_cluster_info *cluster_info, unsigned long page_nr)
 {
 	unsigned long idx = page_nr / SWAPFILE_CLUSTER;
 
@@ -564,19 +562,9 @@ static void add_cluster_info_page(struct swap_info_struct *p,
 	if (cluster_is_free(&cluster_info[idx]))
 		alloc_cluster(p, idx);
 
-	VM_BUG_ON(cluster_count(&cluster_info[idx]) + count > SWAPFILE_CLUSTER);
+	VM_BUG_ON(cluster_count(&cluster_info[idx]) >= SWAPFILE_CLUSTER);
 	cluster_set_count(&cluster_info[idx],
-		cluster_count(&cluster_info[idx]) + count);
-}
-
-/*
- * The cluster corresponding to page_nr will be used. The cluster will be
- * removed from free cluster list and its usage counter will be increased by 1.
- */
-static void inc_cluster_info_page(struct swap_info_struct *p,
-	struct swap_cluster_info *cluster_info, unsigned long page_nr)
-{
-	add_cluster_info_page(p, cluster_info, page_nr, 1);
+		cluster_count(&cluster_info[idx]) + 1);
 }
 
 /*
@@ -606,7 +594,7 @@ static void dec_cluster_info_page(struct swap_info_struct *p,
  */
 static bool
 scan_swap_map_ssd_cluster_conflict(struct swap_info_struct *si,
-	unsigned long offset, int order)
+	unsigned long offset)
 {
 	struct percpu_cluster *percpu_cluster;
 	bool conflict;
@@ -620,39 +608,24 @@ scan_swap_map_ssd_cluster_conflict(struct swap_info_struct *si,
 		return false;
 
 	percpu_cluster = this_cpu_ptr(si->percpu_cluster);
-	percpu_cluster->next[order] = SWAP_NEXT_INVALID;
-	return true;
-}
-
-static inline bool swap_range_empty(char *swap_map, unsigned int start,
-				    unsigned int nr_pages)
-{
-	unsigned int i;
-
-	for (i = 0; i < nr_pages; i++) {
-		if (swap_map[start + i])
-			return false;
-	}
-
+	percpu_cluster->next = SWAP_NEXT_INVALID;
 	return true;
 }
 
 /*
- * Try to get swap entries with specified order from current cpu's swap entry
- * pool (a cluster). This might involve allocating a new cluster for current CPU
- * too.
+ * Try to get a swap entry from current cpu's swap entry pool (a cluster). This
+ * might involve allocating a new cluster for current CPU too.
  */
 static bool scan_swap_map_try_ssd_cluster(struct swap_info_struct *si,
-	unsigned long *offset, unsigned long *scan_base, int order)
+	unsigned long *offset, unsigned long *scan_base)
 {
-	unsigned int nr_pages = 1 << order;
 	struct percpu_cluster *cluster;
 	struct swap_cluster_info *ci;
 	unsigned int tmp, max;
 
 new_cluster:
 	cluster = this_cpu_ptr(si->percpu_cluster);
-	tmp = cluster->next[order];
+	tmp = cluster->next;
 	if (tmp == SWAP_NEXT_INVALID) {
 		if (!cluster_list_empty(&si->free_clusters)) {
 			tmp = cluster_next(&si->free_clusters.head) *
@@ -673,27 +646,26 @@ new_cluster:
 
 	/*
 	 * Other CPUs can use our cluster if they can't find a free cluster,
-	 * check if there is still free entry in the cluster, maintaining
-	 * natural alignment.
+	 * check if there is still free entry in the cluster
 	 */
 	max = min_t(unsigned long, si->max, ALIGN(tmp + 1, SWAPFILE_CLUSTER));
 	if (tmp < max) {
 		ci = lock_cluster(si, tmp);
 		while (tmp < max) {
-			if (swap_range_empty(si->swap_map, tmp, nr_pages))
+			if (!si->swap_map[tmp])
 				break;
-			tmp += nr_pages;
+			tmp++;
 		}
 		unlock_cluster(ci);
 	}
 	if (tmp >= max) {
-		cluster->next[order] = SWAP_NEXT_INVALID;
+		cluster->next = SWAP_NEXT_INVALID;
 		goto new_cluster;
 	}
 	*offset = tmp;
 	*scan_base = tmp;
-	tmp += nr_pages;
-	cluster->next[order] = tmp < max ? tmp : SWAP_NEXT_INVALID;
+	tmp += 1;
+	cluster->next = tmp < max ? tmp : SWAP_NEXT_INVALID;
 	return true;
 }
 
@@ -818,14 +790,13 @@ static bool swap_offset_available_and_locked(struct swap_info_struct *si,
 
 static int scan_swap_map_slots(struct swap_info_struct *si,
 			       unsigned char usage, int nr,
-			       swp_entry_t slots[], int order)
+			       swp_entry_t slots[])
 {
 	struct swap_cluster_info *ci;
 	unsigned long offset;
 	unsigned long scan_base;
 	unsigned long last_in_cluster = 0;
 	int latency_ration = LATENCY_LIMIT;
-	unsigned int nr_pages = 1 << order;
 	int n_ret = 0;
 	bool scanned_many = false;
 
@@ -839,25 +810,6 @@ static int scan_swap_map_slots(struct swap_info_struct *si,
 	 * But we do now try to find an empty cluster.  -Andrea
 	 * And we let swap pages go all over an SSD partition.  Hugh
 	 */
-
-	if (order > 0) {
-		/*
-		 * Should not even be attempting large allocations when huge
-		 * page swap is disabled.  Warn and fail the allocation.
-		 */
-		if (!IS_ENABLED(CONFIG_THP_SWAP) ||
-		    nr_pages > SWAPFILE_CLUSTER) {
-			VM_WARN_ON_ONCE(1);
-			return 0;
-		}
-
-		/*
-		 * Swapfile is not block device or not using clusters so unable
-		 * to allocate large entries.
-		 */
-		if (!(si->flags & SWP_BLKDEV) || !si->cluster_info)
-			return 0;
-	}
 
 	si->flags += SWP_SCANNING;
 	/*
@@ -873,11 +825,8 @@ static int scan_swap_map_slots(struct swap_info_struct *si,
 
 	/* SSD algorithm */
 	if (si->cluster_info) {
-		if (!scan_swap_map_try_ssd_cluster(si, &offset, &scan_base, order)) {
-			if (order > 0)
-				goto no_page;
+		if (!scan_swap_map_try_ssd_cluster(si, &offset, &scan_base))
 			goto scan;
-		}
 	} else if (unlikely(!si->cluster_nr--)) {
 		if (si->pages - si->inuse_pages < SWAPFILE_CLUSTER) {
 			si->cluster_nr = SWAPFILE_CLUSTER - 1;
@@ -919,16 +868,13 @@ static int scan_swap_map_slots(struct swap_info_struct *si,
 
 checks:
 	if (si->cluster_info) {
-		while (scan_swap_map_ssd_cluster_conflict(si, offset, order)) {
+		while (scan_swap_map_ssd_cluster_conflict(si, offset)) {
 		/* take a break if we already got some slots */
 			if (n_ret)
 				goto done;
 			if (!scan_swap_map_try_ssd_cluster(si, &offset,
-							&scan_base, order)) {
-				if (order > 0)
-					goto no_page;
+							&scan_base))
 				goto scan;
-			}
 		}
 	}
 	if (!(si->flags & SWP_WRITEOK))
@@ -959,11 +905,11 @@ checks:
 		else
 			goto done;
 	}
-	memset(si->swap_map + offset, usage, nr_pages);
-	add_cluster_info_page(si, si->cluster_info, offset, nr_pages);
+	WRITE_ONCE(si->swap_map[offset], usage);
+	inc_cluster_info_page(si, si->cluster_info, offset);
 	unlock_cluster(ci);
 
-	swap_range_alloc(si, offset, nr_pages);
+	swap_range_alloc(si, offset, 1);
 	slots[n_ret++] = swp_entry(si->type, offset);
 
 	/* got enough slots or reach max slots? */
@@ -984,10 +930,8 @@ checks:
 
 	/* try to get more slots in cluster */
 	if (si->cluster_info) {
-		if (scan_swap_map_try_ssd_cluster(si, &offset, &scan_base, order))
+		if (scan_swap_map_try_ssd_cluster(si, &offset, &scan_base))
 			goto checks;
-		if (order > 0)
-			goto done;
 	} else if (si->cluster_nr && !si->swap_map[++offset]) {
 		/* non-ssd case, still more slots in cluster? */
 		--si->cluster_nr;
@@ -1014,13 +958,11 @@ checks:
 	}
 
 done:
-	if (order == 0)
-		set_cluster_next(si, offset + 1);
+	set_cluster_next(si, offset + 1);
 	si->flags -= SWP_SCANNING;
 	return n_ret;
 
 scan:
-	VM_WARN_ON(order > 0);
 	spin_unlock(&si->lock);
 	while (++offset <= READ_ONCE(si->highest_bit)) {
 		if (unlikely(--latency_ration < 0)) {
@@ -1049,6 +991,38 @@ no_page:
 	return n_ret;
 }
 
+static int swap_alloc_cluster(struct swap_info_struct *si, swp_entry_t *slot)
+{
+	unsigned long idx;
+	struct swap_cluster_info *ci;
+	unsigned long offset;
+
+	/*
+	 * Should not even be attempting cluster allocations when huge
+	 * page swap is disabled.  Warn and fail the allocation.
+	 */
+	if (!IS_ENABLED(CONFIG_THP_SWAP)) {
+		VM_WARN_ON_ONCE(1);
+		return 0;
+	}
+
+	if (cluster_list_empty(&si->free_clusters))
+		return 0;
+
+	idx = cluster_list_first(&si->free_clusters);
+	offset = idx * SWAPFILE_CLUSTER;
+	ci = lock_cluster(si, offset);
+	alloc_cluster(si, idx);
+	cluster_set_count(ci, SWAPFILE_CLUSTER);
+
+	memset(si->swap_map + offset, SWAP_HAS_CACHE, SWAPFILE_CLUSTER);
+	unlock_cluster(ci);
+	swap_range_alloc(si, offset, SWAPFILE_CLUSTER);
+	*slot = swp_entry(si->type, offset);
+
+	return 1;
+}
+
 static void swap_free_cluster(struct swap_info_struct *si, unsigned long idx)
 {
 	unsigned long offset = idx * SWAPFILE_CLUSTER;
@@ -1070,6 +1044,9 @@ int get_swap_pages(int n_goal, swp_entry_t swp_entries[], int entry_order)
 	long avail_pgs;
 	int n_ret = 0;
 	int node;
+
+	/* Only single cluster request supported */
+	WARN_ON_ONCE(n_goal > 1 && size == SWAPFILE_CLUSTER);
 
 	spin_lock(&swap_avail_lock);
 
@@ -1106,10 +1083,14 @@ start_over:
 			spin_unlock(&si->lock);
 			goto nextsi;
 		}
-		n_ret = scan_swap_map_slots(si, SWAP_HAS_CACHE,
-					    n_goal, swp_entries, order);
+		if (size == SWAPFILE_CLUSTER) {
+			if (si->flags & SWP_BLKDEV)
+				n_ret = swap_alloc_cluster(si, swp_entries);
+		} else
+			n_ret = scan_swap_map_slots(si, SWAP_HAS_CACHE,
+						    n_goal, swp_entries);
 		spin_unlock(&si->lock);
-		if (n_ret || size > 1)
+		if (n_ret || size == SWAPFILE_CLUSTER)
 			goto check_out;
 		cond_resched();
 
@@ -1686,7 +1667,7 @@ swp_entry_t get_swap_page_of_type(int type)
 
 	/* This is called for allocating swap entry, not cache */
 	spin_lock(&si->lock);
-	if ((si->flags & SWP_WRITEOK) && scan_swap_map_slots(si, 1, 1, &entry, 0))
+	if ((si->flags & SWP_WRITEOK) && scan_swap_map_slots(si, 1, 1, &entry))
 		atomic_long_dec(&nr_swap_pages);
 	spin_unlock(&si->lock);
 fail:
@@ -3135,7 +3116,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 		p->flags |= SWP_SYNCHRONOUS_IO;
 
 	if (p->bdev && bdev_nonrot(p->bdev)) {
-		int cpu, i;
+		int cpu;
 		unsigned long ci, nr_cluster;
 
 		p->flags |= SWP_SOLIDSTATE;
@@ -3173,8 +3154,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 			struct percpu_cluster *cluster;
 
 			cluster = per_cpu_ptr(p->percpu_cluster, cpu);
-			for (i = 0; i < SWAP_NR_ORDERS; i++)
-				cluster->next[i] = SWAP_NEXT_INVALID;
+			cluster->next = SWAP_NEXT_INVALID;
 		}
 	} else {
 		atomic_inc(&nr_rotate_swap);
