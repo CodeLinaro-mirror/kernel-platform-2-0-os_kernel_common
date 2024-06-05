@@ -1526,7 +1526,7 @@ static inline bool zap_drop_file_uffd_wp(struct zap_details *details)
  */
 static inline void
 zap_install_uffd_wp_if_needed(struct vm_area_struct *vma,
-			      unsigned long addr, pte_t *pte, int nr,
+			      unsigned long addr, pte_t *pte,
 			      struct zap_details *details, pte_t pteval)
 {
 	/* Zap on anonymous always means dropping everything */
@@ -1536,27 +1536,20 @@ zap_install_uffd_wp_if_needed(struct vm_area_struct *vma,
 	if (zap_drop_file_uffd_wp(details))
 		return;
 
-	for (;;) {
-		/* the PFN in the PTE is irrelevant. */
-		pte_install_uffd_wp_if_needed(vma, addr, pte, pteval);
-		if (--nr == 0)
-			break;
-		pte++;
-		addr += PAGE_SIZE;
-	}
+	pte_install_uffd_wp_if_needed(vma, addr, pte, pteval);
 }
 
-static __always_inline void zap_present_folio_ptes(struct mmu_gather *tlb,
+static inline void zap_present_folio_pte(struct mmu_gather *tlb,
 		struct vm_area_struct *vma, struct folio *folio,
-		struct page *page, pte_t *pte, pte_t ptent, unsigned int nr,
-		unsigned long addr, struct zap_details *details, int *rss,
-		bool *force_flush, bool *force_break)
+		struct page *page, pte_t *pte, pte_t ptent, unsigned long addr,
+		struct zap_details *details, int *rss, bool *force_flush,
+		bool *force_break)
 {
 	struct mm_struct *mm = tlb->mm;
 	bool delay_rmap = false;
 
 	if (!folio_test_anon(folio)) {
-		ptent = get_and_clear_full_ptes(mm, addr, pte, nr, tlb->fullmm);
+		ptent = ptep_get_and_clear_full(mm, addr, pte, tlb->fullmm);
 		if (pte_dirty(ptent)) {
 			folio_mark_dirty(folio);
 			if (tlb_delay_rmap(tlb)) {
@@ -1566,49 +1559,36 @@ static __always_inline void zap_present_folio_ptes(struct mmu_gather *tlb,
 		}
 		if (pte_young(ptent) && likely(vma_has_recency(vma)))
 			folio_mark_accessed(folio);
-		rss[mm_counter(folio)] -= nr;
+		rss[mm_counter(folio)]--;
 	} else {
 		/* We don't need up-to-date accessed/dirty bits. */
-		clear_full_ptes(mm, addr, pte, nr, tlb->fullmm);
-		rss[MM_ANONPAGES] -= nr;
+		ptep_get_and_clear_full(mm, addr, pte, tlb->fullmm);
+		rss[MM_ANONPAGES]--;
 	}
-	/* Checking a single PTE in a batch is sufficient. */
 	arch_check_zapped_pte(vma, ptent);
-	tlb_remove_tlb_entries(tlb, pte, nr, addr);
+	tlb_remove_tlb_entry(tlb, pte, addr);
 	if (unlikely(userfaultfd_pte_wp(vma, ptent)))
-		zap_install_uffd_wp_if_needed(vma, addr, pte, nr, details,
-					      ptent);
+		zap_install_uffd_wp_if_needed(vma, addr, pte, details, ptent);
 
 	if (!delay_rmap) {
-		folio_remove_rmap_ptes(folio, page, nr, vma);
-
-		/* Only sanity-check the first page in a batch. */
+		folio_remove_rmap_pte(folio, page, vma);
 		if (unlikely(page_mapcount(page) < 0))
 			print_bad_pte(vma, addr, ptent, page);
 	}
-	if (unlikely(__tlb_remove_folio_pages(tlb, page, nr, delay_rmap))) {
+	if (unlikely(__tlb_remove_page(tlb, page, delay_rmap))) {
 		*force_flush = true;
 		*force_break = true;
 	}
 }
 
-/*
- * Zap or skip at least one present PTE, trying to batch-process subsequent
- * PTEs that map consecutive pages of the same folio.
- *
- * Returns the number of processed (skipped or zapped) PTEs (at least 1).
- */
-static inline int zap_present_ptes(struct mmu_gather *tlb,
+static inline void zap_present_pte(struct mmu_gather *tlb,
 		struct vm_area_struct *vma, pte_t *pte, pte_t ptent,
-		unsigned int max_nr, unsigned long addr,
-		struct zap_details *details, int *rss, bool *force_flush,
-		bool *force_break)
+		unsigned long addr, struct zap_details *details,
+		int *rss, bool *force_flush, bool *force_break)
 {
-	const fpb_t fpb_flags = FPB_IGNORE_DIRTY | FPB_IGNORE_SOFT_DIRTY;
 	struct mm_struct *mm = tlb->mm;
 	struct folio *folio;
 	struct page *page;
-	int nr;
 
 	page = vm_normal_page(vma, addr, ptent);
 	if (!page) {
@@ -1618,29 +1598,14 @@ static inline int zap_present_ptes(struct mmu_gather *tlb,
 		tlb_remove_tlb_entry(tlb, pte, addr);
 		VM_WARN_ON_ONCE(userfaultfd_wp(vma));
 		ksm_might_unmap_zero_page(mm, ptent);
-		return 1;
+		return;
 	}
 
 	folio = page_folio(page);
 	if (unlikely(!should_zap_folio(details, folio)))
-		return 1;
-
-	/*
-	 * Make sure that the common "small folio" case is as fast as possible
-	 * by keeping the batching logic separate.
-	 */
-	if (unlikely(folio_test_large(folio) && max_nr != 1)) {
-		nr = folio_pte_batch(folio, addr, pte, ptent, max_nr, fpb_flags,
-				     NULL);
-
-		zap_present_folio_ptes(tlb, vma, folio, page, pte, ptent, nr,
-				       addr, details, rss, force_flush,
-				       force_break);
-		return nr;
-	}
-	zap_present_folio_ptes(tlb, vma, folio, page, pte, ptent, 1, addr,
-			       details, rss, force_flush, force_break);
-	return 1;
+		return;
+	zap_present_folio_pte(tlb, vma, folio, page, pte, ptent, addr, details,
+			      rss, force_flush, force_break);
 }
 
 static unsigned long zap_pte_range(struct mmu_gather *tlb,
@@ -1655,7 +1620,6 @@ static unsigned long zap_pte_range(struct mmu_gather *tlb,
 	pte_t *start_pte;
 	pte_t *pte;
 	swp_entry_t entry;
-	int nr;
 	bool bypass = false;
 
 	tlb_change_page_size(tlb, PAGE_SIZE);
@@ -1670,9 +1634,7 @@ static unsigned long zap_pte_range(struct mmu_gather *tlb,
 		pte_t ptent = ptep_get(pte);
 		struct folio *folio;
 		struct page *page;
-		int max_nr;
 
-		nr = 1;
 		if (pte_none(ptent))
 			continue;
 
@@ -1680,12 +1642,10 @@ static unsigned long zap_pte_range(struct mmu_gather *tlb,
 			break;
 
 		if (pte_present(ptent)) {
-			max_nr = (end - addr) / PAGE_SIZE;
-			nr = zap_present_ptes(tlb, vma, pte, ptent, max_nr,
-					      addr, details, rss, &force_flush,
-					      &force_break);
+			zap_present_pte(tlb, vma, pte, ptent, addr, details,
+					rss, &force_flush, &force_break);
 			if (unlikely(force_break)) {
-				addr += nr * PAGE_SIZE;
+				addr += PAGE_SIZE;
 				break;
 			}
 			continue;
@@ -1742,8 +1702,8 @@ static unsigned long zap_pte_range(struct mmu_gather *tlb,
 		}
 skip:
 		pte_clear_not_present_full(mm, addr, pte, tlb->fullmm);
-		zap_install_uffd_wp_if_needed(vma, addr, pte, 1, details, ptent);
-	} while (pte += nr, addr += PAGE_SIZE * nr, addr != end);
+		zap_install_uffd_wp_if_needed(vma, addr, pte, details, ptent);
+	} while (pte++, addr += PAGE_SIZE, addr != end);
 
 	add_mm_rss_vec(mm, rss);
 	arch_leave_lazy_mmu_mode();
