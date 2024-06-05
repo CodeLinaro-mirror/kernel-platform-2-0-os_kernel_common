@@ -5922,7 +5922,6 @@ static enum mc_target_type get_mctgt_type(struct vm_area_struct *vma,
 		unsigned long addr, pte_t ptent, union mc_target *target)
 {
 	struct page *page = NULL;
-	struct folio *folio;
 	enum mc_target_type ret = MC_TARGET_NONE;
 	swp_entry_t ent = { .val = 0 };
 
@@ -5937,11 +5936,9 @@ static enum mc_target_type get_mctgt_type(struct vm_area_struct *vma,
 	else if (is_swap_pte(ptent))
 		page = mc_handle_swap_pte(vma, ptent, &ent);
 
-	if (page)
-		folio = page_folio(page);
 	if (target && page) {
-		if (!folio_trylock(folio)) {
-			folio_put(folio);
+		if (!trylock_page(page)) {
+			put_page(page);
 			return ret;
 		}
 		/*
@@ -5956,8 +5953,8 @@ static enum mc_target_type get_mctgt_type(struct vm_area_struct *vma,
 		 * Alas, skip moving the page in this case.
 		 */
 		if (!pte_present(ptent) && page_mapped(page)) {
-			folio_unlock(folio);
-			folio_put(folio);
+			unlock_page(page);
+			put_page(page);
 			return ret;
 		}
 	}
@@ -5970,18 +5967,18 @@ static enum mc_target_type get_mctgt_type(struct vm_area_struct *vma,
 		 * mem_cgroup_move_account() checks the page is valid or
 		 * not under LRU exclusion.
 		 */
-		if (folio_memcg(folio) == mc.from) {
+		if (page_memcg(page) == mc.from) {
 			ret = MC_TARGET_PAGE;
-			if (folio_is_device_private(folio) ||
-			    folio_is_device_coherent(folio))
+			if (is_device_private_page(page) ||
+			    is_device_coherent_page(page))
 				ret = MC_TARGET_DEVICE;
 			if (target)
-				target->folio = folio;
+				target->folio = page_folio(page);
 		}
 		if (!ret || !target) {
 			if (target)
-				folio_unlock(folio);
-			folio_put(folio);
+				unlock_page(page);
+			put_page(page);
 		}
 	}
 	/*
