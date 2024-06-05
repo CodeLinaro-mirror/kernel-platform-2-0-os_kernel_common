@@ -4364,9 +4364,6 @@ static struct folio *alloc_anon_folio(struct vm_fault *vmf)
 
 	pte_unmap(pte);
 
-	if (!orders)
-		goto fallback;
-
 	/* Try allocating the highest of the remaining orders. */
 	gfp = vma_thp_gfp_mask(vma);
 	while (orders) {
