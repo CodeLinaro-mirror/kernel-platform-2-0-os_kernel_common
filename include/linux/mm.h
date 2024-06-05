@@ -2608,11 +2608,11 @@ static inline int mm_counter_file(struct page *page)
 	return MM_FILEPAGES;
 }
 
-static inline int mm_counter(struct folio *folio)
+static inline int mm_counter(struct page *page)
 {
-	if (folio_test_anon(folio))
+	if (PageAnon(page))
 		return MM_ANONPAGES;
-	return mm_counter_file(&folio->page);
+	return mm_counter_file(page);
 }
 
 static inline unsigned long get_mm_rss(struct mm_struct *mm)
