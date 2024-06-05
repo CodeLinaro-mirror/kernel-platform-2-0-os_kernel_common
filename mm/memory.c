@@ -815,9 +815,9 @@ copy_nonpresent_pte(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 		}
 		rss[MM_SWAPENTS]++;
 	} else if (is_migration_entry(entry)) {
-		folio = pfn_swap_entry_folio(entry);
+		page = pfn_swap_entry_to_page(entry);
 
-		rss[mm_counter(&folio->page)]++;
+		rss[mm_counter(page)]++;
 
 		if (!is_readable_migration_entry(entry) &&
 				is_cow_mapping(vm_flags)) {
