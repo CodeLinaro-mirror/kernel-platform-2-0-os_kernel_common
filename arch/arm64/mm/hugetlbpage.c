@@ -254,12 +254,12 @@ void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
 
 	if (!pte_present(pte)) {
 		for (i = 0; i < ncontig; i++, ptep++, addr += pgsize)
-			set_ptes(mm, addr, ptep, pte, 1);
+			set_pte_at(mm, addr, ptep, pte);
 		return;
 	}
 
 	if (!pte_cont(pte)) {
-		set_ptes(mm, addr, ptep, pte, 1);
+		set_pte_at(mm, addr, ptep, pte);
 		return;
 	}
 
@@ -270,7 +270,7 @@ void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
 	clear_flush(mm, addr, ptep, pgsize, ncontig);
 
 	for (i = 0; i < ncontig; i++, ptep++, addr += pgsize, pfn += dpfn)
-		set_ptes(mm, addr, ptep, pfn_pte(pfn, hugeprot), 1);
+		set_pte_at(mm, addr, ptep, pfn_pte(pfn, hugeprot));
 }
 
 pte_t *huge_pte_alloc(struct mm_struct *mm, struct vm_area_struct *vma,
@@ -478,7 +478,7 @@ int huge_ptep_set_access_flags(struct vm_area_struct *vma,
 
 	hugeprot = pte_pgprot(pte);
 	for (i = 0; i < ncontig; i++, ptep++, addr += pgsize, pfn += dpfn)
-		set_ptes(mm, addr, ptep, pfn_pte(pfn, hugeprot), 1);
+		set_pte_at(mm, addr, ptep, pfn_pte(pfn, hugeprot));
 
 	return 1;
 }
@@ -507,7 +507,7 @@ void huge_ptep_set_wrprotect(struct mm_struct *mm,
 	pfn = pte_pfn(pte);
 
 	for (i = 0; i < ncontig; i++, ptep++, addr += pgsize, pfn += dpfn)
-		set_ptes(mm, addr, ptep, pfn_pte(pfn, hugeprot), 1);
+		set_pte_at(mm, addr, ptep, pfn_pte(pfn, hugeprot));
 }
 
 pte_t huge_ptep_clear_flush(struct vm_area_struct *vma,
