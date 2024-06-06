@@ -1555,11 +1555,11 @@ static __always_inline void __folio_remove_rmap(struct folio *folio,
 		__lruvec_stat_mod_folio(folio, idx, -nr);
 
 		/*
-		 * Queue anon THP for deferred split if at least one
+		 * Queue anon large folio for deferred split if at least one
 		 * page of the folio is unmapped and at least one page
 		 * is still mapped.
 		 */
-		if (folio_test_pmd_mappable(folio) && folio_test_anon(folio))
+		if (folio_test_large(folio) && folio_test_anon(folio))
 			if (level == RMAP_LEVEL_PTE || nr < nr_pmdmapped)
 				deferred_split_folio(folio);
 	}
