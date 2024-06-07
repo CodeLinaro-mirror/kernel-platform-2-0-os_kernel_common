@@ -34,7 +34,7 @@
 #include <uapi/linux/android/binder.h>
 #include <uapi/linux/android/binderfs.h>
 
-#include "binder_internal.h"
+#include "rust_binder_internal.h"
 
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 
@@ -45,23 +45,10 @@ MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 /* Ensure that the initial ipc namespace always has devices available. */
 #define BINDERFS_MAX_MINOR_CAPPED (BINDERFS_MAX_MINOR - 4)
 
-/* === DEFINED IN RUST === */
-extern int rust_binder_stats_show(struct seq_file *m, void *unused);
 DEFINE_SHOW_ATTRIBUTE(rust_binder_stats);
-
-extern int rust_binder_state_show(struct seq_file *m, void *unused);
 DEFINE_SHOW_ATTRIBUTE(rust_binder_state);
-
-extern int rust_binder_transactions_show(struct seq_file *m, void *unused);
 DEFINE_SHOW_ATTRIBUTE(rust_binder_transactions);
-
-extern int rust_binder_transaction_log_show(struct seq_file *m, void *unused);
 DEFINE_SHOW_ATTRIBUTE(rust_binder_transaction_log);
-
-extern const struct file_operations rust_binder_fops;
-extern rust_binder_device rust_binder_new_device(char *name);
-extern void rust_binder_remove_device(rust_binder_device device);
-/* === END DEFINED IN RUST === */
 
 char *rust_binder_devices_param = CONFIG_ANDROID_BINDER_DEVICES;
 module_param_named(rust_devices, rust_binder_devices_param, charp, 0444);

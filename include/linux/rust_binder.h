@@ -2,15 +2,13 @@
 #ifndef _LINUX_RUST_BINDER_H
 #define _LINUX_RUST_BINDER_H
 
+#include <uapi/linux/android/binder.h>
 #include <uapi/linux/android/binderfs.h>
 
 /*
- * This typedef is used for Rust binder driver instances. The driver object is
- * completely opaque from C and can only be accessed via calls into Rust, so we
- * use a typedef.
+ * This symbol is exposed by `rust_binderfs.c` and exists here so that Rust
+ * Binder can call it.
  */
-typedef void *rust_binder_device;
-
 int init_rust_binderfs(void);
 
 #endif
