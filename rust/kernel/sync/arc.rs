@@ -202,6 +202,9 @@ impl<T> Arc<T> {
     {
         UniqueArc::init(init).map(|u| u.into())
     }
+
+    /// The offset that the value is stored at.
+    pub const DATA_OFFSET: usize = core::mem::offset_of!(ArcInner<T>, data);
 }
 
 impl<T: ?Sized> Arc<T> {
