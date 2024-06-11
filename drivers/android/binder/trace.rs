@@ -8,6 +8,7 @@ use kernel::bindings::rust_binder_transaction;
 use kernel::tracepoint::declare_trace;
 
 declare_trace! {
+    fn rust_binder_wait_for_work(proc_work: bool, transaction_stack: bool, thread_todo: bool);
     fn rust_binder_transaction(reply: bool, t: rust_binder_transaction);
     fn rust_binder_transaction_received(t: rust_binder_transaction);
 }
@@ -15,6 +16,12 @@ declare_trace! {
 #[inline]
 fn raw_transaction(t: &Transaction) -> rust_binder_transaction {
     t as *const Transaction as rust_binder_transaction
+}
+
+#[inline]
+pub(crate) fn trace_wait_for_work(proc_work: bool, transaction_stack: bool, thread_todo: bool) {
+    // SAFETY: Always safe to call.
+    unsafe { rust_binder_wait_for_work(proc_work, transaction_stack, thread_todo) }
 }
 
 #[inline]

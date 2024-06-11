@@ -1459,10 +1459,18 @@ impl Thread {
         let read_start = req.read_buffer.wrapping_add(req.read_consumed);
         let read_len = req.read_size - req.read_consumed;
         let mut writer = UserSlice::new(read_start as _, read_len as _).writer();
-        let (in_pool, use_proc_queue) = {
+        let (in_pool, has_transaction, thread_todo, use_proc_queue) = {
             let inner = self.inner.lock();
-            (inner.is_looper(), inner.should_use_process_work_queue())
+            (
+                inner.is_looper(),
+                inner.current_transaction.is_some(),
+                !inner.work_list.is_empty(),
+                inner.should_use_process_work_queue(),
+            )
         };
+
+        crate::trace::trace_wait_for_work(use_proc_queue, has_transaction, thread_todo);
+
         let getter = if use_proc_queue {
             Self::get_work
         } else {
