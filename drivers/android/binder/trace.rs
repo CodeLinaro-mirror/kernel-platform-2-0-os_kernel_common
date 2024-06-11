@@ -9,6 +9,7 @@ use kernel::tracepoint::declare_trace;
 
 declare_trace! {
     fn rust_binder_transaction(reply: bool, t: rust_binder_transaction);
+    fn rust_binder_transaction_received(t: rust_binder_transaction);
 }
 
 #[inline]
@@ -20,4 +21,10 @@ fn raw_transaction(t: &Transaction) -> rust_binder_transaction {
 pub(crate) fn trace_transaction(reply: bool, t: &Transaction) {
     // SAFETY: The raw transaction is valid for the duration of this call.
     unsafe { rust_binder_transaction(reply, raw_transaction(t)) }
+}
+
+#[inline]
+pub(crate) fn trace_transaction_received(t: &Transaction) {
+    // SAFETY: The raw transaction is valid for the duration of this call.
+    unsafe { rust_binder_transaction_received(raw_transaction(t)) }
 }
