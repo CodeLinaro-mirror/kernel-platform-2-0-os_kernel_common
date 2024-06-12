@@ -1482,6 +1482,8 @@ impl Process {
         use kernel::ioctl::{_IOC_DIR, _IOC_SIZE};
         use kernel::uapi::{_IOC_READ, _IOC_WRITE};
 
+        crate::trace::trace_ioctl(cmd, arg as usize);
+
         let user_slice = UserSlice::new(arg, _IOC_SIZE(cmd));
 
         const _IOC_READ_WRITE: u32 = _IOC_READ | _IOC_WRITE;

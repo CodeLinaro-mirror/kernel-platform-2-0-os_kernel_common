@@ -11,6 +11,21 @@
 
 #include <linux/tracepoint.h>
 
+TRACE_EVENT(rust_binder_ioctl,
+	TP_PROTO(unsigned int cmd, unsigned long arg),
+	TP_ARGS(cmd, arg),
+
+	TP_STRUCT__entry(
+		__field(unsigned int, cmd)
+		__field(unsigned long, arg)
+	),
+	TP_fast_assign(
+		__entry->cmd = cmd;
+		__entry->arg = arg;
+	),
+	TP_printk("cmd=0x%x arg=0x%lx", __entry->cmd, __entry->arg)
+);
+
 TRACE_EVENT(rust_binder_wait_for_work,
 	TP_PROTO(bool proc_work, bool transaction_stack, bool thread_todo),
 	TP_ARGS(proc_work, transaction_stack, thread_todo),
