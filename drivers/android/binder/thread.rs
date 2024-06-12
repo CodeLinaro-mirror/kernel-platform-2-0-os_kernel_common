@@ -705,6 +705,12 @@ impl Thread {
             );
         }
 
+        crate::trace::trace_set_priority(
+            task,
+            desired.prio,
+            prio::to_kernel_prio(policy, priority),
+        );
+
         let mut prio_state = self.prio_lock.lock();
         if !verify && prio_state.state == PriorityState::Abort {
             // A new priority has been set by an incoming nested
