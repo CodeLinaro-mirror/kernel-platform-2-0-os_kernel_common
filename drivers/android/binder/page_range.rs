@@ -21,7 +21,7 @@ use core::{
     ptr,
 };
 
-use crate::{
+use kernel::{
     bindings,
     error::Result,
     mm::{virt, MmGrab},
@@ -38,7 +38,7 @@ use crate::{
 ///
 /// Each shrinker can be used by many `ShrinkablePageRange` objects.
 #[repr(C)]
-pub struct Shrinker {
+pub(crate) struct Shrinker {
     inner: Opaque<bindings::shrinker>,
     list_lru: Opaque<bindings::list_lru>,
 }
@@ -53,7 +53,7 @@ impl Shrinker {
     ///
     /// Before using this shrinker with a `ShrinkablePageRange`, the `register` method must have
     /// been called exactly once, and it must not have returned an error.
-    pub const unsafe fn new() -> Self {
+    pub(crate) const unsafe fn new() -> Self {
         Self {
             inner: Opaque::uninit(),
             list_lru: Opaque::uninit(),
@@ -61,7 +61,7 @@ impl Shrinker {
     }
 
     /// Register this shrinker with the kernel.
-    pub fn register(&'static self, name: &CStr) -> Result<()> {
+    pub(crate) fn register(&'static self, name: &CStr) -> Result<()> {
         // SAFETY: These fields are not yet used, so it's okay to zero them.
         unsafe {
             self.inner.get().write_bytes(0, 1);
@@ -117,7 +117,7 @@ impl Shrinker {
 /// _not_ okay to call `stop_using_range` on a page that is in use by the methods that read or
 /// write to the page.
 #[pin_data(PinnedDrop)]
-pub struct ShrinkablePageRange {
+pub(crate) struct ShrinkablePageRange {
     /// Shrinker object registered with the kernel.
     shrinker: &'static Shrinker,
     /// The mm for the relevant process.
@@ -240,7 +240,7 @@ impl PageInfo {
 
 impl ShrinkablePageRange {
     /// Create a new `ShrinkablePageRange` using the given shrinker.
-    pub fn new(shrinker: &'static Shrinker) -> impl PinInit<Self, Error> {
+    pub(crate) fn new(shrinker: &'static Shrinker) -> impl PinInit<Self, Error> {
         try_pin_init!(Self {
             shrinker,
             mm: MmGrab::mmgrab_current().ok_or(ESRCH)?,
@@ -254,7 +254,7 @@ impl ShrinkablePageRange {
     }
 
     /// Register a vma with this page range. Returns the size of the region.
-    pub fn register_with_vma(&self, vma: &virt::Area) -> Result<usize> {
+    pub(crate) fn register_with_vma(&self, vma: &virt::Area) -> Result<usize> {
         let num_bytes = usize::min(vma.end() - vma.start(), bindings::SZ_4M as usize);
         let num_pages = num_bytes >> PAGE_SHIFT;
 
@@ -306,7 +306,7 @@ impl ShrinkablePageRange {
     /// Make sure that the given pages are allocated and mapped.
     ///
     /// Must not be called from an atomic context.
-    pub fn use_range(&self, start: usize, end: usize) -> Result<()> {
+    pub(crate) fn use_range(&self, start: usize, end: usize) -> Result<()> {
         if start >= end {
             return Ok(());
         }
@@ -423,7 +423,7 @@ impl ShrinkablePageRange {
     /// If the given page is in use, then mark it as available so that the shrinker can free it.
     ///
     /// May be called from an atomic context.
-    pub fn stop_using_range(&self, start: usize, end: usize) {
+    pub(crate) fn stop_using_range(&self, start: usize, end: usize) {
         if start >= end {
             return;
         }
@@ -499,7 +499,7 @@ impl ShrinkablePageRange {
     /// # Safety
     ///
     /// All pages touched by this operation must be in use for the duration of this call.
-    pub unsafe fn copy_from_user_slice(
+    pub(crate) unsafe fn copy_from_user_slice(
         &self,
         reader: &mut UserSliceReader,
         offset: usize,
@@ -518,7 +518,7 @@ impl ShrinkablePageRange {
     /// # Safety
     ///
     /// All pages touched by this operation must be in use for the duration of this call.
-    pub unsafe fn read<T: FromBytes>(&self, offset: usize) -> Result<T> {
+    pub(crate) unsafe fn read<T: FromBytes>(&self, offset: usize) -> Result<T> {
         let mut out = MaybeUninit::<T>::uninit();
         let mut out_offset = 0;
         // SAFETY: `self.iterate` has the same safety requirements as `read`.
@@ -541,7 +541,7 @@ impl ShrinkablePageRange {
     /// # Safety
     ///
     /// All pages touched by this operation must be in use for the duration of this call.
-    pub unsafe fn write<T: ?Sized>(&self, offset: usize, obj: &T) -> Result {
+    pub(crate) unsafe fn write<T: ?Sized>(&self, offset: usize, obj: &T) -> Result {
         let mut obj_offset = 0;
         // SAFETY: `self.iterate` has the same safety requirements as `write`.
         unsafe {
@@ -561,7 +561,7 @@ impl ShrinkablePageRange {
     /// # Safety
     ///
     /// All pages touched by this operation must be in use for the duration of this call.
-    pub unsafe fn fill_zero(&self, offset: usize, size: usize) -> Result {
+    pub(crate) unsafe fn fill_zero(&self, offset: usize, size: usize) -> Result {
         // SAFETY: `self.iterate` has the same safety requirements as `copy_into`.
         unsafe {
             self.iterate(offset, size, |page, offset, len| {
@@ -628,9 +628,18 @@ unsafe extern "C" fn rust_shrink_scan(
     let nr_to_scan = unsafe { (*sc).nr_to_scan };
     // SAFETY: Accessing the lru list is okay. Just an FFI call.
     unsafe {
+        extern "C" {
+            fn rust_shrink_free_page_wrap(
+                item: *mut bindings::list_head,
+                list: *mut bindings::list_lru_one,
+                lock: *mut bindings::spinlock_t,
+                cb_arg: *mut core::ffi::c_void,
+            ) -> bindings::lru_status;
+        }
+
         bindings::list_lru_walk(
             shrinker.list_lru.get(),
-            Some(bindings::rust_shrink_free_page_wrap),
+            Some(rust_shrink_free_page_wrap),
             ptr::null_mut(),
             nr_to_scan,
         )
