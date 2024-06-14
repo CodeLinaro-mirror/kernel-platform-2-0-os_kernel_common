@@ -11,7 +11,6 @@ use kernel::{
     list::{
         HasListLinks, ListArc, ListArcSafe, ListItem, ListLinks, ListLinksSelfPtr, TryNewListArc,
     },
-    page_range::Shrinker,
     prelude::*,
     seq_file::SeqFile,
     seq_print,
@@ -21,7 +20,7 @@ use kernel::{
     uaccess::UserSliceWriter,
 };
 
-use crate::{context::Context, process::Process, thread::Thread};
+use crate::{context::Context, page_range::Shrinker, process::Process, thread::Thread};
 
 use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
@@ -30,6 +29,7 @@ mod context;
 mod defs;
 mod error;
 mod node;
+mod page_range;
 mod prio;
 mod process;
 mod range_alloc;
