@@ -1115,8 +1115,17 @@ static int smmu_detach_dev(struct kvm_hyp_iommu *iommu, struct kvm_hyp_iommu_dom
 			goto out_unlock;
 		}
 		cd_table = (u64 *)(FIELD_GET(STRTAB_STE_0_S1CTXPTR_MASK, dst[0]) << 6);
-		/* This shouldn't happen*/
-		BUG_ON(!cd_table);
+
+		/*
+		 * When a device is assigned we free cd_table, and the VM dies
+		 * VFIO will try to detach the blocking domain which was forciably
+		 * detached on assignement, so we would end with stage-1 domain without
+		 * cd table.
+		 */
+		if (!cd_table) {
+			ret = 0;
+			goto out_unlock;
+		}
 
 		cd_table = hyp_phys_to_virt((phys_addr_t)cd_table);
 		cd = smmu_get_cd_ptr(cd_table, pasid);
@@ -1223,6 +1232,45 @@ bool smmu_dabt_device(struct hyp_arm_smmu_v3_device *smmu,
 		cpu_reg(host_ctxt, rd) = readl_relaxed(smmu->base + off);
 
 	return true;
+}
+
+/*
+ * This will lose the domain information we relying on host attaching to a blocked
+ * domain which is empty, which it will re-attach again after VM dies. (when VIFO detachs
+ * the device)
+ */
+int smmu_block_dev(struct kvm_hyp_iommu *iommu, u32 sid, bool is_host2guest)
+{
+	struct hyp_arm_smmu_v3_device *smmu = to_smmu(iommu);
+	u64 *dst;
+	int i = 0, nr_entries, cd_sz;
+	u64 *cd_table;
+	u64 val;
+	int ret = 0;
+
+	kvm_iommu_lock(iommu);
+	dst = smmu_get_ste_ptr(smmu, sid);
+	if (!dst)
+		goto out_ret;
+
+	val = le64_to_cpu(dst[0]);
+	cd_table = (u64 *)(FIELD_GET(STRTAB_STE_0_S1CTXPTR_MASK, val) << 6);
+	nr_entries = 1 << FIELD_GET(STRTAB_STE_0_S1CDMAX, val);
+	cd_sz = (1 << nr_entries) * (CTXDESC_CD_DWORDS << 3);
+
+	/* Good drivers doesn't leak memory. */
+	if (cd_table)
+		kvm_iommu_reclaim_pages(hyp_phys_to_virt((u64)cd_table), get_order(cd_sz));
+
+	/* zap zippity zop. */
+	for (i = 0; i < STRTAB_STE_DWORDS; i++)
+		dst[i] = 0;
+
+	ret = smmu_sync_ste(smmu, dst, sid);
+
+out_ret:
+	kvm_iommu_unlock(iommu);
+	return ret;
 }
 
 bool smmu_dabt_handler(struct kvm_cpu_context *host_ctxt, u64 esr, u64 addr)
@@ -1444,5 +1492,6 @@ struct kvm_iommu_ops smmu_ops = {
 	.map_pages			= smmu_map_pages,
 	.unmap_pages			= smmu_unmap_pages,
 	.iova_to_phys			= smmu_iova_to_phys,
+	.block_dev			= smmu_block_dev,
 };
 
