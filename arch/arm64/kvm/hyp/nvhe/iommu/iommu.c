@@ -489,6 +489,22 @@ bool kvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt, u64 esr, u64
 	return ret;
 }
 
+int kvm_iommu_block_dev(pkvm_handle_t iommu_id, u32 endpoint_id, struct pkvm_hyp_vm *hyp_vm)
+{
+	struct kvm_hyp_iommu *iommu;
+	int ret;
+
+	if (!kvm_iommu_ops || !kvm_iommu_ops->block_dev)
+		return 0;
+
+	iommu = kvm_iommu_ops->get_iommu_by_id(iommu_id);
+	if (!iommu)
+		return -ENOENT;
+
+	ret = kvm_iommu_ops->block_dev(iommu, endpoint_id, !hyp_vm);
+	return ret;
+}
+
 static int iommu_power_on(struct kvm_power_domain *pd)
 {
 	struct kvm_hyp_iommu *iommu = container_of(pd, struct kvm_hyp_iommu,

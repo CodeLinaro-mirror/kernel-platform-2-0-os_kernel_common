@@ -6,6 +6,8 @@
 
 #include <kvm/iommu.h>
 #include <linux/io-pgtable.h>
+
+#include <nvhe/pkvm.h>
 #include <nvhe/spinlock.h>
 
 #if IS_ENABLED(CONFIG_ARM_SMMU_V3_PKVM)
@@ -54,6 +56,8 @@ void kvm_iommu_iotlb_gather_add_page(struct kvm_hyp_iommu_domain *domain,
 void kvm_iommu_host_stage2_idmap(phys_addr_t start, phys_addr_t end,
 				 enum kvm_pgtable_prot prot);
 int kvm_iommu_snapshot_host_stage2(struct kvm_hyp_iommu_domain *domain);
+
+int kvm_iommu_block_dev(pkvm_handle_t iommu_id, u32 endpoint_id, struct pkvm_hyp_vm *vm);
 
 #define KVM_IOMMU_PADDR_CACHE_MAX		((size_t)511)
 /**
@@ -138,6 +142,8 @@ struct kvm_iommu_ops {
 			      struct iommu_iotlb_gather *gather,
 			      struct kvm_iommu_paddr_cache *cache);
 	phys_addr_t (*iova_to_phys)(struct kvm_hyp_iommu_domain *domain, unsigned long iova);
+	int (*block_dev)(struct kvm_hyp_iommu *iommu, u32 endpoint_id,
+			 bool is_host2guest);
 	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);

@@ -7,6 +7,7 @@
 #include <kvm/arm_hypercalls.h>
 #include <kvm/device.h>
 
+#include <nvhe/iommu.h>
 #include <nvhe/mem_protect.h>
 
 struct pkvm_device *registered_devices;
@@ -128,10 +129,24 @@ bool pkvm_device_is_assignable(u64 pfn)
 
 static int pkvm_device_reset(struct pkvm_device *dev)
 {
+	struct pkvm_dev_iommu *iommu;
+	int ret;
+	int i;
+
 	hyp_assert_lock_held(&device_spinlock);
 
-	if (dev->reset_handler)
-		return dev->reset_handler(dev);
+	if (dev->reset_handler) {
+		ret = dev->reset_handler(dev);
+		if (ret)
+			return ret;
+	}
+
+	for (i = 0 ; i < dev->nr_iommus ; ++i) {
+		iommu = &dev->iommus[i];
+		ret = kvm_iommu_block_dev(iommu->id, iommu->endpoint, dev->ctxt);
+		if (ret)
+			return ret;
+	}
 	return 0;
 }
 
