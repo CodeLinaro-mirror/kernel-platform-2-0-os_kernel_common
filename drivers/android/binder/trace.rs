@@ -2,9 +2,11 @@
 
 // Copyright (C) 2024 Google LLC.
 
-use crate::{thread::Thread, transaction::Transaction};
+use crate::{node::Node, thread::Thread, transaction::Transaction};
 
-use kernel::bindings::{rust_binder_thread, rust_binder_transaction, task_struct};
+use kernel::bindings::{
+    flat_binder_object, rust_binder_node, rust_binder_thread, rust_binder_transaction, task_struct,
+};
 use kernel::error::Result;
 use kernel::task::Task;
 use kernel::tracepoint::declare_trace;
@@ -21,6 +23,9 @@ declare_trace! {
     fn rust_binder_transaction(reply: bool, t: rust_binder_transaction);
     fn rust_binder_transaction_received(t: rust_binder_transaction);
     fn rust_binder_transaction_thread_selected(t: rust_binder_transaction, thread: rust_binder_thread);
+    fn rust_binder_transaction_node_send(t_debug_id: c_int, n: rust_binder_node,
+                                         orig: *const flat_binder_object,
+                                         trans: *const flat_binder_object);
 
     fn android_vh_rust_binder_set_priority(t: rust_binder_transaction, task: *mut task_struct);
     fn android_vh_rust_binder_restore_priority(task: *mut task_struct);
@@ -34,6 +39,11 @@ fn raw_transaction(t: &Transaction) -> rust_binder_transaction {
 #[inline]
 fn raw_thread(t: &Thread) -> rust_binder_thread {
     t as *const Thread as rust_binder_thread
+}
+
+#[inline]
+fn raw_node(n: &Node) -> rust_binder_node {
+    n as *const Node as rust_binder_node
 }
 
 #[inline]
@@ -108,4 +118,15 @@ pub(crate) fn trace_transaction_received(t: &Transaction) {
 pub(crate) fn trace_transaction_thread_selected(t: &Transaction, th: &Thread) {
     // SAFETY: The raw transaction is valid for the duration of this call.
     unsafe { rust_binder_transaction_thread_selected(raw_transaction(t), raw_thread(th)) }
+}
+
+#[inline]
+pub(crate) fn trace_transaction_node_send(
+    t_debug_id: usize,
+    n: &Node,
+    orig: &flat_binder_object,
+    trans: &flat_binder_object,
+) {
+    // SAFETY: The pointers are valid for the duration of this call.
+    unsafe { rust_binder_transaction_node_send(t_debug_id as c_int, raw_node(n), orig, trans) }
 }
