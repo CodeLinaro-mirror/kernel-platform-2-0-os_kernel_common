@@ -16,6 +16,24 @@
       "message": "Reading this again, shouldn\u0027t we use different variable for inner loop? Else we will miss few items from `z_erofs_gbufpool` depending on gbuf-\u003enrpages.",
       "revId": "db2b9af3dc24881fb21a24e30f0440303c96bfd0",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "795eb58a_c6053899",
+        "filename": "fs/erofs/zutil.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1954115
+      },
+      "writtenOn": "2024-06-25T18:05:11Z",
+      "side": 1,
+      "message": "Last patch in series addresses this concern. So marking this resolved.",
+      "parentUuid": "64445716_93bfb00f",
+      "revId": "db2b9af3dc24881fb21a24e30f0440303c96bfd0",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
