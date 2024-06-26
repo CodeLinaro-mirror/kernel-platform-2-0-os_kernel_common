@@ -93,6 +93,7 @@ impl<T> RangeAllocator<T> {
     /// Try to reserve a new buffer, using the provided allocation if necessary.
     pub(crate) fn reserve_new(
         &mut self,
+        debug_id: usize,
         size: usize,
         is_oneway: bool,
         pid: Pid,
@@ -130,7 +131,12 @@ impl<T> RangeAllocator<T> {
                 let new_desc = Descriptor::new(found_offset + size, found_size - size);
                 let (tree_node, free_tree_node, desc_node_res) = alloc.initialize(new_desc);
 
-                desc.state = Some(DescriptorState::new(is_oneway, pid, desc_node_res));
+                desc.state = Some(DescriptorState::new(
+                    is_oneway,
+                    debug_id,
+                    pid,
+                    desc_node_res,
+                ));
                 desc.size = size;
 
                 (found_size, found_offset, tree_node, free_tree_node)
@@ -273,7 +279,7 @@ impl<T> RangeAllocator<T> {
     /// [`DescriptorState::Reserved`].
     ///
     /// Returns the size of the existing entry and the data associated with it.
-    pub(crate) fn reserve_existing(&mut self, offset: usize) -> Result<(usize, Option<T>)> {
+    pub(crate) fn reserve_existing(&mut self, offset: usize) -> Result<(usize, usize, Option<T>)> {
         let desc = self.tree.get_mut(&offset).ok_or_else(|| {
             pr_warn!(
                 "ENOENT from range_alloc.reserve_existing - offset: {}",
@@ -282,10 +288,14 @@ impl<T> RangeAllocator<T> {
             ENOENT
         })?;
 
-        let data = desc.try_change_state(|state| match state {
+        let (debug_id, data) = desc.try_change_state(|state| match state {
             Some(DescriptorState::Allocated(allocation)) => {
                 let (reservation, data) = allocation.deallocate();
-                (Some(DescriptorState::Reserved(reservation)), Ok(data))
+                let debug_id = reservation.debug_id;
+                (
+                    Some(DescriptorState::Reserved(reservation)),
+                    Ok((debug_id, data)),
+                )
             }
             other => {
                 pr_warn!(
@@ -296,16 +306,21 @@ impl<T> RangeAllocator<T> {
             }
         })?;
 
-        Ok((desc.size, data))
+        Ok((desc.size, debug_id, data))
     }
 
     /// Call the provided callback at every allocated region.
     ///
     /// This destroys the range allocator. Used only during shutdown.
-    pub(crate) fn take_for_each<F: Fn(usize, usize, Option<T>)>(&mut self, callback: F) {
+    pub(crate) fn take_for_each<F: Fn(usize, usize, usize, Option<T>)>(&mut self, callback: F) {
         for (_, desc) in self.tree.iter_mut() {
             if let Some(DescriptorState::Allocated(allocation)) = &mut desc.state {
-                callback(desc.offset, desc.size, allocation.take());
+                callback(
+                    desc.offset,
+                    desc.size,
+                    allocation.debug_id,
+                    allocation.take(),
+                );
             }
         }
     }
@@ -366,8 +381,9 @@ enum DescriptorState<T> {
 }
 
 impl<T> DescriptorState<T> {
-    fn new(is_oneway: bool, pid: Pid, free_res: FreeNodeRes) -> Self {
+    fn new(is_oneway: bool, debug_id: usize, pid: Pid, free_res: FreeNodeRes) -> Self {
         DescriptorState::Reserved(Reservation {
+            debug_id,
             is_oneway,
             pid,
             free_res,
@@ -390,6 +406,7 @@ impl<T> DescriptorState<T> {
 }
 
 struct Reservation {
+    debug_id: usize,
     is_oneway: bool,
     pid: Pid,
     free_res: FreeNodeRes,
@@ -399,6 +416,7 @@ impl Reservation {
     fn allocate<T>(self, data: Option<T>) -> Allocation<T> {
         Allocation {
             data,
+            debug_id: self.debug_id,
             is_oneway: self.is_oneway,
             pid: self.pid,
             free_res: self.free_res,
@@ -407,6 +425,7 @@ impl Reservation {
 }
 
 struct Allocation<T> {
+    debug_id: usize,
     is_oneway: bool,
     pid: Pid,
     free_res: FreeNodeRes,
@@ -417,6 +436,7 @@ impl<T> Allocation<T> {
     fn deallocate(self) -> (Reservation, Option<T>) {
         (
             Reservation {
+                debug_id: self.debug_id,
                 is_oneway: self.is_oneway,
                 pid: self.pid,
                 free_res: self.free_res,

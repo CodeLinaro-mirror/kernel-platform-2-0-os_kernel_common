@@ -1004,6 +1004,7 @@ impl Thread {
         &self,
         to_process: Arc<Process>,
         tr: &BinderTransactionDataSg,
+        debug_id: usize,
         allow_fds: bool,
         txn_security_ctx_offset: Option<&mut usize>,
     ) -> BinderResult<Allocation> {
@@ -1044,17 +1045,18 @@ impl Thread {
             size_of::<usize>(),
         );
         let secctx_off = aligned_data_size + aligned_offsets_size + aligned_buffers_size;
-        let mut alloc = match to_process.buffer_alloc(len, is_oneway, self.process.task.pid()) {
-            Ok(alloc) => alloc,
-            Err(err) => {
-                pr_warn!(
-                    "Failed to allocate buffer. len:{}, is_oneway:{}",
-                    len,
-                    is_oneway
-                );
-                return Err(err);
-            }
-        };
+        let mut alloc =
+            match to_process.buffer_alloc(debug_id, len, is_oneway, self.process.task.pid()) {
+                Ok(alloc) => alloc,
+                Err(err) => {
+                    pr_warn!(
+                        "Failed to allocate buffer. len:{}, is_oneway:{}",
+                        len,
+                        is_oneway
+                    );
+                    return Err(err);
+                }
+            };
 
         // SAFETY: This accesses a union field, but it's okay because the field's type is valid for
         // all bit-patterns.
