@@ -63,6 +63,7 @@ impl Transaction {
         from: &Arc<Thread>,
         tr: &BinderTransactionDataSg,
     ) -> BinderResult<DLArc<Self>> {
+        let debug_id = super::next_debug_id();
         let trd = &tr.transaction_data;
         let allow_fds = node_ref.node.flags & FLAT_BINDER_FLAG_ACCEPTS_FDS != 0;
         let txn_security_ctx = node_ref.node.flags & FLAT_BINDER_FLAG_TXN_SECURITY_CTX != 0;
@@ -71,6 +72,7 @@ impl Transaction {
         let mut alloc = match from.copy_transaction_data(
             to.clone(),
             tr,
+            debug_id,
             allow_fds,
             txn_security_ctx_off.as_mut(),
         ) {
@@ -108,7 +110,7 @@ impl Transaction {
             };
 
         Ok(DTRWrap::arc_pin_init(pin_init!(Transaction {
-            debug_id: super::next_debug_id(),
+            debug_id,
             target_node: Some(target_node),
             from_parent,
             sender_euid: from.process.cred.euid(),
@@ -136,8 +138,10 @@ impl Transaction {
         tr: &BinderTransactionDataSg,
         allow_fds: bool,
     ) -> BinderResult<DLArc<Self>> {
+        let debug_id = super::next_debug_id();
         let trd = &tr.transaction_data;
-        let mut alloc = match from.copy_transaction_data(to.clone(), tr, allow_fds, None) {
+        let mut alloc = match from.copy_transaction_data(to.clone(), tr, debug_id, allow_fds, None)
+        {
             Ok(alloc) => alloc,
             Err(err) => {
                 pr_warn!("Failure in copy_transaction_data: {:?}", err);
@@ -149,7 +153,7 @@ impl Transaction {
             alloc.set_info_clear_on_drop();
         }
         Ok(DTRWrap::arc_pin_init(pin_init!(Transaction {
-            debug_id: super::next_debug_id(),
+            debug_id,
             target_node: None,
             from_parent: None,
             sender_euid: from.process.task.euid(),

@@ -867,6 +867,7 @@ impl Process {
 
     pub(crate) fn buffer_alloc(
         self: &Arc<Self>,
+        debug_id: usize,
         size: usize,
         is_oneway: bool,
         from_pid: i32,
@@ -878,10 +879,11 @@ impl Process {
         let mapping = inner.mapping.as_mut().ok_or_else(BinderError::new_dead)?;
         let offset = mapping
             .alloc
-            .reserve_new(size, is_oneway, from_pid, alloc)?;
+            .reserve_new(debug_id, size, is_oneway, from_pid, alloc)?;
 
         let res = Allocation::new(
             self.clone(),
+            debug_id,
             offset,
             size,
             mapping.address + offset,
@@ -917,9 +919,10 @@ impl Process {
         let mut inner = self.inner.lock();
         let mapping = inner.mapping.as_mut()?;
         let offset = ptr.checked_sub(mapping.address)?;
-        let (size, odata) = mapping.alloc.reserve_existing(offset).ok()?;
+        let (size, debug_id, odata) = mapping.alloc.reserve_existing(offset).ok()?;
         let mut alloc = Allocation::new(
             self.clone(),
+            debug_id,
             offset,
             size,
             ptr,
@@ -1196,15 +1199,23 @@ impl Process {
         if let Some(mut mapping) = omapping {
             let address = mapping.address;
             let oneway_spam_detected = mapping.alloc.oneway_spam_detected;
-            mapping.alloc.take_for_each(|offset, size, odata| {
-                let ptr = offset + address;
-                let mut alloc =
-                    Allocation::new(self.clone(), offset, size, ptr, oneway_spam_detected);
-                if let Some(data) = odata {
-                    alloc.set_info(data);
-                }
-                drop(alloc)
-            });
+            mapping
+                .alloc
+                .take_for_each(|offset, size, debug_id, odata| {
+                    let ptr = offset + address;
+                    let mut alloc = Allocation::new(
+                        self.clone(),
+                        debug_id,
+                        offset,
+                        size,
+                        ptr,
+                        oneway_spam_detected,
+                    );
+                    if let Some(data) = odata {
+                        alloc.set_info(data);
+                    }
+                    drop(alloc)
+                });
         }
 
         // Drop all references. We do this dance with `swap` to avoid destroying the references
