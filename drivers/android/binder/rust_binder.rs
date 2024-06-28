@@ -16,7 +16,7 @@ use kernel::{
     seq_print,
     sync::poll::PollTable,
     sync::Arc,
-    types::ForeignOwnable,
+    types::{AsBytes, ForeignOwnable},
     uaccess::UserSliceWriter,
 };
 
@@ -60,7 +60,7 @@ trait DeliverToRead: ListArcSafe + Send + Sync {
     /// Performs work. Returns true if remaining work items in the queue should be processed
     /// immediately, or false if it should return to caller before processing additional work
     /// items.
-    fn do_work(self: DArc<Self>, thread: &Thread, writer: &mut UserSliceWriter) -> Result<bool>;
+    fn do_work(self: DArc<Self>, thread: &Thread, writer: &mut BinderReturnWriter) -> Result<bool>;
 
     /// Cancels the given work item. This is called instead of [`DeliverToRead::do_work`] when work
     /// won't be delivered.
@@ -164,9 +164,13 @@ impl DeliverCode {
 }
 
 impl DeliverToRead for DeliverCode {
-    fn do_work(self: DArc<Self>, _thread: &Thread, writer: &mut UserSliceWriter) -> Result<bool> {
+    fn do_work(
+        self: DArc<Self>,
+        _thread: &Thread,
+        writer: &mut BinderReturnWriter,
+    ) -> Result<bool> {
         if !self.skip.load(Ordering::Relaxed) {
-            writer.write(&self.code)?;
+            writer.write_code(self.code)?;
         }
         Ok(true)
     }
@@ -189,6 +193,33 @@ impl DeliverToRead for DeliverCode {
             seq_print!(m, "transaction error: {}\n", self.code);
         }
         Ok(())
+    }
+}
+
+/// Provides a single place to write Binder return values via the
+/// supplied `UserSliceWriter`.
+pub(crate) struct BinderReturnWriter {
+    writer: UserSliceWriter,
+}
+
+impl BinderReturnWriter {
+    fn new(writer: UserSliceWriter) -> Self {
+        BinderReturnWriter { writer }
+    }
+
+    /// Write a return code back to user space.
+    /// Should be a `BR_` constant from [`defs`] e.g. [`defs::BR_TRANSACTION_COMPLETE`].
+    fn write_code(&mut self, code: u32) -> Result {
+        self.writer.write(&code)
+    }
+
+    /// Write something *other than* a return code to user space.
+    fn write_payload<T: AsBytes>(&mut self, payload: &T) -> Result {
+        self.writer.write(payload)
+    }
+
+    fn len(&self) -> usize {
+        self.writer.len()
     }
 }
 

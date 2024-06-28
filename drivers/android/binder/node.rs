@@ -12,7 +12,6 @@ use kernel::{
     seq_print,
     sync::lock::{spinlock::SpinLockBackend, Guard},
     sync::{Arc, LockedBy, SpinLock},
-    uaccess::UserSliceWriter,
 };
 
 use crate::{
@@ -22,7 +21,7 @@ use crate::{
     process::{NodeRefInfo, Process, ProcessInner},
     thread::Thread,
     transaction::Transaction,
-    DArc, DLArc, DTRWrap, DeliverToRead,
+    BinderReturnWriter, DArc, DLArc, DTRWrap, DeliverToRead,
 };
 
 mod wrapper;
@@ -535,10 +534,10 @@ impl Node {
         inner.weak.has_count = true;
     }
 
-    fn write(&self, writer: &mut UserSliceWriter, code: u32) -> Result {
-        writer.write(&code)?;
-        writer.write(&self.ptr)?;
-        writer.write(&self.cookie)?;
+    fn write(&self, writer: &mut BinderReturnWriter, code: u32) -> Result {
+        writer.write_code(code)?;
+        writer.write_payload(&self.ptr)?;
+        writer.write_payload(&self.cookie)?;
         Ok(())
     }
 
@@ -622,7 +621,7 @@ impl Node {
     /// `NodeWrapper::do_work`.
     fn do_work_locked(
         &self,
-        writer: &mut UserSliceWriter,
+        writer: &mut BinderReturnWriter,
         mut guard: Guard<'_, ProcessInner, SpinLockBackend>,
     ) -> Result<bool> {
         let inner = self.inner.access_mut(&mut guard);
@@ -674,7 +673,11 @@ impl Node {
 }
 
 impl DeliverToRead for Node {
-    fn do_work(self: DArc<Self>, _thread: &Thread, writer: &mut UserSliceWriter) -> Result<bool> {
+    fn do_work(
+        self: DArc<Self>,
+        _thread: &Thread,
+        writer: &mut BinderReturnWriter,
+    ) -> Result<bool> {
         let mut owner_inner = self.owner.inner.lock();
         let inner = self.inner.access_mut(&mut owner_inner);
 
@@ -1025,7 +1028,11 @@ kernel::list::impl_list_item! {
 }
 
 impl DeliverToRead for NodeDeath {
-    fn do_work(self: DArc<Self>, _thread: &Thread, writer: &mut UserSliceWriter) -> Result<bool> {
+    fn do_work(
+        self: DArc<Self>,
+        _thread: &Thread,
+        writer: &mut BinderReturnWriter,
+    ) -> Result<bool> {
         let done = {
             let inner = self.inner.lock();
             if inner.aborted {
@@ -1050,8 +1057,8 @@ impl DeliverToRead for NodeDeath {
             BR_DEAD_BINDER
         };
 
-        writer.write(&cmd)?;
-        writer.write(&cookie)?;
+        writer.write_code(cmd)?;
+        writer.write_payload(&cookie)?;
         // DEAD_BINDER notifications can cause transactions, so stop processing work items when we
         // get to a death notification.
         Ok(cmd != BR_DEAD_BINDER)
