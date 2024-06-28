@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "142c422f_4055442d",
+        "filename": "drivers/android/binder/process.rs",
+        "patchSetId": 3
+      },
+      "lineNbr": 901,
+      "author": {
+        "id": 1416371
+      },
+      "writtenOn": "2024-06-28T18:21:22Z",
+      "side": 0,
+      "message": "In theory the movement of this past `return Err` should be in the original `NewAllocation` patch, not this one.",
+      "revId": "fe93f048688bb0fd4cf9f1f853107ec9691cfa1a",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
