@@ -390,6 +390,42 @@ impl<'a> AllocationView<'a> {
     }
 }
 
+/// A wrapper around `Allocation` that is being created.
+///
+/// If the allocation is destroyed while wrapped in this wrapper, then the allocation will be
+/// considered to be part of a failed transaction. Successful transactions avoid that by calling
+/// `success`, which skips the destructor.
+#[repr(transparent)]
+pub(crate) struct NewAllocation(pub(crate) Allocation);
+
+impl NewAllocation {
+    pub(crate) fn success(self) -> Allocation {
+        // This skips the destructor.
+        //
+        // SAFETY: This type is `#[repr(transparent)]`, so the layout matches.
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl core::ops::Deref for NewAllocation {
+    type Target = Allocation;
+    fn deref(&self) -> &Allocation {
+        &self.0
+    }
+}
+
+impl core::ops::DerefMut for NewAllocation {
+    fn deref_mut(&mut self) -> &mut Allocation {
+        &mut self.0
+    }
+}
+
+impl Drop for NewAllocation {
+    fn drop(&mut self) {
+        // This will be updated to emit a tracepoint saying that the transaction failed.
+    }
+}
+
 /// A binder object as it is serialized.
 ///
 /// # Invariants

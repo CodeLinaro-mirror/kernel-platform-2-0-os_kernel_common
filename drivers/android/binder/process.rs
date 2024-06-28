@@ -33,7 +33,7 @@ use kernel::{
 };
 
 use crate::{
-    allocation::{Allocation, AllocationInfo},
+    allocation::{Allocation, AllocationInfo, NewAllocation},
     context::Context,
     defs::*,
     error::{BinderError, BinderResult},
@@ -871,7 +871,7 @@ impl Process {
         size: usize,
         is_oneway: bool,
         from_pid: i32,
-    ) -> BinderResult<Allocation> {
+    ) -> BinderResult<NewAllocation> {
         use kernel::page::PAGE_SIZE;
 
         let alloc = range_alloc::ReserveNewBox::try_new()?;
@@ -912,7 +912,7 @@ impl Process {
             }
         }
 
-        Ok(res)
+        Ok(NewAllocation(res))
     }
 
     pub(crate) fn buffer_get(self: &Arc<Self>, ptr: usize) -> Option<Allocation> {

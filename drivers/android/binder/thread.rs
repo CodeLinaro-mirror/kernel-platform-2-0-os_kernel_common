@@ -26,7 +26,7 @@ use kernel::{
 };
 
 use crate::{
-    allocation::{Allocation, AllocationView, BinderObject, BinderObjectRef},
+    allocation::{Allocation, AllocationView, BinderObject, BinderObjectRef, NewAllocation},
     defs::*,
     error::BinderResult,
     prio::{self, BinderPriority, PriorityState},
@@ -1007,7 +1007,7 @@ impl Thread {
         debug_id: usize,
         allow_fds: bool,
         txn_security_ctx_offset: Option<&mut usize>,
-    ) -> BinderResult<Allocation> {
+    ) -> BinderResult<NewAllocation> {
         let trd = &tr.transaction_data;
         let is_oneway = trd.flags & TF_ONE_WAY != 0;
         let mut secctx = if let Some(offset) = txn_security_ctx_offset {
