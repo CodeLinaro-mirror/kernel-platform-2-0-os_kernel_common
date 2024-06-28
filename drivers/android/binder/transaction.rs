@@ -12,7 +12,6 @@ use kernel::{
     task::Kuid,
     time::{ktime_ms_delta, Ktime},
     types::ScopeGuard,
-    uaccess::UserSliceWriter,
 };
 
 use crate::{
@@ -24,7 +23,7 @@ use crate::{
     process::{Process, ProcessInner},
     ptr_align,
     thread::{PushWorkRes, Thread},
-    DArc, DLArc, DTRWrap, DeliverToRead,
+    BinderReturnWriter, DArc, DLArc, DTRWrap, DeliverToRead,
 };
 
 #[pin_data(PinnedDrop)]
@@ -367,7 +366,7 @@ impl Transaction {
 }
 
 impl DeliverToRead for Transaction {
-    fn do_work(self: DArc<Self>, thread: &Thread, writer: &mut UserSliceWriter) -> Result<bool> {
+    fn do_work(self: DArc<Self>, thread: &Thread, writer: &mut BinderReturnWriter) -> Result<bool> {
         let send_failed_reply = ScopeGuard::new(|| {
             if self.target_node.is_some() && self.flags & TF_ONE_WAY == 0 {
                 let reply = Err(BR_FAILED_REPLY);
@@ -418,12 +417,12 @@ impl DeliverToRead for Transaction {
         };
 
         // Write the transaction code and data to the user buffer.
-        writer.write(&code)?;
+        writer.write_code(code)?;
         if let Some(off) = self.txn_security_ctx_off {
             tr_sec.secctx = (self.data_address + off) as u64;
-            writer.write(&tr_sec)?;
+            writer.write_payload(&tr_sec)?;
         } else {
-            writer.write(&*tr)?;
+            writer.write_payload(&*tr)?;
         }
 
         let mut alloc = self.allocation.lock().take().ok_or(ESRCH)?;

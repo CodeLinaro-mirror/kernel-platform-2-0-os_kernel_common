@@ -8,10 +8,9 @@ use kernel::{
     seq_file::SeqFile,
     seq_print,
     sync::UniqueArc,
-    uaccess::UserSliceWriter,
 };
 
-use crate::{node::Node, thread::Thread, DArc, DLArc, DTRWrap, DeliverToRead};
+use crate::{node::Node, thread::Thread, BinderReturnWriter, DArc, DLArc, DTRWrap, DeliverToRead};
 
 use core::mem::MaybeUninit;
 
@@ -45,7 +44,11 @@ kernel::list::impl_list_arc_safe! {
 }
 
 impl DeliverToRead for NodeWrapper {
-    fn do_work(self: DArc<Self>, _thread: &Thread, writer: &mut UserSliceWriter) -> Result<bool> {
+    fn do_work(
+        self: DArc<Self>,
+        _thread: &Thread,
+        writer: &mut BinderReturnWriter,
+    ) -> Result<bool> {
         let node = &self.node;
         let mut owner_inner = node.owner.inner.lock();
         let inner = node.inner.access_mut(&mut owner_inner);

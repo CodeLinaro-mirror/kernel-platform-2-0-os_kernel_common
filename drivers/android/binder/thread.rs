@@ -22,7 +22,7 @@ use kernel::{
     sync::{Arc, SpinLock},
     task::Task,
     types::{ARef, Either},
-    uaccess::{UserSlice, UserSliceWriter},
+    uaccess::UserSlice,
 };
 
 use crate::{
@@ -33,7 +33,7 @@ use crate::{
     process::Process,
     ptr_align,
     transaction::Transaction,
-    DArc, DLArc, DTRWrap, DeliverCode, DeliverToRead,
+    BinderReturnWriter, DArc, DLArc, DTRWrap, DeliverCode, DeliverToRead,
 };
 
 use core::{
@@ -1448,7 +1448,8 @@ impl Thread {
     fn read(self: &Arc<Self>, req: &mut BinderWriteRead, wait: bool) -> Result {
         let read_start = req.read_buffer.wrapping_add(req.read_consumed);
         let read_len = req.read_size - req.read_consumed;
-        let mut writer = UserSlice::new(read_start as _, read_len as _).writer();
+        let mut writer =
+            BinderReturnWriter::new(UserSlice::new(read_start as _, read_len as _).writer());
         let (in_pool, use_proc_queue) = {
             let inner = self.inner.lock();
             (inner.is_looper(), inner.should_use_process_work_queue())
@@ -1463,7 +1464,7 @@ impl Thread {
         // BR_SPAWN_LOOPER if we need to.
         let mut has_noop_placeholder = false;
         if req.read_consumed == 0 {
-            if let Err(err) = writer.write(&BR_NOOP) {
+            if let Err(err) = writer.write_code(BR_NOOP) {
                 pr_warn!("Failure when writing BR_NOOP at beginning of buffer.");
                 return Err(err);
             }
@@ -1622,10 +1623,14 @@ impl ThreadError {
 }
 
 impl DeliverToRead for ThreadError {
-    fn do_work(self: DArc<Self>, _thread: &Thread, writer: &mut UserSliceWriter) -> Result<bool> {
+    fn do_work(
+        self: DArc<Self>,
+        _thread: &Thread,
+        writer: &mut BinderReturnWriter,
+    ) -> Result<bool> {
         let code = self.error_code.load(Ordering::Relaxed);
         self.error_code.store(BR_OK, Ordering::Relaxed);
-        writer.write(&code)?;
+        writer.write_code(code)?;
         Ok(true)
     }
 
