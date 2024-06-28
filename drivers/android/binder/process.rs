@@ -898,8 +898,6 @@ impl Process {
         );
         drop(inner);
 
-        let res = NewAllocation(res);
-
         // This allocation will be marked as in use until the `Allocation` is used to free it.
         //
         // This method can't be called while holding a lock, so we release the lock first. It's
@@ -921,7 +919,7 @@ impl Process {
             }
         }
 
-        Ok(res)
+        Ok(NewAllocation(res))
     }
 
     pub(crate) fn buffer_get(self: &Arc<Self>, ptr: usize) -> Option<Allocation> {
