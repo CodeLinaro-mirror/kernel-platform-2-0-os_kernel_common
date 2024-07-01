@@ -307244,6 +307244,13 @@ function {
   parameter_id: 0x19c40476
 }
 function {
+  id: 0x16d1bcdb
+  return_type_id: 0x48b5725f
+  parameter_id: 0x1f66cd75
+  parameter_id: 0x6720d32f
+  parameter_id: 0x33756485
+}
+function {
   id: 0x16d5560c
   return_type_id: 0x48b5725f
   parameter_id: 0x19341e7e
@@ -317425,6 +317432,12 @@ function {
   id: 0x5b450f90
   return_type_id: 0x391f15ea
   parameter_id: 0x33a9d455
+}
+function {
+  id: 0x5b4a4767
+  return_type_id: 0x92233392
+  parameter_id: 0x33756485
+  parameter_id: 0x1333434c
 }
 function {
   id: 0x5b4eac6a
@@ -366619,6 +366632,15 @@ elf_symbol {
   full_name: "clk_unprepare"
 }
 elf_symbol {
+  id: 0xa72e6674
+  name: "clockevent_delta2ns"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xeb92722a
+  type_id: 0x5b4a4767
+  full_name: "clockevent_delta2ns"
+}
+elf_symbol {
   id: 0x430bfeda
   name: "clockevents_config_and_register"
   is_defined: true
@@ -366626,6 +366648,15 @@ elf_symbol {
   crc: 0xcdd0c1c5
   type_id: 0x177cb160
   full_name: "clockevents_config_and_register"
+}
+elf_symbol {
+  id: 0xf06c3226
+  name: "clockevents_register_device"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x2a99d602
+  type_id: 0x14548140
+  full_name: "clockevents_register_device"
 }
 elf_symbol {
   id: 0x0522e13b
@@ -402046,6 +402077,15 @@ elf_symbol {
   full_name: "sched_clock"
 }
 elf_symbol {
+  id: 0xe224f61e
+  name: "sched_clock_register"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x86d43be9
+  type_id: 0x16d1bcdb
+  full_name: "sched_clock_register"
+}
+elf_symbol {
   id: 0xd2090791
   name: "sched_feat_keys"
   is_defined: true
@@ -420565,7 +420605,9 @@ interface {
   symbol_id: 0x495f0223
   symbol_id: 0x7fbd0d58
   symbol_id: 0x06f2ea68
+  symbol_id: 0xa72e6674
   symbol_id: 0x430bfeda
+  symbol_id: 0xf06c3226
   symbol_id: 0x0522e13b
   symbol_id: 0x961eb280
   symbol_id: 0xfa04a306
@@ -424492,6 +424534,7 @@ interface {
   symbol_id: 0xe8c754b0
   symbol_id: 0x12fb2fd6
   symbol_id: 0xac6ce0b0
+  symbol_id: 0xe224f61e
   symbol_id: 0xd2090791
   symbol_id: 0xedd0d1ed
   symbol_id: 0xda5d60be
