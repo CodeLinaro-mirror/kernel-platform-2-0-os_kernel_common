@@ -238,10 +238,30 @@ static void domain_put(struct kvm_hyp_iommu_domain *domain)
 	BUG_ON(!atomic_dec_return_release(&domain->refs));
 }
 
+static int access_allowed(struct kvm_hyp_iommu_domain *domain)
+{
+	struct pkvm_hyp_vcpu *ctxt = __get_ctxt();
+	int ret = 0;
+
+	if (!domain)
+		return -EINVAL;
+
+	/* Avoid racing with {alloc/free}_domain */
+	domain_get(domain);
+	if (!ctxt && domain->vm)
+		ret = -EPERM;
+	if (ctxt && (domain->vm != pkvm_hyp_vcpu_to_hyp_vm(ctxt)))
+		ret = -EPERM;
+	domain_put(domain);
+	return ret;
+}
+
 int kvm_iommu_alloc_domain(pkvm_handle_t domain_id, u32 type)
 {
 	int ret = -EINVAL;
 	struct kvm_hyp_iommu_domain *domain;
+	struct pkvm_hyp_vcpu *ctxt = __get_ctxt();
+	struct pkvm_hyp_vm *vm;
 
 	domain = handle_to_domain(domain_id);
 	if (!domain)
@@ -256,6 +276,10 @@ int kvm_iommu_alloc_domain(pkvm_handle_t domain_id, u32 type)
 	if (ret)
 		goto out_unlock;
 
+	if (ctxt) {
+		vm = pkvm_hyp_vcpu_to_hyp_vm(ctxt);
+		domain->vm = vm;
+	}
 	atomic_set_release(&domain->refs, 1);
 out_unlock:
 	hyp_spin_unlock(&kvm_iommu_domain_lock);
@@ -268,8 +292,9 @@ int kvm_iommu_free_domain(pkvm_handle_t domain_id)
 	struct kvm_hyp_iommu_domain *domain;
 
 	domain = handle_to_domain(domain_id);
-	if (!domain)
-		return -EINVAL;
+	ret = access_allowed(domain);
+	if (ret)
+		return ret;
 
 	hyp_spin_lock(&kvm_iommu_domain_lock);
 	if (WARN_ON(atomic_cmpxchg_acquire(&domain->refs, 1, 0) != 1)) {
@@ -308,7 +333,11 @@ int kvm_iommu_attach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 		return ret;
 
 	domain = handle_to_domain(domain_id);
-	if (!domain || domain_get(domain)) {
+	ret = access_allowed(domain);
+	if (ret)
+		goto out_unlock;
+
+	if (domain_get(domain)) {
 		ret = -EINVAL;
 		goto out_unlock;
 	}
@@ -339,7 +368,11 @@ int kvm_iommu_detach_dev(pkvm_handle_t iommu_id, pkvm_handle_t domain_id,
 		return ret;
 
 	domain = handle_to_domain(domain_id);
-	if (!domain || atomic_read(&domain->refs) <= 1) {
+	ret = access_allowed(domain);
+	if (ret)
+		goto out_unlock;
+
+	if (atomic_read(&domain->refs) <= 1) {
 		ret = -EINVAL;
 		goto out_unlock;
 	}
@@ -378,7 +411,7 @@ size_t kvm_iommu_map_pages(pkvm_handle_t domain_id, unsigned long iova,
 		return 0;
 
 	domain = handle_to_domain(domain_id);
-	if (!domain || domain_get(domain))
+	if (access_allowed(domain) || domain_get(domain))
 		return 0;
 
 	ret = __pkvm_use_dma(paddr, size, __get_ctxt());
@@ -474,7 +507,7 @@ size_t kvm_iommu_unmap_pages(pkvm_handle_t domain_id,
 		return 0;
 
 	domain = handle_to_domain(domain_id);
-	if (!domain || domain_get(domain))
+	if (access_allowed(domain) || domain_get(domain))
 		return 0;
 
 	iommu_iotlb_gather_init(&iotlb_gather);
@@ -506,7 +539,7 @@ phys_addr_t kvm_iommu_iova_to_phys(pkvm_handle_t domain_id, unsigned long iova)
 
 	domain = handle_to_domain( domain_id);
 
-	if (!domain || domain_get(domain))
+	if (access_allowed(domain) || domain_get(domain))
 		return 0;
 
 	phys = kvm_iommu_ops->iova_to_phys(domain, iova);
