@@ -13,6 +13,7 @@ struct kvm_hyp_iommu;
 struct iommu_iotlb_gather;
 struct kvm_hyp_iommu_domain;
 struct kvm_iommu_paddr_cache;
+struct pkvm_device;
 
 #ifdef CONFIG_MODULES
 enum pkvm_psci_notification {
@@ -214,6 +215,7 @@ struct pkvm_module_ops {
 	void (*iommu_reclaim_pages_atomic)(void *p, u8 order);
 	int (*iommu_snapshot_host_stage2)(struct kvm_hyp_iommu_domain *domain);
 	int (*hyp_smp_processor_id)(void);
+	int (*device_register_reset)(u64 phys, int (*cb)(struct pkvm_device *dev));
 	ANDROID_KABI_USE(1, void (*iommu_flush_unmap_cache)(struct kvm_iommu_paddr_cache *cache));
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
