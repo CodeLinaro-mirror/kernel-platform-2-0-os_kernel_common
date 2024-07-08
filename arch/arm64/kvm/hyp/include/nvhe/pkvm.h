@@ -145,6 +145,7 @@ int pkvm_device_hyp_assign_mmio(u64 pfn);
 int pkvm_device_reclaim_mmio(u64 pfn);
 bool pkvm_device_is_assignable(u64 pfn);
 int pkvm_host_map_guest_mmio(struct pkvm_hyp_vcpu *hyp_vcpu, u64 pfn, u64 gfn);
+int pkvm_device_register_reset(u64 phys, int (*cb)(struct pkvm_device *));
 
 struct pkvm_hyp_vcpu *pkvm_mpidr_to_hyp_vcpu(struct pkvm_hyp_vm *vm, u64 mpidr);
 
