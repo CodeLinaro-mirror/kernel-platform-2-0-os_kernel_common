@@ -150,3 +150,42 @@ becoming visible to another VM.
 -----------------------------------
 
 See mmio-guard.rst
+
+``ARM_SMCCC_KVM_FUNC_DEV_REQ_MMIO``
+--------------------------------------
+
+Verify a device MMIO region matches what the hosts describe in the
+device tree for a phyiscal device passthrough to a protected
+virtual machine.
+
+Called per resource(MMIO reg) in the device tree with the same IPA
+start address and resource size.
+
+Returns a token that can be used to verify the resource matching
+a trusted device containing the same token, which passed through
+a platform specific way.
+
+Must be called before any MMIO access for protected virtual machines.
+
+Ideally from protected vm firmware.
+
++---------------------+-------------------------------------------------------------+
+| Presence:           | Optional.                                                   |
++---------------------+-------------------------------------------------------------+
+| Calling convention: | HVC64                                                       |
++---------------------+----------+--------------------------------------------------+
+| Function ID:        | (uint32) | 0xC60000018                                      |
++---------------------+----------+----+---------------------------------------------+
+| Arguments:          | (uint64) | R1 | Base IPA of MMIO region                     |
+|                     +----------+----+---------------------------------------------+
+|                     | (uint64) | R2 | Size of MMIO region                         |
+|                     +----------+----+---------------------------------------------+
+|                     | (uint64) | R3 | Reserved / Must be zero                     |
++---------------------+----------+----+---------------------------------------------+
+| Return Values:      | (int64)  | R0 | ``SUCCESS (0)``                             |
+|                     |          |    +---------------------------------------------+
+|                     |          |    | ``INVALID_PARAMETER (-3)``                  |
+|                     +----------+----+---------------------------------------------+
+|                     | (uint64) | R1 | Token used to represent the region which    |
+|                     |          |    | can be used to verify it.                   |
++---------------------+----------+----+---------------------------------------------+
