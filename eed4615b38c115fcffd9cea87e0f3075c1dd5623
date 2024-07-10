@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27262d56_34767446",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2024-07-10T17:01:17Z",
+      "side": 1,
+      "message": "Create a 2nd patch with the symbol update changes. Remove the symbol update from this patch.",
+      "revId": "eed4615b38c115fcffd9cea87e0f3075c1dd5623",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
