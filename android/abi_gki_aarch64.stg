@@ -31654,6 +31654,11 @@ typedef {
   referred_type_id: 0x4585663f
 }
 typedef {
+  id: 0x94aa5e96
+  name: "fpi_t"
+  referred_type_id: 0x6720d32f
+}
+typedef {
   id: 0x39972774
   name: "fr_proto"
   referred_type_id: 0x2880e524
@@ -293450,6 +293455,13 @@ function {
   parameter_id: 0x0b27dc43
 }
 function {
+  id: 0x100bb93b
+  return_type_id: 0x48b5725f
+  parameter_id: 0x06835e9c
+  parameter_id: 0x4585663f
+  parameter_id: 0x94aa5e96
+}
+function {
   id: 0x100bdee9
   return_type_id: 0x48b5725f
   parameter_id: 0x038de60c
@@ -293493,6 +293505,14 @@ function {
   parameter_id: 0xf435685e
   parameter_id: 0x18bd6530
   parameter_id: 0xe02e14d6
+}
+function {
+  id: 0x1013ec0e
+  return_type_id: 0x48b5725f
+  parameter_id: 0x06835e9c
+  parameter_id: 0x4585663f
+  parameter_id: 0xf1a6dfed
+  parameter_id: 0x4585663f
 }
 function {
   id: 0x1014c641
@@ -371067,6 +371087,15 @@ elf_symbol {
   full_name: "free_fs_struct"
 }
 elf_symbol {
+  id: 0xb56ed1a2
+  name: "free_hpage_ok"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x2dcbef3b
+  type_id: 0x100bb93b
+  full_name: "free_hpage_ok"
+}
+elf_symbol {
   id: 0xef2d8e08
   name: "free_hyp_memcache"
   is_defined: true
@@ -389607,6 +389636,15 @@ elf_symbol {
   crc: 0xf70e4a4d
   type_id: 0x10985193
   full_name: "preempt_schedule_notrace"
+}
+elf_symbol {
+  id: 0xaeaf7c63
+  name: "prep_new_hpage"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x13eb1e99
+  type_id: 0x1013ec0e
+  full_name: "prep_new_hpage"
 }
 elf_symbol {
   id: 0x98d05c44
@@ -413654,6 +413692,7 @@ interface {
   symbol_id: 0x0513219e
   symbol_id: 0x1b00ff86
   symbol_id: 0xc8cad91b
+  symbol_id: 0xb56ed1a2
   symbol_id: 0xef2d8e08
   symbol_id: 0x9b815cdc
   symbol_id: 0x998ad938
@@ -415709,6 +415748,7 @@ interface {
   symbol_id: 0x48fb8c7e
   symbol_id: 0x180b11d3
   symbol_id: 0xd46a0ddb
+  symbol_id: 0xaeaf7c63
   symbol_id: 0x98d05c44
   symbol_id: 0x80c0972e
   symbol_id: 0x49317a7a
