@@ -1382,6 +1382,42 @@ static void __free_pages_ok(struct page *page, unsigned int order,
 	__count_vm_events(PGFREE, 1 << order);
 }
 
+void free_hpage_ok(struct page *page, unsigned int order,
+		fpi_t fpi_flags)
+{
+	unsigned long flags;
+	int migratetype;
+	unsigned long pfn = page_to_pfn(page);
+	struct zone *zone = page_zone(page);
+
+	if (order != HPAGE_PMD_ORDER)
+		return;
+
+	if (page_ref_count(page)) {
+		put_page_testzero(page);
+		if (!free_pages_prepare(page, order, fpi_flags))
+			return;
+	}
+
+	/*
+	 * Calling get_pfnblock_migratetype() without spin_lock_irqsave() here
+	 * is used to avoid calling get_pfnblock_migratetype() under the lock.
+	 * This will reduce the lock holding time.
+	 */
+	migratetype = get_pfnblock_migratetype(page, pfn);
+
+	spin_lock_irqsave(&zone->lock, flags);
+	if (unlikely(has_isolate_pageblock(zone) ||
+		is_migrate_isolate(migratetype))) {
+		migratetype = get_pfnblock_migratetype(page, pfn);
+	}
+	__free_one_page(page, pfn, zone, order, migratetype, fpi_flags);
+	spin_unlock_irqrestore(&zone->lock, flags);
+
+	__count_vm_events(PGFREE, 1 << order);
+}
+EXPORT_SYMBOL_GPL(free_hpage_ok);
+
 void __free_pages_core(struct page *page, unsigned int order)
 {
 	unsigned int nr_pages = 1 << order;
@@ -1655,6 +1691,30 @@ static void prep_new_page(struct page *page, unsigned int order, gfp_t gfp_flags
 		clear_page_pfmemalloc(page);
 	trace_android_vh_test_clear_look_around_ref(page);
 }
+
+void prep_new_hpage(struct page *page, unsigned int order,
+		gfp_t gfp_flags, unsigned int alloc_flags)
+{
+	if (order != HPAGE_PMD_ORDER)
+		return;
+
+	post_alloc_hook(page, order, gfp_flags);
+
+	if (order && (gfp_flags & __GFP_COMP))
+		prep_compound_page(page, order);
+
+	/*
+	 * page is set pfmemalloc when ALLOC_NO_WATERMARKS was necessary to
+	 * allocate the page. The expectation is that the caller is taking
+	 * steps that will free more memory. The caller should avoid the page
+	 * being used for !PFMEMALLOC purposes.
+	 */
+	if (alloc_flags & ALLOC_NO_WATERMARKS)
+		set_page_pfmemalloc(page);
+	else
+		clear_page_pfmemalloc(page);
+}
+EXPORT_SYMBOL_GPL(prep_new_hpage);
 
 /*
  * Go through the free lists for the given migratetype and remove
