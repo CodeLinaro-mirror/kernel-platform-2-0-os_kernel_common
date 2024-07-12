@@ -67,6 +67,10 @@ DECLARE_HOOK(android_vh_use_vm_swappiness,
 DECLARE_HOOK(android_vh_tune_scan_control,
 	TP_PROTO(bool *skip_swap),
 	TP_ARGS(skip_swap));
+struct shrinker_info;
+DECLARE_HOOK(android_vh_shrink_slab_memcg_nonslab,
+	TP_PROTO(int i, struct shrinker_info *info),
+	TP_ARGS(i, info));
 #endif /* _TRACE_HOOK_VMSCAN_H */
 /* This part must be outside protection */
 #include <trace/define_trace.h>
