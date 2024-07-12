@@ -652,13 +652,6 @@
   rb_erase
   rb_insert_color
   request_firmware_nowait
-  rfkill_alloc
-  rfkill_blocked
-  rfkill_destroy
-  rfkill_register
-  rfkill_resume_polling
-  rfkill_set_hw_state_reason
-  rfkill_unregister
   __sock_create
   sock_release
   sysfs_create_link
