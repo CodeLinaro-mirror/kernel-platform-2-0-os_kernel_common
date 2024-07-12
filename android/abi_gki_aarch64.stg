@@ -322768,6 +322768,13 @@ function {
   parameter_id: 0x7b64642a
 }
 function {
+  id: 0x9a31ecdc
+  return_type_id: 0x6720d32f
+  parameter_id: 0x18bd6530
+  parameter_id: 0x6720d32f
+  parameter_id: 0x0b57ce4e
+}
+function {
   id: 0x9a32aa77
   return_type_id: 0x6720d32f
   parameter_id: 0x18bd6530
@@ -346744,6 +346751,15 @@ elf_symbol {
   full_name: "__traceiter_android_vh_shrink_slab_bypass"
 }
 elf_symbol {
+  id: 0xde036da8
+  name: "__traceiter_android_vh_shrink_slab_memcg_nonslab"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x6620c50e
+  type_id: 0x9a31ecdc
+  full_name: "__traceiter_android_vh_shrink_slab_memcg_nonslab"
+}
+elf_symbol {
   id: 0x69c3749b
   name: "__traceiter_android_vh_si_mem_available_adjust"
   is_defined: true
@@ -351575,6 +351591,15 @@ elf_symbol {
   crc: 0x0c676a8a
   type_id: 0x18ccbd2c
   full_name: "__tracepoint_android_vh_shrink_slab_bypass"
+}
+elf_symbol {
+  id: 0x0c64c302
+  name: "__tracepoint_android_vh_shrink_slab_memcg_nonslab"
+  is_defined: true
+  symbol_type: OBJECT
+  crc: 0xb895048f
+  type_id: 0x18ccbd2c
+  full_name: "__tracepoint_android_vh_shrink_slab_memcg_nonslab"
 }
 elf_symbol {
   id: 0xc8a7ac69
@@ -410789,6 +410814,7 @@ interface {
   symbol_id: 0x6d9f8b13
   symbol_id: 0x21e28aab
   symbol_id: 0xdfd06b97
+  symbol_id: 0xde036da8
   symbol_id: 0x69c3749b
   symbol_id: 0x3d0fc76c
   symbol_id: 0x56a5b453
@@ -411326,6 +411352,7 @@ interface {
   symbol_id: 0x8712dd01
   symbol_id: 0xbd6dfce1
   symbol_id: 0x3e70324d
+  symbol_id: 0x0c64c302
   symbol_id: 0xc8a7ac69
   symbol_id: 0x5ef059ce
   symbol_id: 0x4aa5e229
