@@ -12,6 +12,7 @@
   __blk_req_zone_write_lock
   __blk_req_zone_write_unlock
   caches_clean_inval_pou
+  capable
   cleancache_register_ops
   copy_page
   _dev_alert
@@ -28,6 +29,7 @@
   elv_rqhash_del
   file_ra_state_init
   file_write_and_wait_range
+  find_vma_prev
   generic_perform_write
   getboottime64
   get_options
@@ -38,10 +40,14 @@
   gserial_resume
   gserial_suspend
   gs_free_req
+  import_iovec
   kick_all_cpus_sync
+  mm_access
+  mm_kobj
   netlink_ack
   param_get_uint
   param_set_uint
+  pidfd_get_task
   proc_set_size
   pstore_register
   pstore_unregister
@@ -63,6 +69,7 @@
   __traceiter_android_rvh_do_sea
   __traceiter_android_rvh_do_sp_pc_abort
   __traceiter_android_rvh_panic_unhandled
+  __traceiter_android_rvh_process_madvise_bypass
   __traceiter_android_rvh_report_bug
   __traceiter_android_vh_alloc_contig_range_not_isolated
   __traceiter_android_vh_alloc_pages_slowpath_start
@@ -109,6 +116,7 @@
   __tracepoint_android_rvh_do_sea
   __tracepoint_android_rvh_do_sp_pc_abort
   __tracepoint_android_rvh_panic_unhandled
+  __tracepoint_android_rvh_process_madvise_bypass
   __tracepoint_android_rvh_report_bug
   __tracepoint_android_vh_alloc_contig_range_not_isolated
   __tracepoint_android_vh_alloc_pages_slowpath_start
