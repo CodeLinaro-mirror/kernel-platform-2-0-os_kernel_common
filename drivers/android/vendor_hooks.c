@@ -449,3 +449,4 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_tune_scan_control);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_shrink_slab_memcg_nonslab);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_smaps_swap_shared);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_show_smap_swap_shared);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_process_madvise_bypass);
