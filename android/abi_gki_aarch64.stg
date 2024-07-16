@@ -325631,13 +325631,6 @@ function {
   parameter_id: 0x1c898f28
 }
 function {
-  id: 0x9b730ea8
-  return_type_id: 0x6720d32f
-  parameter_id: 0x18bd6530
-  parameter_id: 0x33756485
-  parameter_id: 0x4585663f
-}
-function {
   id: 0x9b735e47
   return_type_id: 0x6720d32f
   parameter_id: 0x1aeeade4
@@ -344471,8 +344464,8 @@ elf_symbol {
   name: "__traceiter_android_vh_alloc_contig_range_not_isolated"
   is_defined: true
   symbol_type: FUNCTION
-  crc: 0xaccb4007
-  type_id: 0x9b730ea8
+  crc: 0x5ff5e446
+  type_id: 0x9b6eb2a8
   full_name: "__traceiter_android_vh_alloc_contig_range_not_isolated"
 }
 elf_symbol {

@@ -299,7 +299,7 @@ DECLARE_HOOK(android_vh_cma_debug_show_areas,
 	TP_PROTO(bool *show),
 	TP_ARGS(show));
 DECLARE_HOOK(android_vh_alloc_contig_range_not_isolated,
-	TP_PROTO(unsigned long start, unsigned end),
+	TP_PROTO(unsigned long start, unsigned long end),
 	TP_ARGS(start, end));
 DECLARE_HOOK(android_vh_warn_alloc_tune_ratelimit,
 	TP_PROTO(struct ratelimit_state *rs),
