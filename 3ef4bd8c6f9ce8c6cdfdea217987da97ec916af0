@@ -18,6 +18,24 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e7253d2_d0957c2f",
+        "filename": "mm/compaction.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 2832,
+      "author": {
+        "id": 1988826
+      },
+      "writtenOn": "2024-07-17T02:50:22Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "6b2d6f5b_4da31f75",
+      "revId": "3ef4bd8c6f9ce8c6cdfdea217987da97ec916af0",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c6f7fa91_57e64fc2",
@@ -31,6 +49,24 @@
       "writtenOn": "2024-07-16T16:35:29Z",
       "side": 1,
       "message": "At the end I think you should update COMPACTSUCCESS/COMPACTFAIL counters.",
+      "revId": "3ef4bd8c6f9ce8c6cdfdea217987da97ec916af0",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f271abad_b5d6dcb0",
+        "filename": "mm/compaction.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 2844,
+      "author": {
+        "id": 1988826
+      },
+      "writtenOn": "2024-07-17T02:50:22Z",
+      "side": 1,
+      "message": "It will be updated inside compact_zone().",
+      "parentUuid": "c6f7fa91_57e64fc2",
       "revId": "3ef4bd8c6f9ce8c6cdfdea217987da97ec916af0",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
