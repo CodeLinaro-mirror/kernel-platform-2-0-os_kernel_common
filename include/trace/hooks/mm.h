@@ -317,6 +317,10 @@ DECLARE_HOOK(android_vh_free_pages_prepare_bypass,
 	TP_PROTO(struct page *page, unsigned int order,
 		int __bitwise flags, bool *bypass),
 	TP_ARGS(page, order, flags, bypass));
+DECLARE_HOOK(android_vh_free_pages_ok_bypass,
+	TP_PROTO(struct page *page, unsigned int order,
+		int __bitwise flags, bool *bypass),
+	TP_ARGS(page, order, flags, bypass));
 
 #endif /* _TRACE_HOOK_MM_H */
 
