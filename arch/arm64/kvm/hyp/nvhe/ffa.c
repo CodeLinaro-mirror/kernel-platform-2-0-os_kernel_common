@@ -42,6 +42,9 @@
  */
 #define HOST_FFA_ID	0
 
+#define PKVM_VCPU_FROM_CTXT(ctxt) ((struct pkvm_hyp_vcpu *)container_of(\
+	container_of((ctxt), struct kvm_vcpu, arch.ctxt), struct pkvm_hyp_vcpu, vcpu))
+
 /*
  * A buffer to hold the maximum descriptor size we can see from the host,
  * which is required when the SPMD returns a fragmented FFA_MEM_RETRIEVE_RESP
@@ -200,6 +203,7 @@ static void do_ffa_rxtx_map(struct arm_smccc_res *res,
 	DECLARE_REG(u32, npages, ctxt, 3);
 	int ret = 0;
 	void *rx_virt, *tx_virt;
+	struct pkvm_hyp_vcpu *pkvm_vcpu = NULL;
 
 	if (npages != (KVM_FFA_MBOX_NR_PAGES * PAGE_SIZE) / FFA_PAGE_SIZE) {
 		ret = FFA_RET_INVALID_PARAMETERS;
@@ -225,32 +229,58 @@ static void do_ffa_rxtx_map(struct arm_smccc_res *res,
 	if (ret)
 		goto out_unlock;
 
-	ret = __pkvm_host_share_hyp(hyp_phys_to_pfn(tx));
-	if (ret) {
-		ret = FFA_RET_INVALID_PARAMETERS;
-		goto err_unmap;
-	}
+	if (vmid == KVM_HOST_VMID) {
+		ret = __pkvm_host_share_hyp(hyp_phys_to_pfn(tx));
+		if (ret) {
+			ret = FFA_RET_INVALID_PARAMETERS;
+			goto err_unmap;
+		}
 
-	ret = __pkvm_host_share_hyp(hyp_phys_to_pfn(rx));
-	if (ret) {
-		ret = FFA_RET_INVALID_PARAMETERS;
-		goto err_unshare_tx;
-	}
+		ret = __pkvm_host_share_hyp(hyp_phys_to_pfn(rx));
+		if (ret) {
+			ret = FFA_RET_INVALID_PARAMETERS;
+			goto err_unshare_tx;
+		}
 
-	tx_virt = hyp_phys_to_virt(tx);
-	ret = hyp_pin_shared_mem(tx_virt, tx_virt + 1);
-	if (ret) {
-		ret = FFA_RET_INVALID_PARAMETERS;
-		goto err_unshare_rx;
-	}
+		tx_virt = hyp_phys_to_virt(tx);
+		ret = hyp_pin_shared_mem(tx_virt, tx_virt + 1);
+		if (ret) {
+			ret = FFA_RET_INVALID_PARAMETERS;
+			goto err_unshare_rx;
+		}
 
-	rx_virt = hyp_phys_to_virt(rx);
-	ret = hyp_pin_shared_mem(rx_virt, rx_virt + 1);
-	if (ret) {
-		ret = FFA_RET_INVALID_PARAMETERS;
-		goto err_unpin_tx;
-	}
+		rx_virt = hyp_phys_to_virt(rx);
+		ret = hyp_pin_shared_mem(rx_virt, rx_virt + 1);
+		if (ret) {
+			ret = FFA_RET_INVALID_PARAMETERS;
+			goto err_unpin_tx;
+		}
+	} else {
+		pkvm_vcpu = PKVM_VCPU_FROM_CTXT(ctxt);
+		ret = __pkvm_guest_share_hyp(pkvm_vcpu, tx, (u64 *)&tx_virt);
+		if (ret) {
+			ret = FFA_RET_INVALID_PARAMETERS;
+			goto err_unmap;
+		}
 
+		ret = __pkvm_guest_share_hyp(pkvm_vcpu, rx, (u64 *)&rx_virt);
+		if (ret) {
+			ret = FFA_RET_INVALID_PARAMETERS;
+			goto err_unshare_tx;
+		}
+
+		ret = hyp_pin_shared_mem_from_guest(pkvm_vcpu, (void *)tx, tx_virt, tx_virt + 1);
+		if (ret) {
+			ret = FFA_RET_INVALID_PARAMETERS;
+			goto err_unshare_rx;
+		}
+
+		ret = hyp_pin_shared_mem_from_guest(pkvm_vcpu, (void *)rx, rx_virt, rx_virt + 1);
+		if (ret) {
+			ret = FFA_RET_INVALID_PARAMETERS;
+			goto err_unpin_tx;
+		}
+	}
 	endp_buffers[vmid].tx = tx_virt;
 	endp_buffers[vmid].rx = rx_virt;
 
@@ -261,11 +291,20 @@ out:
 	return;
 
 err_unpin_tx:
-	hyp_unpin_shared_mem(tx_virt, tx_virt + 1);
+	if (vmid == KVM_HOST_VMID)
+		hyp_unpin_shared_mem(tx_virt, tx_virt + 1);
+	else
+		hyp_unpin_shared_mem_from_guest(pkvm_vcpu, tx_virt, tx_virt + 1);
 err_unshare_rx:
-	__pkvm_host_unshare_hyp(hyp_phys_to_pfn(rx));
+	if (vmid == KVM_HOST_VMID)
+		__pkvm_host_unshare_hyp(hyp_phys_to_pfn(rx));
+	else
+		__pkvm_guest_unshare_hyp(pkvm_vcpu, rx);
 err_unshare_tx:
-	__pkvm_host_unshare_hyp(hyp_phys_to_pfn(tx));
+	if (vmid == KVM_HOST_VMID)
+		__pkvm_host_unshare_hyp(hyp_phys_to_pfn(tx));
+	else
+		__pkvm_guest_unshare_hyp(pkvm_vcpu, tx);
 err_unmap:
 	ffa_unmap_hyp_buffers();
 	goto out_unlock;
@@ -685,6 +724,10 @@ bool kvm_guest_ffa_handler(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code)
 			handled = false;
 			goto unhandled;
 		}
+		break;
+	/* Memory management */
+	case FFA_FN64_RXTX_MAP:
+		do_ffa_rxtx_map(&res, ctxt, vmid);
 		break;
 	default:
 		if (ffa_call_supported(func_id)) {
