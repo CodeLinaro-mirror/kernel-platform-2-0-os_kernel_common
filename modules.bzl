@@ -101,11 +101,23 @@ _ARM64_GKI_MODULES_LIST = [
 _X86_GKI_MODULES_LIST = [
     # keep sorted
     "drivers/ptp/ptp_kvm.ko",
+    "fs/lockd/lockd.ko",
+    "fs/nfs/nfs.ko",
+    "fs/nfs/nfsv4.ko",
+    "fs/nfs_common/grace.ko",
+    "net/dns_resolver/dns_resolver.ko",
+    "net/sunrpc/sunrpc.ko",
 ]
 
 _X86_64_GKI_MODULES_LIST = [
     # keep sorted
     "drivers/ptp/ptp_kvm.ko",
+    "fs/lockd/lockd.ko",
+    "fs/nfs/nfs.ko",
+    "fs/nfs/nfsv4.ko",
+    "fs/nfs_common/grace.ko",
+    "net/dns_resolver/dns_resolver.ko",
+    "net/sunrpc/sunrpc.ko",
 ]
 
 # buildifier: disable=unnamed-macro
