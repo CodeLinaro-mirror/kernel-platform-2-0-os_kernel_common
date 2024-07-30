@@ -2680,6 +2680,36 @@ static int scmi_debugfs_raw_mode_setup(struct scmi_info *info)
 	return ret;
 }
 
+static const struct scmi_desc *get_scmi_desc(struct device *dev)
+{
+	const struct scmi_desc *desc;
+	struct scmi_desc *new_desc;
+	u32 timeout;
+	int ret;
+
+	desc = of_device_get_match_data(dev);
+	if (!desc)
+		return NULL;
+
+	ret = of_property_read_u32(dev->of_node, "max-rx-timeout-ms",
+				   &timeout);
+	if (ret) {
+		if (ret != -EINVAL)
+			dev_err(dev, "Malformed max-rx-timeout-ms DT property.\n");
+		return desc;
+	}
+
+	new_desc = devm_kzalloc(dev, sizeof(*new_desc), GFP_KERNEL);
+	if (!new_desc)
+		return NULL;
+	memcpy(new_desc, desc, sizeof(*desc));
+	new_desc->max_rx_timeout_ms = timeout;
+	dev_info(dev, "SCMI max-rx-timeout: %dms\n",
+		 new_desc->max_rx_timeout_ms);
+
+	return new_desc;
+}
+
 static int scmi_probe(struct platform_device *pdev)
 {
 	int ret;
@@ -2690,7 +2720,7 @@ static int scmi_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct device_node *child, *np = dev->of_node;
 
-	desc = of_device_get_match_data(dev);
+	desc = get_scmi_desc(dev);
 	if (!desc)
 		return -EINVAL;
 
