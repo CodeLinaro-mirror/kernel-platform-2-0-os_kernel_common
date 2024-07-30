@@ -491,7 +491,7 @@ uvc_v4l2_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
 		return -EINVAL;
 
 	/* Enable UVC video. */
-	ret = uvcg_video_enable(video);
+	ret = uvcg_video_enable(video, 1);
 	if (ret < 0)
 		return ret;
 
@@ -517,7 +517,7 @@ uvc_v4l2_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 		return -EINVAL;
 
 	uvc->state = UVC_STATE_CONNECTED;
-	ret = uvcg_video_disable(video);
+	ret = uvcg_video_enable(video, 0);
 	if (ret < 0)
 		return ret;
 
@@ -563,7 +563,7 @@ static void uvc_v4l2_disable(struct uvc_device *uvc)
 	if (uvc->state == UVC_STATE_STREAMING)
 		uvc->state = UVC_STATE_CONNECTED;
 
-	uvcg_video_disable(&uvc->video);
+	uvcg_video_enable(&uvc->video, 0);
 	uvcg_free_buffers(&uvc->video.queue);
 	uvc->func_connected = false;
 	wake_up_interruptible(&uvc->func_connected_queue);
