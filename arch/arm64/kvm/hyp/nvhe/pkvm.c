@@ -1676,7 +1676,7 @@ bool kvm_handle_pvm_smc64(struct kvm_vcpu *vcpu, u64 *exit_code)
 {
 	u32 fn = smccc_get_function(vcpu);
 	struct pkvm_hyp_vcpu *hyp_vcpu;
-	u64 val[4] = { SMCCC_RET_NOT_SUPPORTED };
+	//u64 val[4] = { SMCCC_RET_NOT_SUPPORTED };
 	bool handled;
 
 	__kvm_skip_instr(vcpu);
@@ -1688,8 +1688,12 @@ bool kvm_handle_pvm_smc64(struct kvm_vcpu *vcpu, u64 *exit_code)
 
 		if (!handled)
 			__kvm_hyp_host_forward_smc(&vcpu->arch.ctxt);
-	} else
-		smccc_set_retval(vcpu, val[0], val[1], val[2], val[3]);
+	} else {
+		// HACKME until we have Dmitriy re-work to get rid of the custom
+		// smcs.
+		//smccc_set_retval(vcpu, val[0], val[1], val[2], val[3]);
+		__kvm_hyp_host_forward_smc(&vcpu->arch.ctxt);
+	}
 
 	return true;
 }
