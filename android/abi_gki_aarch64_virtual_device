@@ -1499,3 +1499,8 @@
   led_trigger_register
   led_trigger_unregister
   stream_open
+
+# required by clk-scmi.ko
+  of_clk_hw_onecell_get
+  scmi_driver_register
+  scmi_driver_unregister
