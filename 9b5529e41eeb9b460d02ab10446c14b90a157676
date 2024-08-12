@@ -22,6 +22,30 @@
       },
       "revId": "9b5529e41eeb9b460d02ab10446c14b90a157676",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e46350f_10d00075",
+        "filename": "android/abi_gki_aarch64_pixel",
+        "patchSetId": 1
+      },
+      "lineNbr": 2514,
+      "author": {
+        "id": 1275554
+      },
+      "writtenOn": "2024-08-12T21:38:42Z",
+      "side": 1,
+      "message": "I have no idea. Just script added it. In my experience, additional symbol will be added if they were not generated before but was okay since other vendors already opened to use the symbol.",
+      "parentUuid": "bfd96d1b_21c2a269",
+      "range": {
+        "startLine": 2514,
+        "startChar": 2,
+        "endLine": 2514,
+        "endChar": 42
+      },
+      "revId": "9b5529e41eeb9b460d02ab10446c14b90a157676",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
