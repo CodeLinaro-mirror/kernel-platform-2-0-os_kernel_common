@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ed0f4f36_28f483e7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2024-08-13T16:15:20Z",
+      "side": 1,
+      "message": "You should include .stg file in this patch.",
+      "revId": "9b5529e41eeb9b460d02ab10446c14b90a157676",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bfd96d1b_21c2a269",
         "filename": "android/abi_gki_aarch64_pixel",
         "patchSetId": 1
