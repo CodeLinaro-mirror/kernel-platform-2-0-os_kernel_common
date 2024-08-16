@@ -36,6 +36,7 @@
 #include <nvhe/memory.h>
 #include <nvhe/trap_handler.h>
 #include <nvhe/spinlock.h>
+#include <kvm/arm_hypercalls.h>
 
 /*
  * "ID value 0 must be returned at the Non-secure physical FF-A instance"
@@ -1229,6 +1230,9 @@ bool kvm_guest_ffa_handler(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code)
 		break;
 	case FFA_MEM_RECLAIM:
 		do_ffa_mem_reclaim(&res, ctxt, vm_handle);
+		break;
+	case FFA_ID_GET:
+		ffa_to_smccc_res_prop(&res, FFA_RET_SUCCESS, vm_handle);
 		break;
 	default:
 		if (ffa_call_supported(func_id)) {
