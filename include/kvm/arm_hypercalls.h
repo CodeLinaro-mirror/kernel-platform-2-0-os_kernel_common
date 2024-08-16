@@ -40,6 +40,11 @@ static inline void smccc_set_retval(struct kvm_vcpu *vcpu,
 	vcpu_set_reg(vcpu, 3, a3);
 }
 
+static inline void smccc_set_client_id(struct kvm_vcpu *vcpu, u16 vmid)
+{
+	vcpu_set_reg(vcpu, 7, vmid);
+}
+
 struct kvm_one_reg;
 
 void kvm_arm_init_hypercalls(struct kvm *kvm);
