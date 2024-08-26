@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b23165c9_4b65f59a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2024-08-26T16:34:38Z",
+      "side": 1,
+      "message": "Breaks KMI:\n```\ntype \u0027struct binder_transaction\u0027 changed\n  byte size changed from 176 to 184\n  member \u0027u64 android_oem_data1\u0027 was added\n```",
+      "revId": "ed76d13fc2623aa67a5b0303b32096e863bdeec0",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
