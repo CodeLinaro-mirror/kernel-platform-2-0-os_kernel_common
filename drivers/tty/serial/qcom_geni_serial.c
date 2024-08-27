@@ -1355,6 +1355,7 @@ static void qcom_geni_serial_pm(struct uart_port *uport,
 	if (new_state == UART_PM_STATE_ON && old_state == UART_PM_STATE_OFF) {
 		if (port->se.is_fw_managed) {
 			pm_runtime_get_sync(port->se.pwr_dev);
+			pm_runtime_get_sync(port->se.perf_dev);
 		} else {
 			geni_icc_enable(&port->se);
 			if (port->clk_rate)
@@ -1366,6 +1367,7 @@ static void qcom_geni_serial_pm(struct uart_port *uport,
 		if (port->se.is_fw_managed) {
 			port->se.cur_perf_lvl = 0;
 			pm_runtime_put_sync(port->se.pwr_dev);
+			pm_runtime_put_sync(port->se.perf_dev);
 		} else {
 			geni_se_resources_off(&port->se);
 			dev_pm_opp_set_rate(uport->dev, 0);
