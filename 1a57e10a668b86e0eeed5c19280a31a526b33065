@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "99c64744_50090e79",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2024-09-09T17:29:06Z",
+      "side": 1,
+      "message": "create a patch on top of this one to add the symbol to your symbol list",
+      "revId": "1a57e10a668b86e0eeed5c19280a31a526b33065",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
