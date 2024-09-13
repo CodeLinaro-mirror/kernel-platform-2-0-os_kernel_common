@@ -1158,6 +1158,14 @@
   kfree_skb_reason
   kill_fasync
   kimage_voffset
+  klist_add_head
+  klist_add_tail
+  klist_init
+  klist_iter_exit
+  klist_iter_init
+  klist_next
+  klist_node_attached
+  klist_remove
   __kmalloc
   kmalloc_caches
   kmalloc_large
@@ -1666,6 +1674,7 @@
   radix_tree_iter_delete
   radix_tree_lookup
   radix_tree_next_chunk
+  raise_softirq
   ___ratelimit
   raw_notifier_call_chain
   raw_notifier_chain_register
@@ -2190,6 +2199,7 @@
   __traceiter_android_rvh_can_migrate_task
   __traceiter_android_rvh_cgroup_force_kthread_migration
   __traceiter_android_rvh_check_preempt_wakeup
+  __traceiter_android_rvh_check_preempt_wakeup_ignore
   __traceiter_android_rvh_cpu_overutilized
   __traceiter_android_rvh_dequeue_task
   __traceiter_android_rvh_dequeue_task_fair
@@ -2286,6 +2296,7 @@
   __tracepoint_android_rvh_can_migrate_task
   __tracepoint_android_rvh_cgroup_force_kthread_migration
   __tracepoint_android_rvh_check_preempt_wakeup
+  __tracepoint_android_rvh_check_preempt_wakeup_ignore
   __tracepoint_android_rvh_cpu_overutilized
   __tracepoint_android_rvh_dequeue_task
   __tracepoint_android_rvh_dequeue_task_fair

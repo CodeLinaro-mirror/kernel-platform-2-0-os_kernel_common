@@ -663,6 +663,7 @@
   fwnode_property_read_u32_array
   gcd
   generic_device_group
+  generic_file_llseek
   generic_handle_domain_irq
   generic_handle_irq
   geni_icc_disable
@@ -749,6 +750,7 @@
   gpio_free_array
   gpio_request
   gpio_to_desc
+  groups_free
   gunyah_rm_call
   gunyah_rm_notifier_register
   gunyah_rm_notifier_unregister
@@ -783,6 +785,7 @@
   __hw_addr_init
   __hw_addr_sync
   __hw_addr_unsync
+  hwspin_lock_bust
   hwspin_lock_free
   hwspin_lock_request_specific
   __hwspin_lock_timeout
@@ -1035,14 +1038,20 @@
   kstrtoull_from_user
   kthread_bind_mask
   kthread_cancel_work_sync
+  kthread_create_on_cpu
   kthread_create_on_node
   kthread_create_worker
   kthread_destroy_worker
   kthread_flush_worker
   __kthread_init_worker
+  kthread_park
+  kthread_parkme
   kthread_queue_work
+  kthread_set_per_cpu
+  kthread_should_park
   kthread_should_stop
   kthread_stop
+  kthread_unpark
   kthread_worker_fn
   ktime_get
   ktime_get_coarse_with_offset
@@ -1413,8 +1422,10 @@
   pm_clk_suspend
   pm_generic_resume
   pm_generic_suspend
+  pm_genpd_add_device
   pm_genpd_add_subdomain
   pm_genpd_init
+  pm_genpd_remove_device
   pm_genpd_remove_subdomain
   pm_power_off
   __pm_relax
