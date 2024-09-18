@@ -33,6 +33,42 @@
       "message": "create patch to add symbols to symbol list",
       "revId": "1a57e10a668b86e0eeed5c19280a31a526b33065",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bda8ff1f_ddb18775",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 2032918
+      },
+      "writtenOn": "2024-09-18T02:44:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0fa96476_2747c896",
+      "revId": "1a57e10a668b86e0eeed5c19280a31a526b33065",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8f12865_02227df0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 2032918
+      },
+      "writtenOn": "2024-09-18T02:44:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "99c64744_50090e79",
+      "revId": "1a57e10a668b86e0eeed5c19280a31a526b33065",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
