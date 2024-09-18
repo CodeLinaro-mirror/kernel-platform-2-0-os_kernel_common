@@ -54,7 +54,7 @@
 
 
 /* UIC command timeout, unit: ms */
-#define UIC_CMD_TIMEOUT	500
+#define UIC_CMD_TIMEOUT	2000
 
 /* NOP OUT retries waiting for NOP IN response */
 #define NOP_OUT_RETRIES    10
