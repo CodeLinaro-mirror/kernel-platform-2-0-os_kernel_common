@@ -227,24 +227,6 @@ uvc_video_encode_isoc(struct usb_request *req, struct uvc_video *video,
  * Request handling
  */
 
-static void
-uvc_video_free_request(struct uvc_request *ureq, struct usb_ep *ep)
-{
-	sg_free_table(&ureq->sgt);
-	if (ureq->req && ep) {
-		usb_ep_free_request(ep, ureq->req);
-		ureq->req = NULL;
-	}
-
-	kfree(ureq->req_buffer);
-	ureq->req_buffer = NULL;
-
-	if (!list_empty(&ureq->list))
-		list_del_init(&ureq->list);
-
-	kfree(ureq);
-}
-
 static int uvcg_video_ep_queue(struct uvc_video *video, struct usb_request *req)
 {
 	int ret;
@@ -311,12 +293,27 @@ uvc_video_complete(struct usb_ep *ep, struct usb_request *req)
 static int
 uvc_video_free_requests(struct uvc_video *video)
 {
-	struct uvc_request *ureq, *temp;
+	unsigned int i;
 
-	list_for_each_entry_safe(ureq, temp, &video->ureqs, list)
-		uvc_video_free_request(ureq, video->ep);
+	if (video->ureq) {
+		for (i = 0; i < video->uvc_num_requests; ++i) {
+			sg_free_table(&video->ureq[i].sgt);
 
-	INIT_LIST_HEAD(&video->ureqs);
+			if (video->ureq[i].req) {
+				usb_ep_free_request(video->ep, video->ureq[i].req);
+				video->ureq[i].req = NULL;
+			}
+
+			if (video->ureq[i].req_buffer) {
+				kfree(video->ureq[i].req_buffer);
+				video->ureq[i].req_buffer = NULL;
+			}
+		}
+
+		kfree(video->ureq);
+		video->ureq = NULL;
+	}
+
 	INIT_LIST_HEAD(&video->req_free);
 	video->req_size = 0;
 	return 0;
@@ -325,7 +322,6 @@ uvc_video_free_requests(struct uvc_video *video)
 static int
 uvc_video_alloc_requests(struct uvc_video *video)
 {
-	struct uvc_request *ureq;
 	unsigned int req_size;
 	unsigned int i;
 	int ret = -ENOMEM;
@@ -336,33 +332,29 @@ uvc_video_alloc_requests(struct uvc_video *video)
 		 * max_t(unsigned int, video->ep->maxburst, 1)
 		 * (video->ep->mult);
 
-	for (i = 0; i < video->uvc_num_requests; i++) {
-		ureq = kzalloc(sizeof(struct uvc_request), GFP_KERNEL);
-		if (ureq == NULL)
+	video->ureq = kcalloc(video->uvc_num_requests, sizeof(struct uvc_request), GFP_KERNEL);
+	if (video->ureq == NULL)
+		return -ENOMEM;
+
+	for (i = 0; i < video->uvc_num_requests; ++i) {
+		video->ureq[i].req_buffer = kmalloc(req_size, GFP_KERNEL);
+		if (video->ureq[i].req_buffer == NULL)
 			goto error;
 
-		INIT_LIST_HEAD(&ureq->list);
-
-		list_add_tail(&ureq->list, &video->ureqs);
-
-		ureq->req_buffer = kmalloc(req_size, GFP_KERNEL);
-		if (ureq->req_buffer == NULL)
+		video->ureq[i].req = usb_ep_alloc_request(video->ep, GFP_KERNEL);
+		if (video->ureq[i].req == NULL)
 			goto error;
 
-		ureq->req = usb_ep_alloc_request(video->ep, GFP_KERNEL);
-		if (ureq->req == NULL)
-			goto error;
+		video->ureq[i].req->buf = video->ureq[i].req_buffer;
+		video->ureq[i].req->length = 0;
+		video->ureq[i].req->complete = uvc_video_complete;
+		video->ureq[i].req->context = &video->ureq[i];
+		video->ureq[i].video = video;
+		video->ureq[i].last_buf = NULL;
 
-		ureq->req->buf = ureq->req_buffer;
-		ureq->req->length = 0;
-		ureq->req->complete = uvc_video_complete;
-		ureq->req->context = ureq;
-		ureq->video = video;
-		ureq->last_buf = NULL;
-
-		list_add_tail(&ureq->req->list, &video->req_free);
+		list_add_tail(&video->ureq[i].req->list, &video->req_free);
 		/* req_size/PAGE_SIZE + 1 for overruns and + 1 for header */
-		sg_alloc_table(&ureq->sgt,
+		sg_alloc_table(&video->ureq[i].sgt,
 			       DIV_ROUND_UP(req_size - UVCG_REQUEST_HEADER_LEN,
 					    PAGE_SIZE) + 2, GFP_KERNEL);
 	}
@@ -390,16 +382,15 @@ static void uvcg_video_pump(struct work_struct *work)
 {
 	struct uvc_video *video = container_of(work, struct uvc_video, pump);
 	struct uvc_video_queue *queue = &video->queue;
-	/* video->max_payload_size is only set when using bulk transfer */
-	bool is_bulk = video->max_payload_size;
-	struct uvc_device *uvc = video->uvc;
 	struct usb_request *req = NULL;
 	struct uvc_buffer *buf;
 	unsigned long flags;
-	bool buf_done;
 	int ret;
+	bool buf_int;
+	/* video->max_payload_size is only set when using bulk transfer */
+	bool is_bulk = video->max_payload_size;
 
-	while (uvc->state == UVC_STATE_STREAMING && video->ep->enabled) {
+	while (video->ep->enabled) {
 		/*
 		 * Retrieve the first available USB request, protected by the
 		 * request lock.
@@ -423,19 +414,20 @@ static void uvcg_video_pump(struct work_struct *work)
 
 		if (buf != NULL) {
 			video->encode(req, video, buf);
-			buf_done = buf->state == UVC_BUF_STATE_DONE;
+			/* Always interrupt for the last request of a video buffer */
+			buf_int = buf->state == UVC_BUF_STATE_DONE;
 		} else if (!(queue->flags & UVC_QUEUE_DISCONNECTED) && !is_bulk) {
 			/*
 			 * No video buffer available; the queue is still connected and
-			 * we're transferring over ISOC. Queue a 0 length request to
+			 * we're traferring over ISOC. Queue a 0 length request to
 			 * prevent missed ISOC transfers.
 			 */
 			req->length = 0;
-			buf_done = false;
+			buf_int = false;
 		} else {
 			/*
-			 * Either the queue has been disconnected or no video buffer
-			 * available for bulk transfer. Either way, stop processing
+			 * Either queue has been disconnected or no video buffer
+			 * available to bulk transfer. Either way, stop processing
 			 * further.
 			 */
 			spin_unlock_irqrestore(&queue->irqlock, flags);
@@ -443,24 +435,11 @@ static void uvcg_video_pump(struct work_struct *work)
 		}
 
 		/*
-		 * With USB3 handling more requests at a higher speed, we can't
-		 * afford to generate an interrupt for every request. Decide to
-		 * interrupt:
-		 *
-		 * - When no more requests are available in the free queue, as
-		 *   this may be our last chance to refill the endpoint's
-		 *   request queue.
-		 *
-		 * - When this is request is the last request for the video
-		 *   buffer, as we want to start sending the next video buffer
-		 *   ASAP in case it doesn't get started already in the next
-		 *   iteration of this loop.
-		 *
-		 * - Four times over the length of the requests queue (as
-		 *   indicated by video->uvc_num_requests), as a trade-off
-		 *   between latency and interrupt load.
+		 * With usb3 we have more requests. This will decrease the
+		 * interrupt load to a quarter but also catches the corner
+		 * cases, which needs to be handled.
 		 */
-		if (list_empty(&video->req_free) || buf_done ||
+		if (list_empty(&video->req_free) || buf_int ||
 		    !(video->req_int_count %
 		       DIV_ROUND_UP(video->uvc_num_requests, 4))) {
 			video->req_int_count = 0;
@@ -493,43 +472,30 @@ static void uvcg_video_pump(struct work_struct *work)
 }
 
 /*
- * Disable the video stream
+ * Enable or disable the video stream.
  */
-int
-uvcg_video_disable(struct uvc_video *video)
+int uvcg_video_enable(struct uvc_video *video, int enable)
 {
-	struct uvc_request *ureq;
-
-	if (video->ep == NULL) {
-		uvcg_info(&video->uvc->func,
-			  "Video disable failed, device is uninitialized.\n");
-		return -ENODEV;
-	}
-
-	cancel_work_sync(&video->pump);
-	uvcg_queue_cancel(&video->queue, 0);
-
-	list_for_each_entry(ureq, &video->ureqs, list) {
-		if (ureq->req)
-			usb_ep_dequeue(video->ep, ureq->req);
-	}
-
-	uvc_video_free_requests(video);
-	uvcg_queue_enable(&video->queue, 0);
-	return 0;
-}
-
-/*
- * Enable the video stream.
- */
-int uvcg_video_enable(struct uvc_video *video)
-{
+	unsigned int i;
 	int ret;
 
 	if (video->ep == NULL) {
 		uvcg_info(&video->uvc->func,
 			  "Video enable failed, device is uninitialized.\n");
 		return -ENODEV;
+	}
+
+	if (!enable) {
+		cancel_work_sync(&video->pump);
+		uvcg_queue_cancel(&video->queue, 0);
+
+		for (i = 0; i < video->uvc_num_requests; ++i)
+			if (video->ureq && video->ureq[i].req)
+				usb_ep_dequeue(video->ep, video->ureq[i].req);
+
+		uvc_video_free_requests(video);
+		uvcg_queue_enable(&video->queue, 0);
+		return 0;
 	}
 
 	if ((ret = uvcg_queue_enable(&video->queue, 1)) < 0)
@@ -557,7 +523,6 @@ int uvcg_video_enable(struct uvc_video *video)
  */
 int uvcg_video_init(struct uvc_video *video, struct uvc_device *uvc)
 {
-	INIT_LIST_HEAD(&video->ureqs);
 	INIT_LIST_HEAD(&video->req_free);
 	spin_lock_init(&video->req_lock);
 	INIT_WORK(&video->pump, uvcg_video_pump);
