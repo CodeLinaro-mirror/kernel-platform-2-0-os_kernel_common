@@ -7,6 +7,7 @@
 #include <linux/init.h>
 #include <linux/initrd.h>
 #include <linux/io.h>
+#include <linux/iommu.h>
 #include <linux/kmemleak.h>
 #include <linux/kvm_host.h>
 #include <linux/memblock.h>
@@ -15,6 +16,7 @@
 #include <linux/of_address.h>
 #include <linux/of_fdt.h>
 #include <linux/of_reserved_mem.h>
+#include <linux/platform_device.h>
 #include <linux/sort.h>
 #include <linux/stat.h>
 
@@ -1243,4 +1245,131 @@ unsigned long __pkvm_reclaim_hyp_alloc_mgt(unsigned long nr_pages)
 	} while (last_reclaim && (reclaimed < nr_pages));
 
 	return reclaimed;
+}
+
+static int __pkvm_donate_resource(struct resource *r)
+{
+	size_t off;
+	int ret = 0;
+
+	if (!PAGE_ALIGNED(resource_size(r)))
+		return -EINVAL;
+
+	for (off = 0 ; off < resource_size(r) ; off += PAGE_SIZE) {
+		ret = kvm_call_hyp_nvhe(__pkvm_host_donate_hyp_mmio,
+					__phys_to_pfn(r->start + off));
+		if (ret)
+			break;
+	}
+
+	if (ret) {
+		size_t i;
+
+		for (i = 0 ; i < off ; i += PAGE_SIZE)
+			kvm_call_hyp_nvhe(__pkvm_host_reclaim_hyp_mmio,
+					  __phys_to_pfn(r->start + i));
+	}
+	return ret;
+}
+
+static int __pkvm_reclaim_resource(struct resource *r)
+{
+	size_t off;
+
+	if (!PAGE_ALIGNED(resource_size(r)))
+		return -EINVAL;
+
+	for (off = 0 ; off < resource_size(r) ; off += PAGE_SIZE)
+		kvm_call_hyp_nvhe(__pkvm_host_reclaim_hyp_mmio, __phys_to_pfn(r->start + off));
+
+	return 0;
+}
+
+static int __pkvm_arch_assign_device(struct device *dev, void *data)
+{
+	struct platform_device *pdev;
+	struct resource *r;
+	int index = 0;
+	int ret = 0;
+
+	if (!dev_is_platform(dev))
+		return -EOPNOTSUPP;
+
+	pdev = to_platform_device(dev);
+
+	do {
+		r = platform_get_resource(pdev, IORESOURCE_MEM, index);
+		if (!r)
+			break;
+		ret = __pkvm_donate_resource(r);
+		if (ret)
+			break;
+		index++;
+	} while (r);
+
+	if (ret) {
+		while (index--) {
+			r = platform_get_resource(pdev, IORESOURCE_MEM, index);
+			__pkvm_reclaim_resource(r);
+		}
+	}
+	return ret;
+}
+
+static int __pkvm_arch_reclaim_device(struct device *dev, void *data)
+{
+	struct platform_device *pdev;
+	struct resource *r;
+	int index = 0;
+
+	pdev = to_platform_device(dev);
+
+	do {
+		r = platform_get_resource(pdev, IORESOURCE_MEM, index);
+		if (!r)
+			break;
+		__pkvm_reclaim_resource(r);
+		index++;
+	} while (r);
+
+	return 0;
+}
+
+int kvm_arch_assign_device(struct device *dev)
+{
+	if (!is_protected_kvm_enabled())
+		return 0;
+
+	return __pkvm_arch_assign_device(dev, NULL);
+}
+
+int kvm_arch_assign_group(struct iommu_group *group)
+{
+	int ret;
+
+	if (!is_protected_kvm_enabled())
+		return 0;
+
+	ret = iommu_group_for_each_dev(group, NULL, __pkvm_arch_assign_device);
+
+	if (ret)
+		iommu_group_for_each_dev(group, NULL, __pkvm_arch_reclaim_device);
+
+	return ret;
+}
+
+void kvm_arch_reclaim_device(struct device *dev)
+{
+	if (!is_protected_kvm_enabled())
+		return;
+
+	__pkvm_arch_reclaim_device(dev, NULL);
+}
+
+void kvm_arch_reclaim_group(struct iommu_group *group)
+{
+	if (!is_protected_kvm_enabled())
+		return;
+
+	iommu_group_for_each_dev(group, NULL, __pkvm_arch_reclaim_device);
 }
