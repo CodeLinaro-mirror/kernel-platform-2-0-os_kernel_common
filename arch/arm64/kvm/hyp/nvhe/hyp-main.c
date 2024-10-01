@@ -1613,6 +1613,13 @@ static void handle___pkvm_stage2_snapshot(struct kvm_cpu_context *host_ctxt)
 #endif
 }
 
+static void handle___pkvm_host_donate_hyp_mmio(struct kvm_cpu_context *host_ctxt)
+{
+	DECLARE_REG(u64, pfn, host_ctxt, 1);
+
+	cpu_reg(host_ctxt, 1) = pkvm_device_hyp_assign_mmio(pfn);
+}
+
 typedef void (*hcall_t)(struct kvm_cpu_context *);
 
 #define HANDLE_FUNC(x)	[__KVM_HOST_SMCCC_FUNC_##x] = (hcall_t)handle_##x
@@ -1679,6 +1686,7 @@ static const hcall_t host_hcall[] = {
 	HANDLE_FUNC(__pkvm_host_iommu_iova_to_phys),
 	HANDLE_FUNC(__pkvm_host_hvc_pd),
 	HANDLE_FUNC(__pkvm_stage2_snapshot),
+	HANDLE_FUNC(__pkvm_host_donate_hyp_mmio),
 };
 
 static void handle_host_hcall(struct kvm_cpu_context *host_ctxt)
