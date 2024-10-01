@@ -1349,4 +1349,6 @@ unsigned long __pkvm_reclaim_hyp_alloc_mgt(unsigned long nr_pages);
 int __pkvm_topup_hyp_alloc_mgt(unsigned long id, unsigned long nr_pages,
 			       unsigned long sz_alloc);
 
+#define __KVM_HAVE_ARCH_ASSIGNED_DEVICE_GROUP
+
 #endif /* __ARM64_KVM_HOST_H__ */
