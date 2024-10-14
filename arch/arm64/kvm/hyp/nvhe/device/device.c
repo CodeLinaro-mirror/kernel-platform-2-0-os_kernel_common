@@ -119,3 +119,8 @@ out_unlock:
 	hyp_spin_unlock(&device_spinlock);
 	return ret;
 }
+
+bool pkvm_device_is_assignable(u64 pfn)
+{
+	return pkvm_get_device(hyp_pfn_to_phys(pfn)) != NULL;
+}

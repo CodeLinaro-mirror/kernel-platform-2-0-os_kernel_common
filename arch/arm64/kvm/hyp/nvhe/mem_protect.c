@@ -572,6 +572,12 @@ static enum kvm_pgtable_prot default_hyp_prot(phys_addr_t phys)
 	return addr_is_memory(phys) ? PAGE_HYP : PAGE_HYP_DEVICE;
 }
 
+/* Guest has FWB enabled, so we need to have the correct prot. */
+static enum kvm_pgtable_prot default_guest_prot(bool is_memory)
+{
+	return is_memory ? PKVM_HOST_MEM_PROT : PKVM_HOST_MMIO_PROT | KVM_PGTABLE_PROT_DEVICE;
+}
+
 bool addr_is_memory(phys_addr_t phys)
 {
 	struct kvm_mem_range range;
@@ -1417,7 +1423,8 @@ static int guest_ack_share(const struct pkvm_checked_mem_transition *checked_tx,
 	u64 size = checked_tx->nr_pages * PAGE_SIZE;
 
 	if (!addr_is_memory(tx->completer.guest.phys) || (perms & ~KVM_PGTABLE_PROT_RWX))
-		return -EPERM;
+		if (!pkvm_device_is_assignable(hyp_phys_to_pfn(tx->completer.guest.phys)))
+			return -EPERM;
 
 	return __guest_check_page_state_range(tx->completer.guest.hyp_vm,
 					      checked_tx->completer_addr, size,
@@ -1447,7 +1454,8 @@ static int guest_ack_donation(u64 addr, const struct pkvm_mem_transition *tx)
 	u64 size = tx->nr_pages * PAGE_SIZE;
 
 	if (!addr_is_memory(tx->completer.guest.phys))
-		return -EPERM;
+		if (!pkvm_device_is_assignable(hyp_phys_to_pfn(tx->completer.guest.phys)))
+			return -EPERM;
 
 	return __guest_check_page_state_range(tx->completer.guest.hyp_vm,
 					      addr, size, PKVM_NOPAGE);
@@ -1480,10 +1488,11 @@ static int guest_complete_unshare(const struct pkvm_checked_mem_transition *chec
 
 static int guest_complete_donation(u64 addr, const struct pkvm_mem_transition *tx)
 {
-	enum kvm_pgtable_prot prot = pkvm_mkstate(KVM_PGTABLE_PROT_RWX, PKVM_PAGE_OWNED);
 	struct pkvm_hyp_vm *vm = tx->completer.guest.hyp_vm;
 	struct kvm_hyp_memcache *mc = tx->completer.guest.mc;
 	phys_addr_t phys = tx->completer.guest.phys;
+	bool is_mem = addr_is_memory(phys);
+	enum kvm_pgtable_prot prot = pkvm_mkstate(default_guest_prot(is_mem), PKVM_PAGE_OWNED);
 	u64 size = tx->nr_pages * PAGE_SIZE;
 	int err;
 
@@ -2163,6 +2172,42 @@ int ___pkvm_host_donate_hyp(u64 pfn, u64 nr_pages, bool accept_mmio)
 {
 	return ___pkvm_host_donate_hyp_prot(pfn, nr_pages, accept_mmio,
 					    default_hyp_prot(hyp_pfn_to_phys(pfn)));
+}
+
+int pkvm_hyp_donate_guest(struct pkvm_hyp_vcpu *vcpu, u64 pfn, u64 gfn, u64 nr_pages)
+{
+	int ret;
+	u64 hyp_addr = (u64)__hyp_va(hyp_pfn_to_phys(pfn));
+	u64 guest_addr = hyp_pfn_to_phys(gfn);
+	struct pkvm_hyp_vm *vm = pkvm_hyp_vcpu_to_hyp_vm(vcpu);
+	struct pkvm_mem_transition donation = {
+		.nr_pages	= nr_pages,
+		.initiator	= {
+			.id	= PKVM_ID_HYP,
+			.addr	= hyp_addr,
+			.host	= {
+				.completer_addr = guest_addr,
+			},
+		},
+		.completer	= {
+			.id	= PKVM_ID_GUEST,
+			.guest	= {
+				.hyp_vm = vm,
+				.mc = &vcpu->vcpu.arch.stage2_mc,
+				.phys = hyp_pfn_to_phys(pfn),
+			},
+		},
+	};
+
+	hyp_lock_component();
+	guest_lock_component(vm);
+
+	ret = do_donate(&donation);
+
+	guest_unlock_component(vm);
+	hyp_unlock_component();
+
+	return ret;
 }
 
 int __pkvm_host_donate_hyp_locked(u64 pfn, u64 nr_pages, enum kvm_pgtable_prot prot)
