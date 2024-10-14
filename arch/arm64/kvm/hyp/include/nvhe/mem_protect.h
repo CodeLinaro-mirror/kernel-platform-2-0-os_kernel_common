@@ -62,6 +62,7 @@ int __pkvm_host_use_dma(u64 phys_addr, size_t size);
 int __pkvm_host_unuse_dma(u64 phys_addr, size_t size);
 int __pkvm_guest_stage2_snapshot(struct kvm_pgtable_snapshot *snap, struct pkvm_hyp_vm *vm);
 int __pkvm_host_stage2_snapshot(struct kvm_pgtable_snapshot *snap);
+int pkvm_hyp_donate_guest(struct pkvm_hyp_vcpu *vcpu, u64 pfn, u64 gfn, u64 nr_pages);
 
 bool addr_is_memory(phys_addr_t phys);
 int host_stage2_idmap_locked(phys_addr_t addr, u64 size,
