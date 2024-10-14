@@ -117,6 +117,7 @@ enum __kvm_host_smccc_func {
 	__KVM_HOST_SMCCC_FUNC___pkvm_stage2_snapshot,
 	__KVM_HOST_SMCCC_FUNC___pkvm_host_donate_hyp_mmio,
 	__KVM_HOST_SMCCC_FUNC___pkvm_host_reclaim_hyp_mmio,
+	__KVM_HOST_SMCCC_FUNC___pkvm_host_map_guest_mmio,
 
 	/*
 	 * Start of the dynamically registered hypercalls. Start a bit
