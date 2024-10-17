@@ -367,8 +367,14 @@ enum page_memcg_data_flags {
 static inline bool folio_memcg_kmem(struct folio *folio);
 
 void do_traversal_all_lruvec(void);
+<<<<<<< PATCH SET (57352c ANDROID: mm: export some symbols for more accurate memory re)
+extern unsigned int bucket_order __read_mostly;
+||||||| BASE
+
+=======
 void unpack_shadow(void *shadow, int *memcgidp, pg_data_t **pgdat,
 			    unsigned long *evictionp, bool *workingsetp);
+>>>>>>> BASE      (6ebf50 ANDROID: mm: add vendor hook to trace filemap_add_folio)
 int mem_cgroup_move_account(struct folio *folio,
 			    bool compound,
 			    struct mem_cgroup *from,
