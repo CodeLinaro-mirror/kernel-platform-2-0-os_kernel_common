@@ -368,10 +368,19 @@ static inline bool folio_memcg_kmem(struct folio *folio);
 
 void do_traversal_all_lruvec(void);
 
+<<<<<<< PATCH SET (daeb27 ANDROID: mm: export some symbols)
+extern unsigned int bucket_order __read_mostly;
+void unpack_shadow(void *shadow, int *memcgidp, pg_data_t **pgdat, unsigned long *evictionp, bool *workingsetp);
+void __mem_cgroup_uncharge(struct folio *folio);
+int __mem_cgroup_charge(struct folio *folio, struct mm_struct *mm, gfp_t gfp);
+void __mod_memcg_lruvec_state(struct lruvec *lruvec, enum node_stat_item idx, int val);
+||||||| BASE
+=======
 int mem_cgroup_move_account(struct folio *folio,
 			    bool compound,
 			    struct mem_cgroup *from,
 			    struct mem_cgroup *to);
+>>>>>>> BASE      (6fe234 ANDROID: mm: add vendor hook to trace filemap_add_folio)
 
 /*
  * After the initialization objcg->memcg is always pointing at
