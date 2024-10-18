@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0acf4f3b_6b92dde9",
+        "filename": "mm/memcontrol.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 782,
+      "author": {
+        "id": 1930620
+      },
+      "writtenOn": "2024-10-18T05:47:55Z",
+      "side": 1,
+      "message": "Why do you need `mem_cgroup_flush_stats_ratelimited`? `workingset_refault` already calls this right before the new hook, so can you do without it? I would prefer not to export this because flushing is an area with perf impacts that is changing frequently, and its semantics may need to change if we need to backport or it may disappear completely.",
+      "revId": "2cbde1ec86700d938765e6e3e9225a37f0e5d2bc",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}

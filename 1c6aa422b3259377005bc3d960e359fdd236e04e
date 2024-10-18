@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0caffc1_390fa0d2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1930620
+      },
+      "writtenOn": "2024-10-18T05:47:55Z",
+      "side": 1,
+      "message": "I think this need to be rebased onto aosp/3310839",
+      "revId": "1c6aa422b3259377005bc3d960e359fdd236e04e",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
