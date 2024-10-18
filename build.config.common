@@ -5,6 +5,9 @@ KMI_GENERATION=0
 BRANCH=android16-6.12
 LLVM=1
 DEPMOD=depmod
+CLANG_PREBUILT_BIN=prebuilts/clang/host/linux-x86/clang-${CLANG_VERSION}/bin
+BUILDTOOLS_PREBUILT_BIN=build/kernel/build-tools/path/linux-x86
+
 DTC=$(command -v dtc)
 
 KCFLAGS="${KCFLAGS} -D__ANDROID_COMMON_KERNEL__"
