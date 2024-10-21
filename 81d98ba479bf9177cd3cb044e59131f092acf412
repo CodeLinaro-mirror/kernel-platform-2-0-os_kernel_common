@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2606bf4_5f34b87d",
+        "filename": "kernel/time/sched_clock.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1402878
+      },
+      "writtenOn": "2024-10-21T12:39:33Z",
+      "side": 1,
+      "message": "`return sched_clock();` ?",
+      "range": {
+        "startLine": 113,
+        "startChar": 8,
+        "endLine": 113,
+        "endChar": 9
+      },
+      "revId": "81d98ba479bf9177cd3cb044e59131f092acf412",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
