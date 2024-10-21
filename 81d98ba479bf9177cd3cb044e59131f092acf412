@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3aacc180_066d68b3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1625880
+      },
+      "writtenOn": "2024-10-21T13:56:37Z",
+      "side": 1,
+      "message": "Please split the Linux and Android changes into separate commits.",
+      "revId": "81d98ba479bf9177cd3cb044e59131f092acf412",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d2606bf4_5f34b87d",
         "filename": "kernel/time/sched_clock.c",
         "patchSetId": 2
