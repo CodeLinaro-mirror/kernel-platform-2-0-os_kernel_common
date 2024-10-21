@@ -302739,6 +302739,10 @@ function {
   parameter_id: 0x35041fa7
 }
 function {
+  id: 0x102bb271
+  return_type_id: 0xd5df6730
+}
+function {
   id: 0x102ddf3d
   return_type_id: 0x48b5725f
   parameter_id: 0x04880557
@@ -386730,6 +386734,15 @@ elf_symbol {
   full_name: "get_device_system_crosststamp"
 }
 elf_symbol {
+  id: 0x7edda409
+  name: "get_dup_sched_clock"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xaffb9b62
+  type_id: 0x102bb271
+  full_name: "get_dup_sched_clock"
+}
+elf_symbol {
   id: 0x00d00ad1
   name: "get_each_object_track"
   is_defined: true
@@ -430234,6 +430247,7 @@ interface {
   symbol_id: 0xd9d90ad6
   symbol_id: 0xaf0c4e38
   symbol_id: 0x08e235b1
+  symbol_id: 0x7edda409
   symbol_id: 0x00d00ad1
   symbol_id: 0x4579b2cf
   symbol_id: 0xdb82735d
