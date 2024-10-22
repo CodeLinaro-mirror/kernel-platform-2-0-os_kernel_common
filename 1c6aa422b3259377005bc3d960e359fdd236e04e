@@ -16,6 +16,24 @@
       "message": "I think this need to be rebased onto aosp/3310839",
       "revId": "1c6aa422b3259377005bc3d960e359fdd236e04e",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ea7c914_99a6bf49",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 2006455
+      },
+      "writtenOn": "2024-10-22T08:53:07Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "f0caffc1_390fa0d2",
+      "revId": "1c6aa422b3259377005bc3d960e359fdd236e04e",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
