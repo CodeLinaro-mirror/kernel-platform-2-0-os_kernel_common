@@ -34,6 +34,24 @@
       "parentUuid": "0acf4f3b_6b92dde9",
       "revId": "2cbde1ec86700d938765e6e3e9225a37f0e5d2bc",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "787ed731_028b4380",
+        "filename": "mm/memcontrol.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 782,
+      "author": {
+        "id": 1930620
+      },
+      "writtenOn": "2024-10-23T02:01:35Z",
+      "side": 1,
+      "message": "If you are using MGLRU then the flush is not required in any situation.\nIf you are not using MGLRU and you are performing a similar calculation to `workingset_test_recent` that requires estimating the workingset size based on `NR_{IN}ACTIVE_FILE/ANON` then flushing would be required to get the most recent data. However since `workingset_refault` -\u003e `workingset_test_recent` already flushes the line before `trace_android_vh_refault_filemap_add_folio`, I don\u0027t think you\u0027ll gain much by manually flushing again inside the tracepoint, especially with this ratelimited version of the flush.",
+      "parentUuid": "38d219ae_96c39f74",
+      "revId": "2cbde1ec86700d938765e6e3e9225a37f0e5d2bc",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
