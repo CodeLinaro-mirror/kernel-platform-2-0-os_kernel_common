@@ -76,6 +76,10 @@ DECLARE_RESTRICTED_HOOK(android_rvh_setscheduler,
 	TP_PROTO(struct task_struct *p),
 	TP_ARGS(p), 1);
 
+DECLARE_RESTRICTED_HOOK(android_rvh_replace_next_task_fair,
+	TP_PROTO(struct rq *rq, struct task_struct **p, struct task_struct *prev),
+	TP_ARGS(rq, p, prev), 1);
+
 struct sched_group;
 DECLARE_RESTRICTED_HOOK(android_rvh_find_busiest_group,
 	TP_PROTO(struct sched_group *busiest, struct rq *dst_rq, int *out_balance),
@@ -312,6 +316,10 @@ DECLARE_HOOK(android_vh_set_wake_flags,
 DECLARE_RESTRICTED_HOOK(android_rvh_find_new_ilb,
 	TP_PROTO(struct cpumask *nohz_idle_cpus_mask, int *new_ilb),
 	TP_ARGS(nohz_idle_cpus_mask, new_ilb), 1);
+
+DECLARE_RESTRICTED_HOOK(android_rvh_cpu_util_cfs_boost,
+	TP_PROTO(int cpu, unsigned long *util),
+	TP_ARGS(cpu, util), 1);
 
 /* macro versions of hooks are no longer required */
 
