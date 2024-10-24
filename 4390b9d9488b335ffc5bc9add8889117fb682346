@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a39b83dd_23bfe401",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1930620
+      },
+      "writtenOn": "2024-10-24T16:40:20Z",
+      "side": 1,
+      "message": "Are these hooks for the same purpose as under I7804b30282b865a004f5a7193537aea688901043?",
+      "range": {
+        "startLine": 13,
+        "startChar": 11,
+        "endLine": 13,
+        "endChar": 52
+      },
+      "revId": "4390b9d9488b335ffc5bc9add8889117fb682346",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "312c8e66_29071aef",
+        "filename": "include/linux/memcontrol.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1930620
+      },
+      "writtenOn": "2024-10-24T16:40:20Z",
+      "side": 1,
+      "message": "Already declared on line 708",
+      "revId": "4390b9d9488b335ffc5bc9add8889117fb682346",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3020eba6_8836928e",
+        "filename": "include/linux/memcontrol.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1930620
+      },
+      "writtenOn": "2024-10-24T16:40:20Z",
+      "side": 1,
+      "message": "Already declared on line 680",
+      "revId": "4390b9d9488b335ffc5bc9add8889117fb682346",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b58733c8_bad7075d",
+        "filename": "include/linux/memcontrol.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1930620
+      },
+      "writtenOn": "2024-10-24T16:40:20Z",
+      "side": 1,
+      "message": "Already declared on line 1062",
+      "revId": "4390b9d9488b335ffc5bc9add8889117fb682346",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
