@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "947cb6d2_8045c62e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1069543
+      },
+      "writtenOn": "2024-10-24T18:35:59Z",
+      "side": 1,
+      "message": "This patch is totally different than 1780e411ef940db314578b511518e5872d4a13b4. Please provide more details on the modification. To me this looks like a re-write (ANDROID patch) that provides equivalent functionality.",
+      "revId": "cb9bcba0f042a1f4b35ed804090b53d8af7c59d4",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
