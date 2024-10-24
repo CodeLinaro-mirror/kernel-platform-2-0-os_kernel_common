@@ -16,6 +16,23 @@
       "message": "This patch is totally different than 1780e411ef940db314578b511518e5872d4a13b4. Please provide more details on the modification. To me this looks like a re-write (ANDROID patch) that provides equivalent functionality.",
       "revId": "cb9bcba0f042a1f4b35ed804090b53d8af7c59d4",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fb054172_0712fa17",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1446383
+      },
+      "writtenOn": "2024-10-24T20:53:54Z",
+      "side": 1,
+      "message": "Agree with Todd.\n\nI understand the backport needs changes, but this isn\u0027t even remotely close to the cherry-picked patch.",
+      "revId": "cb9bcba0f042a1f4b35ed804090b53d8af7c59d4",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
