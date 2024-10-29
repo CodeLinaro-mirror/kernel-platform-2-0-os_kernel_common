@@ -171,6 +171,7 @@ define_common_kernels(target_configs = {
     },
     "kernel_x86_64": {
         "abi_definition_stg": "android/abi_gki_x86_64.stg",
+        "kmi_enforced": True,
         "kmi_symbol_list_strict_mode": True,
         "kmi_symbol_list": "android/abi_gki_x86_64",
         "additional_kmi_symbol_lists": [":x86_64_additional_kmi_symbol_lists"],
