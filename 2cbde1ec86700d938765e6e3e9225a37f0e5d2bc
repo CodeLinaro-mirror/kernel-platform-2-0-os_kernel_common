@@ -70,6 +70,24 @@
       "parentUuid": "787ed731_028b4380",
       "revId": "2cbde1ec86700d938765e6e3e9225a37f0e5d2bc",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "831a2391_7d6f938f",
+        "filename": "mm/memcontrol.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 782,
+      "author": {
+        "id": 2006455
+      },
+      "writtenOn": "2024-10-30T02:05:54Z",
+      "side": 1,
+      "message": "Yes, I understand and agree with your point of view, and I have made modifications according to your suggestions, thank you",
+      "parentUuid": "787ed731_028b4380",
+      "revId": "2cbde1ec86700d938765e6e3e9225a37f0e5d2bc",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
