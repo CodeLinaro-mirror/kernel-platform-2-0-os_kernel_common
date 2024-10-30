@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7bf6075b_966bbae2",
+        "filename": "BUILD.bazel",
+        "patchSetId": 1
+      },
+      "lineNbr": 1546,
+      "author": {
+        "id": 1121838
+      },
+      "writtenOn": "2024-10-30T17:01:13Z",
+      "side": 1,
+      "message": "(this was added for cuttlefish, but cuttlefish no longer needs it afaik. But I still need it here because of the weirdness of allow_files \u003d [suffix]. )",
+      "parentUuid": "5da1fb39_7be47874",
+      "revId": "a69bf40bbb1ae0feb066f1b1a9a9bef9212f90f7",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a3e39f55_fdbcc29a",
         "filename": "BUILD.bazel",
         "patchSetId": 1
