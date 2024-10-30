@@ -16,6 +16,29 @@
       "message": "Done",
       "revId": "de60d4a72e924188e300257d203c5c4a359abbde",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c68b84c8_2447afef",
+        "filename": "mm/workingset.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2024-10-30T02:16:52Z",
+      "side": 1,
+      "message": "This symbol was exported before in 6.1 under https://android-review.googlesource.com/c/kernel/common/+/3285495. Please cherry-pick that patch (with the same Change-Id) instead of creating a new patch. Then add additional symbols you need inside a follow-up patch.",
+      "range": {
+        "startLine": 230,
+        "startChar": 0,
+        "endLine": 230,
+        "endChar": 33
+      },
+      "revId": "de60d4a72e924188e300257d203c5c4a359abbde",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
