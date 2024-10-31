@@ -72,6 +72,30 @@
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d91ad0fe_c571dcc9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 2006455
+      },
+      "writtenOn": "2024-10-31T02:49:16Z",
+      "side": 1,
+      "message": "These hooks and I7804b30282b865a004f5a7193537aea688901043 is not the same purpose",
+      "parentUuid": "e651aa7a_7802ade6",
+      "range": {
+        "startLine": 13,
+        "startChar": 11,
+        "endLine": 13,
+        "endChar": 52
+      },
+      "revId": "4390b9d9488b335ffc5bc9add8889117fb682346",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "312c8e66_29071aef",
