@@ -81,7 +81,7 @@ DECLARE_RESTRICTED_HOOK(android_rvh_replace_next_task_fair,
 	TP_ARGS(rq, p, prev), 1);
 
 struct sched_group;
-DECLARE_RESTRICTED_HOOK(android_rvh_find_busiest_group,
+DECLARE_RESTRICTED_HOOK(android_rvh_sched_balance_find_src_group,
 	TP_PROTO(struct sched_group *busiest, struct rq *dst_rq, int *out_balance),
 		TP_ARGS(busiest, dst_rq, out_balance), 1);
 
@@ -329,6 +329,17 @@ DECLARE_HOOK(android_vh_dup_task_struct,
 	TP_PROTO(struct task_struct *tsk, struct task_struct *orig),
 	TP_ARGS(tsk, orig));
 
+DECLARE_RESTRICTED_HOOK(android_rvh_find_energy_efficient_cpu,
+	TP_PROTO(struct task_struct *p, int prev_cpu, int sync, int *new_cpu),
+	TP_ARGS(p, prev_cpu, sync, new_cpu), 1);
+
+DECLARE_HOOK(android_vh_sched_pelt_multiplier,
+	TP_PROTO(unsigned int old, unsigned int cur, int *ret),
+	TP_ARGS(old, cur, ret));
+
+DECLARE_RESTRICTED_HOOK(android_rvh_post_init_entity_util_avg,
+	TP_PROTO(struct sched_entity *se),
+	TP_ARGS(se), 1);
 /* macro versions of hooks are no longer required */
 
 #endif /* _TRACE_HOOK_SCHED_H */
