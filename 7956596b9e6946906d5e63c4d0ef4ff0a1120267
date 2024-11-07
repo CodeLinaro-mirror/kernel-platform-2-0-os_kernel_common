@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "04cd1fba_14e11d70",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2024-11-07T16:56:55Z",
+      "side": 1,
+      "message": "This title is too generic. Please change to something like `export symbols for charging folios to memcgs`",
+      "range": {
+        "startLine": 7,
+        "startChar": 13,
+        "endLine": 7,
+        "endChar": 32
+      },
+      "revId": "7956596b9e6946906d5e63c4d0ef4ff0a1120267",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "32facf12_c4c4ad0f",
@@ -31,6 +54,47 @@
       "writtenOn": "2024-10-31T02:49:16Z",
       "side": 1,
       "message": "Done",
+      "revId": "7956596b9e6946906d5e63c4d0ef4ff0a1120267",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "182fe702_45437eab",
+        "filename": "include/linux/memcontrol.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2024-11-07T16:56:55Z",
+      "side": 1,
+      "message": "Please move this change into https://android-review.googlesource.com/c/kernel/common/+/3325615 and fix the long lines.",
+      "range": {
+        "startLine": 371,
+        "startChar": 0,
+        "endLine": 372,
+        "endChar": 112
+      },
+      "fixSuggestions": [
+        {
+          "fixId": "c2a10c75_4b73dd9d",
+          "description": "prompt_to_edit API",
+          "replacements": [
+            {
+              "path": "include/linux/memcontrol.h",
+              "range": {
+                "startLine": 371,
+                "startChar": 0,
+                "endLine": 372,
+                "endChar": 0
+              },
+              "replacement": ""
+            }
+          ]
+        }
+      ],
       "revId": "7956596b9e6946906d5e63c4d0ef4ff0a1120267",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
