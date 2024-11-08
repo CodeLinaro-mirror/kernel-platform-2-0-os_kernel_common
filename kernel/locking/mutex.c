@@ -33,6 +33,9 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/lock.h>
 
+#undef CREATE_TRACE_POINTS
+#include <trace/hooks/dtask.h>
+
 #ifndef CONFIG_PREEMPT_RT
 #include "mutex.h"
 
@@ -180,9 +183,12 @@ static void
 __mutex_add_waiter(struct mutex *lock, struct mutex_waiter *waiter,
 		   struct list_head *list)
 {
+	bool already_on_list = false;
 	debug_mutex_add_waiter(lock, waiter, current);
 
-	list_add_tail(&waiter->list, list);
+	trace_android_vh_alter_mutex_list_add(lock, waiter, list, &already_on_list);
+	if (!already_on_list)
+		list_add_tail(&waiter->list, list);
 	if (__mutex_waiter_is_first(lock, waiter))
 		__mutex_set_flag(lock, MUTEX_FLAG_WAITERS);
 }
@@ -627,6 +633,7 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 			goto err_early_kill;
 	}
 
+	trace_android_vh_mutex_wait_start(lock);
 	set_current_state(state);
 	trace_contention_begin(lock, LCB_F_MUTEX);
 	for (;;) {
@@ -687,6 +694,7 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 	raw_spin_lock_irqsave(&lock->wait_lock, flags);
 acquired:
 	__set_current_state(TASK_RUNNING);
+	trace_android_vh_mutex_wait_finish(lock);
 
 	if (ww_ctx) {
 		/*
@@ -717,6 +725,7 @@ skip_wait:
 
 err:
 	__set_current_state(TASK_RUNNING);
+	trace_android_vh_mutex_wait_finish(lock);
 	__mutex_remove_waiter(lock, &waiter);
 err_early_kill:
 	trace_contention_end(lock, ret);
@@ -939,6 +948,7 @@ static noinline void __sched __mutex_unlock_slowpath(struct mutex *lock, unsigne
 	raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
 	wake_up_q(&wake_q);
 	preempt_enable();
+	trace_android_vh_mutex_unlock_slowpath(lock);
 }
 
 #ifndef CONFIG_DEBUG_LOCK_ALLOC
