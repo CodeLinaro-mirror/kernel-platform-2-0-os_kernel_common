@@ -12,6 +12,17 @@
  ],
  "presubmit": [
     {
+      "name": "CtsAppEnumerationTestCases",
+      "options": [
+        {
+          "exclude-annotation": "com.android.testutils.SkipPresubmit"
+        },
+        {
+          "include-filter": "android.appenumeration.cts.AppEnumerationTests"
+        }
+      ]
+    },
+    {
       "name": "CtsNetTestCases",
       "options": [
         {
@@ -249,6 +260,16 @@
         },
         {
           "include-filter": "android.telecom.cts.PhoneAccountSuggestionServiceTest"
+        }
+      ]
+    }
+  ],
+  "kernel-presubmit": [
+    {
+      "name": "CtsCameraTestCases",
+      "options": [
+        {
+          "include-filter": "android.hardware.camera2.cts.FastBasicsTest"
         }
       ]
     }

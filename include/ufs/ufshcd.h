@@ -876,9 +876,10 @@ enum ufshcd_mcq_opr {
  * @tmf_tag_set: TMF tag set.
  * @tmf_queue: Used to allocate TMF tags.
  * @tmf_rqs: array with pointers to TMF requests while these are in progress.
- * @active_uic_cmd: handle of active UIC command
- * @uic_cmd_mutex: mutex for UIC command
- * @uic_async_done: completion used during UIC processing
+ * @active_uic_cmd: active UIC command pointer.
+ * @uic_cmd_mutex: mutex used to serialize UIC command processing.
+ * @uic_async_done: completion used to wait for power mode or hibernation state
+ *	changes.
  * @ufshcd_state: UFSHCD state
  * @eh_flags: Error handling flags
  * @intr_mask: Interrupt Mask Bits
@@ -1161,6 +1162,12 @@ struct ufs_hw_queue {
 static inline bool is_mcq_enabled(struct ufs_hba *hba)
 {
 	return hba->mcq_enabled;
+}
+
+static inline unsigned int ufshcd_mcq_opr_offset(struct ufs_hba *hba,
+		enum ufshcd_mcq_opr opr, int idx)
+{
+	return hba->mcq_opr[opr].offset + hba->mcq_opr[opr].stride * idx;
 }
 
 #ifdef CONFIG_SCSI_UFS_VARIABLE_SG_ENTRY_SIZE

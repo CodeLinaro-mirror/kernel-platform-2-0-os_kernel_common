@@ -446,15 +446,15 @@ static void ufshcd_add_command_trace(struct ufs_hba *hba, unsigned int tag,
 
 	opcode = cmd->cmnd[0];
 
-	if (opcode == READ_10 || opcode == WRITE_10) {
-		/*
-		 * Currently we only fully trace read(10) and write(10) commands
-		 */
+	if (opcode == READ_10 || opcode == WRITE_10 ||
+				opcode == READ_16 || opcode == WRITE_16) {
 		transfer_len =
 		       be32_to_cpu(lrbp->ucd_req_ptr->sc.exp_data_transfer_len);
 		lba = scsi_get_lba(cmd);
 		if (opcode == WRITE_10)
 			group_id = lrbp->cmd->cmnd[6];
+		if (opcode == WRITE_16)
+			group_id = lrbp->cmd->cmnd[14];
 	} else if (opcode == UNMAP) {
 		/*
 		 * The number of Bytes to be unmapped beginning with the lba.
@@ -1411,7 +1411,7 @@ static int ufshcd_devfreq_target(struct device *dev,
 	int ret = 0;
 	struct ufs_hba *hba = dev_get_drvdata(dev);
 	ktime_t start;
-	bool scale_up, sched_clk_scaling_suspend_work = false;
+	bool scale_up = false, sched_clk_scaling_suspend_work = false;
 	struct list_head *clk_list = &hba->clk_list_head;
 	struct ufs_clk_info *clki;
 	unsigned long irq_flags;
@@ -2459,6 +2459,7 @@ int ufshcd_send_uic_cmd(struct ufs_hba *hba, struct uic_command *uic_cmd)
 	ufshcd_hold(hba);
 	mutex_lock(&hba->uic_cmd_mutex);
 	ufshcd_add_delay_before_dme_cmd(hba);
+	WARN_ON(hba->uic_async_done);
 
 	ret = __ufshcd_send_uic_cmd(hba, uic_cmd, true);
 	if (!ret)
@@ -3097,7 +3098,9 @@ retry:
 
 		/* MCQ mode */
 		if (is_mcq_enabled(hba)) {
-			err = ufshcd_clear_cmd(hba, lrbp->task_tag);
+			/* successfully cleared the command, retry if needed */
+			if (ufshcd_clear_cmd(hba, lrbp->task_tag) == 0)
+				err = -EAGAIN;
 			hba->dev_cmd.complete = NULL;
 			return err;
 		}
@@ -4008,11 +4011,16 @@ static inline void ufshcd_add_delay_before_dme_cmd(struct ufs_hba *hba)
 			min_sleep_time_us =
 				MIN_DELAY_BEFORE_DME_CMDS_US - delta;
 		else
-			return; /* no more delay required */
+			min_sleep_time_us = 0; /* no more delay required */
 	}
 
-	/* allow sleep for extra 50us if needed */
-	usleep_range(min_sleep_time_us, min_sleep_time_us + 50);
+	if (min_sleep_time_us > 0) {
+		/* allow sleep for extra 50us if needed */
+		usleep_range(min_sleep_time_us, min_sleep_time_us + 50);
+	}
+
+	/* update the last_dme_cmd_tstamp */
+	hba->last_dme_cmd_tstamp = ktime_get();
 }
 
 /**
@@ -4156,7 +4164,6 @@ static int ufshcd_uic_pwr_ctrl(struct ufs_hba *hba, struct uic_command *cmd)
 	unsigned long flags;
 	u8 status;
 	int ret;
-	bool reenable_intr = false;
 
 	mutex_lock(&hba->uic_cmd_mutex);
 	ufshcd_add_delay_before_dme_cmd(hba);
@@ -4167,15 +4174,6 @@ static int ufshcd_uic_pwr_ctrl(struct ufs_hba *hba, struct uic_command *cmd)
 		goto out_unlock;
 	}
 	hba->uic_async_done = &uic_async_done;
-	if (ufshcd_readl(hba, REG_INTERRUPT_ENABLE) & UIC_COMMAND_COMPL) {
-		ufshcd_disable_intr(hba, UIC_COMMAND_COMPL);
-		/*
-		 * Make sure UIC command completion interrupt is disabled before
-		 * issuing UIC command.
-		 */
-		wmb();
-		reenable_intr = true;
-	}
 	spin_unlock_irqrestore(hba->host->host_lock, flags);
 	ret = __ufshcd_send_uic_cmd(hba, cmd, false);
 	if (ret) {
@@ -4219,8 +4217,6 @@ out:
 	spin_lock_irqsave(hba->host->host_lock, flags);
 	hba->active_uic_cmd = NULL;
 	hba->uic_async_done = NULL;
-	if (reenable_intr)
-		ufshcd_enable_intr(hba, UIC_COMMAND_COMPL);
 	if (ret) {
 		ufshcd_set_link_broken(hba);
 		ufshcd_schedule_eh_work(hba);
@@ -5379,31 +5375,31 @@ static bool ufshcd_is_auto_hibern8_error(struct ufs_hba *hba,
 static irqreturn_t ufshcd_uic_cmd_compl(struct ufs_hba *hba, u32 intr_status)
 {
 	irqreturn_t retval = IRQ_NONE;
+	struct uic_command *cmd;
 
 	spin_lock(hba->host->host_lock);
+	cmd = hba->active_uic_cmd;
 	if (ufshcd_is_auto_hibern8_error(hba, intr_status))
 		hba->errors |= (UFSHCD_UIC_HIBERN8_MASK & intr_status);
 
-	if ((intr_status & UIC_COMMAND_COMPL) && hba->active_uic_cmd) {
-		hba->active_uic_cmd->argument2 |=
-			ufshcd_get_uic_cmd_result(hba);
-		hba->active_uic_cmd->argument3 =
-			ufshcd_get_dme_attr_val(hba);
-		if (!hba->uic_async_done)
-			hba->active_uic_cmd->cmd_active = 0;
-		complete(&hba->active_uic_cmd->done);
+	if (intr_status & UIC_COMMAND_COMPL && cmd) {
+		if (!hba->uic_async_done) {
+			cmd->argument2 |= ufshcd_get_uic_cmd_result(hba);
+			cmd->argument3 = ufshcd_get_dme_attr_val(hba);
+			cmd->cmd_active = 0;
+			complete(&cmd->done);
+		}
 		retval = IRQ_HANDLED;
 	}
 
-	if ((intr_status & UFSHCD_UIC_PWR_MASK) && hba->uic_async_done) {
-		hba->active_uic_cmd->cmd_active = 0;
+	if (intr_status & UFSHCD_UIC_PWR_MASK && hba->uic_async_done) {
+		cmd->cmd_active = 0;
 		complete(hba->uic_async_done);
 		retval = IRQ_HANDLED;
 	}
 
 	if (retval == IRQ_HANDLED)
-		ufshcd_add_uic_command_trace(hba, hba->active_uic_cmd,
-					     UFS_CMD_COMP);
+		ufshcd_add_uic_command_trace(hba, cmd, UFS_CMD_COMP);
 	spin_unlock(hba->host->host_lock);
 	return retval;
 }
@@ -8830,6 +8826,7 @@ static int ufshcd_probe_hba(struct ufs_hba *hba, bool init_dev_params)
 	    (hba->quirks & UFSHCD_QUIRK_REINIT_AFTER_MAX_GEAR_SWITCH)) {
 		/* Reset the device and controller before doing reinit */
 		ufshcd_device_reset(hba);
+		ufs_put_device_desc(hba);
 		ufshcd_hba_stop(hba);
 		ufshcd_vops_reinit_notify(hba);
 		ret = ufshcd_hba_enable(hba);
@@ -9636,7 +9633,10 @@ static int __ufshcd_wl_suspend(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 
 	/* UFS device & link must be active before we enter in this function */
 	if (!ufshcd_is_ufs_dev_active(hba) || !ufshcd_is_link_active(hba)) {
-		ret = -EINVAL;
+		/*  Wait err handler finish or trigger err recovery */
+		if (!ufshcd_eh_in_progress(hba))
+			ufshcd_force_error_recovery(hba);
+		ret = -EBUSY;
 		goto enable_scaling;
 	}
 
@@ -10236,10 +10236,7 @@ int ufshcd_system_restore(struct device *dev)
 	 * are updated with the latest queue addresses. Only after
 	 * updating these addresses, we can queue the new commands.
 	 */
-	mb();
-
-	/* Resuming from hibernate, assume that link was OFF */
-	ufshcd_set_link_off(hba);
+	ufshcd_readl(hba, REG_UTP_TASK_REQ_LIST_BASE_H);
 
 	return 0;
 
@@ -10457,7 +10454,7 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	 * Make sure that UFS interrupts are disabled and any pending interrupt
 	 * status is cleared before registering UFS interrupt handler.
 	 */
-	mb();
+	ufshcd_readl(hba, REG_INTERRUPT_ENABLE);
 
 	/* IRQ registration */
 	err = devm_request_irq(dev, irq, ufshcd_intr, IRQF_SHARED, UFSHCD, hba);
