@@ -16,6 +16,23 @@
       "message": "done",
       "revId": "ed132438e9d5ef17477752708bbc52370ca951e0",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23dc4e94_cd97b67d",
+        "filename": "include/linux/memcontrol.h",
+        "patchSetId": 14
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1930620
+      },
+      "writtenOn": "2024-11-18T16:25:03Z",
+      "side": 1,
+      "message": "You are still adding a prototype for a function you can\u0027t call, because it\u0027s not exported in this commit. Each commit should be individually usable.",
+      "revId": "ed132438e9d5ef17477752708bbc52370ca951e0",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
