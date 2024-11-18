@@ -51,6 +51,24 @@
       "parentUuid": "23dc4e94_cd97b67d",
       "revId": "ed132438e9d5ef17477752708bbc52370ca951e0",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1d86a5e8_fdb4b303",
+        "filename": "include/linux/memcontrol.h",
+        "patchSetId": 14
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1157738
+      },
+      "writtenOn": "2024-11-18T20:50:28Z",
+      "side": 1,
+      "message": "Please move `unpack_shadow` declaration back into https://android-review.googlesource.com/c/kernel/common/+/3325615. You misunderstood the request in that patch and moved both `unpack_shadow` and `bucket_order` declarations here.",
+      "parentUuid": "f6b34265_2ef8c63a",
+      "revId": "ed132438e9d5ef17477752708bbc52370ca951e0",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }
