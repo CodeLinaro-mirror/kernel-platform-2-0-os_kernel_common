@@ -994,7 +994,7 @@ static unsigned long shrink_slab_memcg(gfp_t gfp_mask, int nid,
  *
  * Returns the number of reclaimed slab objects.
  */
-static unsigned long shrink_slab(gfp_t gfp_mask, int nid,
+unsigned long shrink_slab(gfp_t gfp_mask, int nid,
 				 struct mem_cgroup *memcg,
 				 int priority)
 {
@@ -1046,6 +1046,8 @@ out:
 	cond_resched();
 	return freed;
 }
+
+EXPORT_SYMBOL_GPL(shrink_slab);
 
 static void drop_slab_node(int nid)
 {
@@ -3215,6 +3217,7 @@ DEFINE_STATIC_KEY_ARRAY_TRUE(lru_gen_caps, NR_LRU_GEN_CAPS);
 DEFINE_STATIC_KEY_ARRAY_FALSE(lru_gen_caps, NR_LRU_GEN_CAPS);
 #define get_cap(cap)	static_branch_unlikely(&lru_gen_caps[cap])
 #endif
+EXPORT_SYMBOL_GPL(lru_gen_caps);
 
 /******************************************************************************
  *                          shorthand helpers
