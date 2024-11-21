@@ -1560,18 +1560,60 @@ filegroup(
 ddk_headers(
     name = "all_headers_unsafe",
     hdrs = [
+        "drivers/android/binder_alloc.h",
+        "drivers/android/binder_internal.h",
+        "drivers/android/binder_trace.h",
+        "drivers/base/regmap/internal.h",
+        "drivers/clk/clk.h",
         "drivers/devfreq/governor.h",
+        "drivers/gpu/drm/virtio/virtgpu_trace.h",
+        "drivers/hwspinlock/hwspinlock_internal.h",
+        "drivers/interconnect/internal.h",
+        "drivers/interconnect/qcom/icc-common.h",
+        "drivers/iommu/dma-iommu.h",
+        "drivers/iommu/io-pgtable-arm.h",
+        "drivers/iommu/iommu-priv.h",
+        "drivers/pci/pci.h",
         "drivers/pinctrl/core.h",
+        "drivers/pinctrl/pinconf.h",
+        "drivers/pinctrl/pinctrl-utils.h",
+        "drivers/regulator/internal.h",
+        "drivers/scsi/scsi_logging.h",
+        "drivers/thermal/thermal_core.h",
+        "drivers/thermal/thermal_debugfs.h",
+        "drivers/thermal/thermal_hwmon.h",
+        "drivers/thermal/thermal_netlink.h",
+        "drivers/tty/hvc/hvc_console.h",
         "drivers/ufs/host/ufshcd-pltfrm.h",
+        "drivers/usb/dwc3/core.h",
+        "drivers/usb/dwc3/debug.h",
+        "drivers/usb/dwc3/gadget.h",
+        "drivers/usb/dwc3/io.h",
+        "drivers/usb/dwc3/trace.h",
+        "drivers/usb/gadget/function/u_ether.h",
+        "drivers/usb/host/pci-quirks.h",
+        "drivers/usb/host/xhci.h",
+        "drivers/usb/host/xhci-caps.h",
+        "drivers/usb/host/xhci-ext-caps.h",
+        "drivers/usb/host/xhci-port.h",
+        "fs/proc/internal.h",
+        "kernel/locking/mutex.h",
+        "kernel/rcu/rcu.h",
+        "kernel/sched/cpudeadline.h",
+        "kernel/sched/cpupri.h",
+        "kernel/sched/features.h",
+        "kernel/sched/sched.h",
+        "kernel/sched/stats.h",
+        "kernel/workqueue_internal.h",
+        "mm/internal.h",
+        "mm/slab.h",
         "//build/kernel/kleaf:user_ddk_unsafe_headers",
     ],
     # The list of include directories where source files can #include headers
     # from. In other words, these are the `-I` option to the C compiler.
     # Unsafe include directories are appended to ccflags-y.
     includes = [
-        "drivers/devfreq",
-        "drivers/pinctrl",
-        "drivers/ufs/host",
+        ".",
     ],
     visibility = ["//visibility:private"],
 )
@@ -2972,3 +3014,7 @@ pkg_zip(
 exports_files([
     "Makefile",
 ])
+
+load(":consolidate.bzl", "define_consolidate")
+
+define_consolidate()
