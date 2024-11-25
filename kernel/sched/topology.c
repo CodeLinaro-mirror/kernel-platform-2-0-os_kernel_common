@@ -255,9 +255,6 @@ static bool sched_is_eas_possible(const struct cpumask *cpu_mask)
 		return false;
 	}
 
-	if (eas_check)
-		goto out;
-
 	/* Do not attempt EAS if schedutil is not being used. */
 	for_each_cpu(i, cpu_mask) {
 		policy = cpufreq_cpu_get(i);
@@ -279,7 +276,6 @@ static bool sched_is_eas_possible(const struct cpumask *cpu_mask)
 		}
 	}
 
-out:
 	return true;
 }
 
