@@ -227,28 +227,6 @@ uvc_video_encode_isoc(struct usb_request *req, struct uvc_video *video,
  * Request handling
  */
 
-/*
- * Callers must take care to hold req_lock when this function may be called
- * from multiple threads. For example, when frames are streaming to the host.
- */
-static void
-uvc_video_free_request(struct uvc_request *ureq, struct usb_ep *ep)
-{
-	sg_free_table(&ureq->sgt);
-	if (ureq->req && ep) {
-		usb_ep_free_request(ep, ureq->req);
-		ureq->req = NULL;
-	}
-
-	kfree(ureq->req_buffer);
-	ureq->req_buffer = NULL;
-
-	if (!list_empty(&ureq->list))
-		list_del_init(&ureq->list);
-
-	kfree(ureq);
-}
-
 static int uvcg_video_ep_queue(struct uvc_video *video, struct usb_request *req)
 {
 	int ret;
@@ -275,25 +253,8 @@ uvc_video_complete(struct usb_ep *ep, struct usb_request *req)
 	struct uvc_request *ureq = req->context;
 	struct uvc_video *video = ureq->video;
 	struct uvc_video_queue *queue = &video->queue;
-	struct uvc_buffer *last_buf;
+	struct uvc_device *uvc = video->uvc;
 	unsigned long flags;
-
-	spin_lock_irqsave(&video->req_lock, flags);
-	if (!video->is_enabled) {
-		/*
-		 * When is_enabled is false, uvcg_video_disable() ensures
-		 * that in-flight uvc_buffers are returned, so we can
-		 * safely call free_request without worrying about
-		 * last_buf.
-		 */
-		uvc_video_free_request(ureq, ep);
-		spin_unlock_irqrestore(&video->req_lock, flags);
-		return;
-	}
-
-	last_buf = ureq->last_buf;
-	ureq->last_buf = NULL;
-	spin_unlock_irqrestore(&video->req_lock, flags);
 
 	switch (req->status) {
 	case 0:
@@ -316,37 +277,43 @@ uvc_video_complete(struct usb_ep *ep, struct usb_request *req)
 		uvcg_queue_cancel(queue, 0);
 	}
 
-	if (last_buf) {
-		spin_lock_irqsave(&queue->irqlock, flags);
-		uvcg_complete_buffer(queue, last_buf);
-		spin_unlock_irqrestore(&queue->irqlock, flags);
+	if (ureq->last_buf) {
+		uvcg_complete_buffer(&video->queue, ureq->last_buf);
+		ureq->last_buf = NULL;
 	}
 
 	spin_lock_irqsave(&video->req_lock, flags);
-	/*
-	 * Video stream might have been disabled while we were
-	 * processing the current usb_request. So make sure
-	 * we're still streaming before queueing the usb_request
-	 * back to req_free
-	 */
-	if (video->is_enabled) {
-		list_add_tail(&req->list, &video->req_free);
-		queue_work(video->async_wq, &video->pump);
-	} else {
-		uvc_video_free_request(ureq, ep);
-	}
+	list_add_tail(&req->list, &video->req_free);
 	spin_unlock_irqrestore(&video->req_lock, flags);
+
+	if (uvc->state == UVC_STATE_STREAMING)
+		queue_work(video->async_wq, &video->pump);
 }
 
 static int
 uvc_video_free_requests(struct uvc_video *video)
 {
-	struct uvc_request *ureq, *temp;
+	unsigned int i;
 
-	list_for_each_entry_safe(ureq, temp, &video->ureqs, list)
-		uvc_video_free_request(ureq, video->ep);
+	if (video->ureq) {
+		for (i = 0; i < video->uvc_num_requests; ++i) {
+			sg_free_table(&video->ureq[i].sgt);
 
-	INIT_LIST_HEAD(&video->ureqs);
+			if (video->ureq[i].req) {
+				usb_ep_free_request(video->ep, video->ureq[i].req);
+				video->ureq[i].req = NULL;
+			}
+
+			if (video->ureq[i].req_buffer) {
+				kfree(video->ureq[i].req_buffer);
+				video->ureq[i].req_buffer = NULL;
+			}
+		}
+
+		kfree(video->ureq);
+		video->ureq = NULL;
+	}
+
 	INIT_LIST_HEAD(&video->req_free);
 	video->req_size = 0;
 	return 0;
@@ -355,7 +322,6 @@ uvc_video_free_requests(struct uvc_video *video)
 static int
 uvc_video_alloc_requests(struct uvc_video *video)
 {
-	struct uvc_request *ureq;
 	unsigned int req_size;
 	unsigned int i;
 	int ret = -ENOMEM;
@@ -366,33 +332,29 @@ uvc_video_alloc_requests(struct uvc_video *video)
 		 * max_t(unsigned int, video->ep->maxburst, 1)
 		 * (video->ep->mult);
 
-	for (i = 0; i < video->uvc_num_requests; i++) {
-		ureq = kzalloc(sizeof(struct uvc_request), GFP_KERNEL);
-		if (ureq == NULL)
+	video->ureq = kcalloc(video->uvc_num_requests, sizeof(struct uvc_request), GFP_KERNEL);
+	if (video->ureq == NULL)
+		return -ENOMEM;
+
+	for (i = 0; i < video->uvc_num_requests; ++i) {
+		video->ureq[i].req_buffer = kmalloc(req_size, GFP_KERNEL);
+		if (video->ureq[i].req_buffer == NULL)
 			goto error;
 
-		INIT_LIST_HEAD(&ureq->list);
-
-		list_add_tail(&ureq->list, &video->ureqs);
-
-		ureq->req_buffer = kmalloc(req_size, GFP_KERNEL);
-		if (ureq->req_buffer == NULL)
+		video->ureq[i].req = usb_ep_alloc_request(video->ep, GFP_KERNEL);
+		if (video->ureq[i].req == NULL)
 			goto error;
 
-		ureq->req = usb_ep_alloc_request(video->ep, GFP_KERNEL);
-		if (ureq->req == NULL)
-			goto error;
+		video->ureq[i].req->buf = video->ureq[i].req_buffer;
+		video->ureq[i].req->length = 0;
+		video->ureq[i].req->complete = uvc_video_complete;
+		video->ureq[i].req->context = &video->ureq[i];
+		video->ureq[i].video = video;
+		video->ureq[i].last_buf = NULL;
 
-		ureq->req->buf = ureq->req_buffer;
-		ureq->req->length = 0;
-		ureq->req->complete = uvc_video_complete;
-		ureq->req->context = ureq;
-		ureq->video = video;
-		ureq->last_buf = NULL;
-
-		list_add_tail(&ureq->req->list, &video->req_free);
+		list_add_tail(&video->ureq[i].req->list, &video->req_free);
 		/* req_size/PAGE_SIZE + 1 for overruns and + 1 for header */
-		sg_alloc_table(&ureq->sgt,
+		sg_alloc_table(&video->ureq[i].sgt,
 			       DIV_ROUND_UP(req_size - UVCG_REQUEST_HEADER_LEN,
 					    PAGE_SIZE) + 2, GFP_KERNEL);
 	}
@@ -428,16 +390,13 @@ static void uvcg_video_pump(struct work_struct *work)
 	bool buf_done;
 	int ret;
 
-	while (true) {
-		if (!video->ep->enabled)
-			return;
-
+	while (video->ep->enabled) {
 		/*
-		 * Check is_enabled and retrieve the first available USB
-		 * request, protected by the request lock.
+		 * Retrieve the first available USB request, protected by the
+		 * request lock.
 		 */
 		spin_lock_irqsave(&video->req_lock, flags);
-		if (!video->is_enabled || list_empty(&video->req_free)) {
+		if (list_empty(&video->req_free)) {
 			spin_unlock_irqrestore(&video->req_lock, flags);
 			return;
 		}
@@ -519,92 +478,17 @@ static void uvcg_video_pump(struct work_struct *work)
 		return;
 
 	spin_lock_irqsave(&video->req_lock, flags);
-	if (video->is_enabled)
-		list_add_tail(&req->list, &video->req_free);
-	else
-		uvc_video_free_request(req->context, video->ep);
+	list_add_tail(&req->list, &video->req_free);
 	spin_unlock_irqrestore(&video->req_lock, flags);
+	return;
 }
 
 /*
- * Disable the video stream
+ * Enable or disable the video stream.
  */
-int
-uvcg_video_disable(struct uvc_video *video)
+int uvcg_video_enable(struct uvc_video *video, int enable)
 {
-	unsigned long flags;
-	struct list_head inflight_bufs;
-	struct usb_request *req, *temp;
-	struct uvc_buffer *buf, *btemp;
-	struct uvc_request *ureq, *utemp;
-
-	if (video->ep == NULL) {
-		uvcg_info(&video->uvc->func,
-			  "Video disable failed, device is uninitialized.\n");
-		return -ENODEV;
-	}
-
-	INIT_LIST_HEAD(&inflight_bufs);
-	spin_lock_irqsave(&video->req_lock, flags);
-	video->is_enabled = false;
-
-	/*
-	 * Remove any in-flight buffers from the uvc_requests
-	 * because we want to return them before cancelling the
-	 * queue. This ensures that we aren't stuck waiting for
-	 * all complete callbacks to come through before disabling
-	 * vb2 queue.
-	 */
-	list_for_each_entry(ureq, &video->ureqs, list) {
-		if (ureq->last_buf) {
-			list_add_tail(&ureq->last_buf->queue, &inflight_bufs);
-			ureq->last_buf = NULL;
-		}
-	}
-	spin_unlock_irqrestore(&video->req_lock, flags);
-
-	cancel_work_sync(&video->pump);
-	uvcg_queue_cancel(&video->queue, 0);
-
-	spin_lock_irqsave(&video->req_lock, flags);
-	/*
-	 * Remove all uvc_requests from ureqs with list_del_init
-	 * This lets uvc_video_free_request correctly identify
-	 * if the uvc_request is attached to a list or not when freeing
-	 * memory.
-	 */
-	list_for_each_entry_safe(ureq, utemp, &video->ureqs, list)
-		list_del_init(&ureq->list);
-
-	list_for_each_entry_safe(req, temp, &video->req_free, list) {
-		list_del(&req->list);
-		uvc_video_free_request(req->context, video->ep);
-	}
-
-	INIT_LIST_HEAD(&video->ureqs);
-	INIT_LIST_HEAD(&video->req_free);
-	video->req_size = 0;
-	spin_unlock_irqrestore(&video->req_lock, flags);
-
-	/*
-	 * Return all the video buffers before disabling the queue.
-	 */
-	spin_lock_irqsave(&video->queue.irqlock, flags);
-	list_for_each_entry_safe(buf, btemp, &inflight_bufs, queue) {
-		list_del(&buf->queue);
-		uvcg_complete_buffer(&video->queue, buf);
-	}
-	spin_unlock_irqrestore(&video->queue.irqlock, flags);
-
-	uvcg_queue_enable(&video->queue, 0);
-	return 0;
-}
-
-/*
- * Enable the video stream.
- */
-int uvcg_video_enable(struct uvc_video *video)
-{
+	unsigned int i;
 	int ret;
 
 	if (video->ep == NULL) {
@@ -613,13 +497,18 @@ int uvcg_video_enable(struct uvc_video *video)
 		return -ENODEV;
 	}
 
-	/*
-	 * Safe to access request related fields without req_lock because
-	 * this is the only thread currently active, and no other
-	 * request handling thread will become active until this function
-	 * returns.
-	 */
-	video->is_enabled = true;
+	if (!enable) {
+		cancel_work_sync(&video->pump);
+		uvcg_queue_cancel(&video->queue, 0);
+
+		for (i = 0; i < video->uvc_num_requests; ++i)
+			if (video->ureq && video->ureq[i].req)
+				usb_ep_dequeue(video->ep, video->ureq[i].req);
+
+		uvc_video_free_requests(video);
+		uvcg_queue_enable(&video->queue, 0);
+		return 0;
+	}
 
 	if ((ret = uvcg_queue_enable(&video->queue, 1)) < 0)
 		return ret;
@@ -646,8 +535,6 @@ int uvcg_video_enable(struct uvc_video *video)
  */
 int uvcg_video_init(struct uvc_video *video, struct uvc_device *uvc)
 {
-	video->is_enabled = false;
-	INIT_LIST_HEAD(&video->ureqs);
 	INIT_LIST_HEAD(&video->req_free);
 	spin_lock_init(&video->req_lock);
 	INIT_WORK(&video->pump, uvcg_video_pump);
