@@ -1564,3 +1564,8 @@
   trace_seq_printf
   trace_seq_putc
   uuid_parse
+
+# required by gh_arm_drv.ko
+  irq_create_fwspec_mapping
+  irq_dispose_mapping
+  irq_get_irq_data

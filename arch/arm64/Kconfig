@@ -2362,3 +2362,5 @@ endmenu # "CPU Power Management"
 source "drivers/acpi/Kconfig"
 
 source "arch/arm64/kvm/Kconfig"
+
+source "arch/arm64/gunyah/Kconfig"
