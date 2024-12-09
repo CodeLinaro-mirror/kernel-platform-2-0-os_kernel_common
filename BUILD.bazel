@@ -1630,6 +1630,7 @@ ddk_headers(
         "kernel/workqueue_internal.h",
         "mm/internal.h",
         "mm/slab.h",
+        "mm/vma.h",
         "sound/usb/card.h",
         "sound/usb/endpoint.h",
         "sound/usb/helper.h",
