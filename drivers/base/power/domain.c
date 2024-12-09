@@ -1078,6 +1078,9 @@ static void genpd_sync_power_off(struct generic_pm_domain *genpd, bool use_lock,
 	if (!genpd_status_on(genpd) || genpd_is_always_on(genpd))
 		return;
 
+	pr_debug("%s: %s, skip it for debug\n", __func__, genpd->name);
+	return;
+
 	if (genpd->suspended_count != genpd->device_count
 	    || atomic_read(&genpd->sd_count) > 0)
 		return;
@@ -1126,6 +1129,9 @@ static void genpd_sync_power_on(struct generic_pm_domain *genpd, bool use_lock,
 
 	if (genpd_status_on(genpd))
 		return;
+
+	pr_debug("%s: %s, skip it for debug\n", __func__, genpd->name);
+	return;
 
 	list_for_each_entry(link, &genpd->child_links, child_node) {
 		genpd_sd_counter_inc(link->parent);
