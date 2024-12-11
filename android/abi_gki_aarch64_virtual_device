@@ -1569,3 +1569,7 @@
   irq_create_fwspec_mapping
   irq_dispose_mapping
   irq_get_irq_data
+
+# required by hvc_gunyah.ko
+  __kfifo_in
+  __kfifo_out
