@@ -2905,7 +2905,6 @@ int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
 			pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream->private_data = rtd;
 		goto out;
 	}
-
 	/* setup any hostless PCMs - i.e. no host IO is performed */
 	if (rtd->dai_link->no_host_mode) {
 		if (pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream) {
