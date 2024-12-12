@@ -229,7 +229,8 @@ void drm_fb_helper_fill_info(struct fb_info *info,
 			     struct drm_fb_helper *fb_helper,
 			     struct drm_fb_helper_surface_size *sizes);
 
-void drm_fb_helper_deferred_io(struct fb_info *info, struct list_head *pagereflist);
+void drm_fb_helper_deferred_io(struct fb_info *info,
+			       struct list_head *pagelist);
 
 ssize_t drm_fb_helper_sys_read(struct fb_info *info, char __user *buf,
 			       size_t count, loff_t *ppos);

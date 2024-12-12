@@ -342,7 +342,7 @@ static u32 owl_emac_dma_cmd_stop(struct owl_emac_priv *priv)
 static void owl_emac_set_hw_mac_addr(struct net_device *netdev)
 {
 	struct owl_emac_priv *priv = netdev_priv(netdev);
-	const u8 *mac_addr = netdev->dev_addr;
+	u8 *mac_addr = netdev->dev_addr;
 	u32 addr_high, addr_low;
 
 	addr_high = mac_addr[0] << 8 | mac_addr[1];

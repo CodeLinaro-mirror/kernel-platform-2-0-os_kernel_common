@@ -145,7 +145,7 @@ static struct afs_call *afs_alloc_call(struct afs_net *net,
 	call->type = type;
 	call->net = net;
 	call->debug_id = atomic_inc_return(&rxrpc_debug_id);
-	refcount_set(&call->ref, 1);
+	atomic_set(&call->usage, 1);
 	INIT_WORK(&call->async_work, afs_process_async_call);
 	init_waitqueue_head(&call->waitq);
 	spin_lock_init(&call->state_lock);
@@ -163,15 +163,14 @@ static struct afs_call *afs_alloc_call(struct afs_net *net,
 void afs_put_call(struct afs_call *call)
 {
 	struct afs_net *net = call->net;
-	bool zero;
-	int r, o;
+	int n = atomic_dec_return(&call->usage);
+	int o = atomic_read(&net->nr_outstanding_calls);
 
-	zero = __refcount_dec_and_test(&call->ref, &r);
-	o = atomic_read(&net->nr_outstanding_calls);
-	trace_afs_call(call, afs_call_trace_put, r - 1, o,
+	trace_afs_call(call, afs_call_trace_put, n, o,
 		       __builtin_return_address(0));
 
-	if (zero) {
+	ASSERTCMP(n, >=, 0);
+	if (n == 0) {
 		ASSERT(!work_pending(&call->async_work));
 		ASSERT(call->type->name != NULL);
 
@@ -199,11 +198,9 @@ void afs_put_call(struct afs_call *call)
 static struct afs_call *afs_get_call(struct afs_call *call,
 				     enum afs_call_trace why)
 {
-	int r;
+	int u = atomic_inc_return(&call->usage);
 
-	__refcount_inc(&call->ref, &r);
-
-	trace_afs_call(call, why, r + 1,
+	trace_afs_call(call, why, u,
 		       atomic_read(&call->net->nr_outstanding_calls),
 		       __builtin_return_address(0));
 	return call;
@@ -666,13 +663,14 @@ static void afs_wake_up_async_call(struct sock *sk, struct rxrpc_call *rxcall,
 				   unsigned long call_user_ID)
 {
 	struct afs_call *call = (struct afs_call *)call_user_ID;
-	int r;
+	int u;
 
 	trace_afs_notify_call(rxcall, call);
 	call->need_attention = true;
 
-	if (__refcount_inc_not_zero(&call->ref, &r)) {
-		trace_afs_call(call, afs_call_trace_wake, r + 1,
+	u = atomic_fetch_add_unless(&call->usage, 1, 0);
+	if (u != 0) {
+		trace_afs_call(call, afs_call_trace_wake, u + 1,
 			       atomic_read(&call->net->nr_outstanding_calls),
 			       __builtin_return_address(0));
 

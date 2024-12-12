@@ -56,9 +56,6 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/migrate.h>
 
-#undef CREATE_TRACE_POINTS
-#include <trace/hooks/mm.h>
-
 #include "internal.h"
 
 int isolate_movable_page(struct page *page, isolate_mode_t mode)
@@ -428,12 +425,8 @@ int migrate_page_move_mapping(struct address_space *mapping,
 	if (PageSwapBacked(page)) {
 		__SetPageSwapBacked(newpage);
 		if (PageSwapCache(page)) {
-			int i;
-
 			SetPageSwapCache(newpage);
-			for (i = 0; i < (1 << compound_order(page)); i++)
-				set_page_private(newpage + i,
-						 page_private(page + i));
+			set_page_private(newpage, page_private(page));
 		}
 	} else {
 		VM_BUG_ON_PAGE(PageSwapCache(page), page);
@@ -569,8 +562,6 @@ void migrate_page_states(struct page *newpage, struct page *page)
 		SetPageChecked(newpage);
 	if (PageMappedToDisk(page))
 		SetPageMappedToDisk(newpage);
-
-	trace_android_vh_look_around_migrate_page(page, newpage);
 
 	/* Move dirty on pages not done by migrate_page_move_mapping() */
 	if (PageDirty(page))

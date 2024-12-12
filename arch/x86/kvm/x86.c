@@ -1498,8 +1498,7 @@ static unsigned int num_msr_based_features;
 	 ARCH_CAP_SKIP_VMENTRY_L1DFLUSH | ARCH_CAP_SSB_NO | ARCH_CAP_MDS_NO | \
 	 ARCH_CAP_PSCHANGE_MC_NO | ARCH_CAP_TSX_CTRL_MSR | ARCH_CAP_TAA_NO | \
 	 ARCH_CAP_SBDR_SSDP_NO | ARCH_CAP_FBSDP_NO | ARCH_CAP_PSDP_NO | \
-	 ARCH_CAP_FB_CLEAR | ARCH_CAP_RRSBA | ARCH_CAP_PBRSB_NO | ARCH_CAP_GDS_NO | \
-	 ARCH_CAP_RFDS_NO | ARCH_CAP_RFDS_CLEAR | ARCH_CAP_BHI_NO)
+	 ARCH_CAP_FB_CLEAR | ARCH_CAP_RRSBA | ARCH_CAP_PBRSB_NO | ARCH_CAP_GDS_NO)
 
 static u64 kvm_get_arch_capabilities(void)
 {
@@ -1536,8 +1535,6 @@ static u64 kvm_get_arch_capabilities(void)
 		data |= ARCH_CAP_SSB_NO;
 	if (!boot_cpu_has_bug(X86_BUG_MDS))
 		data |= ARCH_CAP_MDS_NO;
-	if (!boot_cpu_has_bug(X86_BUG_RFDS))
-		data |= ARCH_CAP_RFDS_NO;
 
 	if (!boot_cpu_has(X86_FEATURE_RTM)) {
 		/*
@@ -3106,7 +3103,7 @@ static void kvmclock_sync_fn(struct work_struct *work)
 static bool can_set_mci_status(struct kvm_vcpu *vcpu)
 {
 	/* McStatusWrEn enabled? */
-	if (guest_cpuid_is_amd_compatible(vcpu))
+	if (guest_cpuid_is_amd_or_hygon(vcpu))
 		return !!(vcpu->arch.msr_hwcr & BIT_ULL(18));
 
 	return false;
@@ -7108,17 +7105,7 @@ static int emulator_cmpxchg_emulated(struct x86_emulate_ctxt *ctxt,
 	}
 
 	if (r < 0)
-		return X86EMUL_UNHANDLEABLE;
-
-	/*
-	 * Mark the page dirty _before_ checking whether or not the CMPXCHG was
-	 * successful, as the old value is written back on failure.  Note, for
-	 * live migration, this is unnecessarily conservative as CMPXCHG writes
-	 * back the original value and the access is atomic, but KVM's ABI is
-	 * that all writes are dirty logged, regardless of the value written.
-	 */
-	kvm_vcpu_mark_page_dirty(vcpu, gpa_to_gfn(gpa));
-
+		goto emul_write;
 	if (r)
 		return X86EMUL_CMPXCHG_FAILED;
 
@@ -12060,10 +12047,7 @@ bool kvm_arch_vcpu_in_kernel(struct kvm_vcpu *vcpu)
 	if (vcpu->arch.guest_state_protected)
 		return true;
 
-	if (vcpu != kvm_get_running_vcpu())
-		return vcpu->arch.preempted_in_kernel;
-
-	return static_call(kvm_x86_get_cpl)(vcpu) == 0;
+	return vcpu->arch.preempted_in_kernel;
 }
 
 unsigned long kvm_arch_vcpu_get_ip(struct kvm_vcpu *vcpu)

@@ -164,16 +164,11 @@
 	#define GMII_PHY_PGSEL_PAGE3	0x0003
 	#define GMII_PHY_PGSEL_PAGE5	0x0005
 
-static int ax88179_reset(struct usbnet *dev);
-
 struct ax88179_data {
 	u8  eee_enabled;
 	u8  eee_active;
 	u16 rxctl;
-	u8 in_pm;
-	u32 wol_supported;
-	u32 wolopts;
-	u8 disconnecting;
+	u16 reserved;
 };
 
 struct ax88179_int_data {
@@ -190,30 +185,15 @@ static const struct {
 	{7, 0xcc, 0x4c, 0x18, 8},
 };
 
-static void ax88179_set_pm_mode(struct usbnet *dev, bool pm_mode)
-{
-	struct ax88179_data *ax179_data = dev->driver_priv;
-
-	ax179_data->in_pm = pm_mode;
-}
-
-static int ax88179_in_pm(struct usbnet *dev)
-{
-	struct ax88179_data *ax179_data = dev->driver_priv;
-
-	return ax179_data->in_pm;
-}
-
 static int __ax88179_read_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
-			      u16 size, void *data)
+			      u16 size, void *data, int in_pm)
 {
 	int ret;
 	int (*fn)(struct usbnet *, u8, u8, u16, u16, void *, u16);
-	struct ax88179_data *ax179_data = dev->driver_priv;
 
 	BUG_ON(!dev);
 
-	if (!ax88179_in_pm(dev))
+	if (!in_pm)
 		fn = usbnet_read_cmd;
 	else
 		fn = usbnet_read_cmd_nopm;
@@ -221,7 +201,7 @@ static int __ax88179_read_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
 	ret = fn(dev, cmd, USB_DIR_IN | USB_TYPE_VENDOR | USB_RECIP_DEVICE,
 		 value, index, data, size);
 
-	if (unlikely((ret < 0) && !(ret == -ENODEV && ax179_data->disconnecting)))
+	if (unlikely(ret < 0))
 		netdev_warn(dev->net, "Failed to read reg index 0x%04x: %d\n",
 			    index, ret);
 
@@ -229,15 +209,14 @@ static int __ax88179_read_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
 }
 
 static int __ax88179_write_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
-			       u16 size, const void *data)
+			       u16 size, void *data, int in_pm)
 {
 	int ret;
 	int (*fn)(struct usbnet *, u8, u8, u16, u16, const void *, u16);
-	struct ax88179_data *ax179_data = dev->driver_priv;
 
 	BUG_ON(!dev);
 
-	if (!ax88179_in_pm(dev))
+	if (!in_pm)
 		fn = usbnet_write_cmd;
 	else
 		fn = usbnet_write_cmd_nopm;
@@ -245,7 +224,7 @@ static int __ax88179_write_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
 	ret = fn(dev, cmd, USB_DIR_OUT | USB_TYPE_VENDOR | USB_RECIP_DEVICE,
 		 value, index, data, size);
 
-	if (unlikely((ret < 0) && !(ret == -ENODEV && ax179_data->disconnecting)))
+	if (unlikely(ret < 0))
 		netdev_warn(dev->net, "Failed to write reg index 0x%04x: %d\n",
 			    index, ret);
 
@@ -270,30 +249,30 @@ static void ax88179_write_cmd_async(struct usbnet *dev, u8 cmd, u16 value,
 	}
 }
 
-static int ax88179_read_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
-			    u16 size, void *data)
+static int ax88179_read_cmd_nopm(struct usbnet *dev, u8 cmd, u16 value,
+				 u16 index, u16 size, void *data)
 {
 	int ret;
 
 	if (2 == size) {
-		u16 buf = 0;
-		ret = __ax88179_read_cmd(dev, cmd, value, index, size, &buf);
+		u16 buf;
+		ret = __ax88179_read_cmd(dev, cmd, value, index, size, &buf, 1);
 		le16_to_cpus(&buf);
 		*((u16 *)data) = buf;
 	} else if (4 == size) {
-		u32 buf = 0;
-		ret = __ax88179_read_cmd(dev, cmd, value, index, size, &buf);
+		u32 buf;
+		ret = __ax88179_read_cmd(dev, cmd, value, index, size, &buf, 1);
 		le32_to_cpus(&buf);
 		*((u32 *)data) = buf;
 	} else {
-		ret = __ax88179_read_cmd(dev, cmd, value, index, size, data);
+		ret = __ax88179_read_cmd(dev, cmd, value, index, size, data, 1);
 	}
 
 	return ret;
 }
 
-static int ax88179_write_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
-			     u16 size, const void *data)
+static int ax88179_write_cmd_nopm(struct usbnet *dev, u8 cmd, u16 value,
+				  u16 index, u16 size, void *data)
 {
 	int ret;
 
@@ -302,10 +281,51 @@ static int ax88179_write_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
 		buf = *((u16 *)data);
 		cpu_to_le16s(&buf);
 		ret = __ax88179_write_cmd(dev, cmd, value, index,
-					  size, &buf);
+					  size, &buf, 1);
 	} else {
 		ret = __ax88179_write_cmd(dev, cmd, value, index,
-					  size, data);
+					  size, data, 1);
+	}
+
+	return ret;
+}
+
+static int ax88179_read_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
+			    u16 size, void *data)
+{
+	int ret;
+
+	if (2 == size) {
+		u16 buf = 0;
+		ret = __ax88179_read_cmd(dev, cmd, value, index, size, &buf, 0);
+		le16_to_cpus(&buf);
+		*((u16 *)data) = buf;
+	} else if (4 == size) {
+		u32 buf = 0;
+		ret = __ax88179_read_cmd(dev, cmd, value, index, size, &buf, 0);
+		le32_to_cpus(&buf);
+		*((u32 *)data) = buf;
+	} else {
+		ret = __ax88179_read_cmd(dev, cmd, value, index, size, data, 0);
+	}
+
+	return ret;
+}
+
+static int ax88179_write_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
+			     u16 size, void *data)
+{
+	int ret;
+
+	if (2 == size) {
+		u16 buf;
+		buf = *((u16 *)data);
+		cpu_to_le16s(&buf);
+		ret = __ax88179_write_cmd(dev, cmd, value, index,
+					  size, &buf, 0);
+	} else {
+		ret = __ax88179_write_cmd(dev, cmd, value, index,
+					  size, data, 0);
 	}
 
 	return ret;
@@ -405,63 +425,55 @@ ax88179_phy_write_mmd_indirect(struct usbnet *dev, u16 prtad, u16 devad,
 static int ax88179_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	struct usbnet *dev = usb_get_intfdata(intf);
-	struct ax88179_data *priv = dev->driver_priv;
 	u16 tmp16;
 	u8 tmp8;
 
-	ax88179_set_pm_mode(dev, true);
-
 	usbnet_suspend(intf, message);
 
-	/* Enable WoL */
-	if (priv->wolopts) {
-		ax88179_read_cmd(dev, AX_ACCESS_MAC, AX_MONITOR_MOD,
-				 1, 1, &tmp8);
-		if (priv->wolopts & WAKE_PHY)
-			tmp8 |= AX_MONITOR_MODE_RWLC;
-		if (priv->wolopts & WAKE_MAGIC)
-			tmp8 |= AX_MONITOR_MODE_RWMP;
-
-		ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_MONITOR_MOD,
-				  1, 1, &tmp8);
-	}
-
 	/* Disable RX path */
-	ax88179_read_cmd(dev, AX_ACCESS_MAC, AX_MEDIUM_STATUS_MODE,
-			 2, 2, &tmp16);
+	ax88179_read_cmd_nopm(dev, AX_ACCESS_MAC, AX_MEDIUM_STATUS_MODE,
+			      2, 2, &tmp16);
 	tmp16 &= ~AX_MEDIUM_RECEIVE_EN;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_MEDIUM_STATUS_MODE,
-			  2, 2, &tmp16);
+	ax88179_write_cmd_nopm(dev, AX_ACCESS_MAC, AX_MEDIUM_STATUS_MODE,
+			       2, 2, &tmp16);
 
 	/* Force bulk-in zero length */
-	ax88179_read_cmd(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL,
-			 2, 2, &tmp16);
+	ax88179_read_cmd_nopm(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL,
+			      2, 2, &tmp16);
 
 	tmp16 |= AX_PHYPWR_RSTCTL_BZ | AX_PHYPWR_RSTCTL_IPRL;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL,
-			  2, 2, &tmp16);
+	ax88179_write_cmd_nopm(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL,
+			       2, 2, &tmp16);
 
 	/* change clock */
 	tmp8 = 0;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_CLK_SELECT, 1, 1, &tmp8);
+	ax88179_write_cmd_nopm(dev, AX_ACCESS_MAC, AX_CLK_SELECT, 1, 1, &tmp8);
 
 	/* Configure RX control register => stop operation */
 	tmp16 = AX_RX_CTL_STOP;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_RX_CTL, 2, 2, &tmp16);
-
-	ax88179_set_pm_mode(dev, false);
+	ax88179_write_cmd_nopm(dev, AX_ACCESS_MAC, AX_RX_CTL, 2, 2, &tmp16);
 
 	return 0;
 }
 
 /* This function is used to enable the autodetach function. */
 /* This function is determined by offset 0x43 of EEPROM */
-static int ax88179_auto_detach(struct usbnet *dev)
+static int ax88179_auto_detach(struct usbnet *dev, int in_pm)
 {
 	u16 tmp16;
 	u8 tmp8;
+	int (*fnr)(struct usbnet *, u8, u16, u16, u16, void *);
+	int (*fnw)(struct usbnet *, u8, u16, u16, u16, void *);
 
-	if (ax88179_read_cmd(dev, AX_ACCESS_EEPROM, 0x43, 1, 2, &tmp16) < 0)
+	if (!in_pm) {
+		fnr = ax88179_read_cmd;
+		fnw = ax88179_write_cmd;
+	} else {
+		fnr = ax88179_read_cmd_nopm;
+		fnw = ax88179_write_cmd_nopm;
+	}
+
+	if (fnr(dev, AX_ACCESS_EEPROM, 0x43, 1, 2, &tmp16) < 0)
 		return 0;
 
 	if ((tmp16 == 0xFFFF) || (!(tmp16 & 0x0100)))
@@ -469,13 +481,13 @@ static int ax88179_auto_detach(struct usbnet *dev)
 
 	/* Enable Auto Detach bit */
 	tmp8 = 0;
-	ax88179_read_cmd(dev, AX_ACCESS_MAC, AX_CLK_SELECT, 1, 1, &tmp8);
+	fnr(dev, AX_ACCESS_MAC, AX_CLK_SELECT, 1, 1, &tmp8);
 	tmp8 |= AX_CLK_SELECT_ULR;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_CLK_SELECT, 1, 1, &tmp8);
+	fnw(dev, AX_ACCESS_MAC, AX_CLK_SELECT, 1, 1, &tmp8);
 
-	ax88179_read_cmd(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL, 2, 2, &tmp16);
+	fnr(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL, 2, 2, &tmp16);
 	tmp16 |= AX_PHYPWR_RSTCTL_AT;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL, 2, 2, &tmp16);
+	fnw(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL, 2, 2, &tmp16);
 
 	return 0;
 }
@@ -486,74 +498,74 @@ static int ax88179_resume(struct usb_interface *intf)
 	u16 tmp16;
 	u8 tmp8;
 
-	ax88179_set_pm_mode(dev, true);
-
 	usbnet_link_change(dev, 0, 0);
 
 	/* Power up ethernet PHY */
 	tmp16 = 0;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL,
-			  2, 2, &tmp16);
+	ax88179_write_cmd_nopm(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL,
+			       2, 2, &tmp16);
 	udelay(1000);
 
 	tmp16 = AX_PHYPWR_RSTCTL_IPRL;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL,
-			  2, 2, &tmp16);
+	ax88179_write_cmd_nopm(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL,
+			       2, 2, &tmp16);
 	msleep(200);
 
 	/* Ethernet PHY Auto Detach*/
-	ax88179_auto_detach(dev);
+	ax88179_auto_detach(dev, 1);
 
 	/* Enable clock */
-	ax88179_read_cmd(dev, AX_ACCESS_MAC,  AX_CLK_SELECT, 1, 1, &tmp8);
+	ax88179_read_cmd_nopm(dev, AX_ACCESS_MAC,  AX_CLK_SELECT, 1, 1, &tmp8);
 	tmp8 |= AX_CLK_SELECT_ACS | AX_CLK_SELECT_BCS;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_CLK_SELECT, 1, 1, &tmp8);
+	ax88179_write_cmd_nopm(dev, AX_ACCESS_MAC, AX_CLK_SELECT, 1, 1, &tmp8);
 	msleep(100);
 
 	/* Configure RX control register => start operation */
 	tmp16 = AX_RX_CTL_DROPCRCERR | AX_RX_CTL_IPE | AX_RX_CTL_START |
 		AX_RX_CTL_AP | AX_RX_CTL_AMALL | AX_RX_CTL_AB;
-	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_RX_CTL, 2, 2, &tmp16);
-
-	ax88179_set_pm_mode(dev, false);
+	ax88179_write_cmd_nopm(dev, AX_ACCESS_MAC, AX_RX_CTL, 2, 2, &tmp16);
 
 	return usbnet_resume(intf);
-}
-
-static void ax88179_disconnect(struct usb_interface *intf)
-{
-	struct usbnet *dev = usb_get_intfdata(intf);
-	struct ax88179_data *ax179_data;
-
-	if (!dev)
-		return;
-
-	ax179_data = dev->driver_priv;
-	ax179_data->disconnecting = 1;
-
-	usbnet_disconnect(intf);
 }
 
 static void
 ax88179_get_wol(struct net_device *net, struct ethtool_wolinfo *wolinfo)
 {
 	struct usbnet *dev = netdev_priv(net);
-	struct ax88179_data *priv = dev->driver_priv;
+	u8 opt;
 
-	wolinfo->supported = priv->wol_supported;
-	wolinfo->wolopts = priv->wolopts;
+	if (ax88179_read_cmd(dev, AX_ACCESS_MAC, AX_MONITOR_MOD,
+			     1, 1, &opt) < 0) {
+		wolinfo->supported = 0;
+		wolinfo->wolopts = 0;
+		return;
+	}
+
+	wolinfo->supported = WAKE_PHY | WAKE_MAGIC;
+	wolinfo->wolopts = 0;
+	if (opt & AX_MONITOR_MODE_RWLC)
+		wolinfo->wolopts |= WAKE_PHY;
+	if (opt & AX_MONITOR_MODE_RWMP)
+		wolinfo->wolopts |= WAKE_MAGIC;
 }
 
 static int
 ax88179_set_wol(struct net_device *net, struct ethtool_wolinfo *wolinfo)
 {
 	struct usbnet *dev = netdev_priv(net);
-	struct ax88179_data *priv = dev->driver_priv;
+	u8 opt = 0;
 
-	if (wolinfo->wolopts & ~(priv->wol_supported))
+	if (wolinfo->wolopts & ~(WAKE_PHY | WAKE_MAGIC))
 		return -EINVAL;
 
-	priv->wolopts = wolinfo->wolopts;
+	if (wolinfo->wolopts & WAKE_PHY)
+		opt |= AX_MONITOR_MODE_RWLC;
+	if (wolinfo->wolopts & WAKE_MAGIC)
+		opt |= AX_MONITOR_MODE_RWMP;
+
+	if (ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_MONITOR_MOD,
+			      1, 1, &opt) < 0)
+		return -EINVAL;
 
 	return 0;
 }
@@ -587,7 +599,8 @@ ax88179_get_eeprom(struct net_device *net, struct ethtool_eeprom *eeprom,
 	/* ax88179/178A returns 2 bytes from eeprom on read */
 	for (i = first_word; i <= last_word; i++) {
 		ret = __ax88179_read_cmd(dev, AX_ACCESS_EEPROM, i, 1, 2,
-					 &eeprom_buff[i - first_word]);
+					 &eeprom_buff[i - first_word],
+					 0);
 		if (ret < 0) {
 			kfree(eeprom_buff);
 			return -EIO;
@@ -732,7 +745,7 @@ ax88179_ethtool_set_eee(struct usbnet *dev, struct ethtool_eee *data)
 static int ax88179_chk_eee(struct usbnet *dev)
 {
 	struct ethtool_cmd ecmd = { .cmd = ETHTOOL_GSET };
-	struct ax88179_data *priv = dev->driver_priv;
+	struct ax88179_data *priv = (struct ax88179_data *)dev->data;
 
 	mii_ethtool_gset(&dev->mii, &ecmd);
 
@@ -835,7 +848,7 @@ static void ax88179_enable_eee(struct usbnet *dev)
 static int ax88179_get_eee(struct net_device *net, struct ethtool_eee *edata)
 {
 	struct usbnet *dev = netdev_priv(net);
-	struct ax88179_data *priv = dev->driver_priv;
+	struct ax88179_data *priv = (struct ax88179_data *)dev->data;
 
 	edata->eee_enabled = priv->eee_enabled;
 	edata->eee_active = priv->eee_active;
@@ -846,7 +859,7 @@ static int ax88179_get_eee(struct net_device *net, struct ethtool_eee *edata)
 static int ax88179_set_eee(struct net_device *net, struct ethtool_eee *edata)
 {
 	struct usbnet *dev = netdev_priv(net);
-	struct ax88179_data *priv = dev->driver_priv;
+	struct ax88179_data *priv = (struct ax88179_data *)dev->data;
 	int ret;
 
 	priv->eee_enabled = edata->eee_enabled;
@@ -897,8 +910,8 @@ static const struct ethtool_ops ax88179_ethtool_ops = {
 static void ax88179_set_multicast(struct net_device *net)
 {
 	struct usbnet *dev = netdev_priv(net);
-	struct ax88179_data *data = dev->driver_priv;
-	u8 *m_filter = ((u8 *)dev->data);
+	struct ax88179_data *data = (struct ax88179_data *)dev->data;
+	u8 *m_filter = ((u8 *)dev->data) + 12;
 
 	data->rxctl = (AX_RX_CTL_START | AX_RX_CTL_AB | AX_RX_CTL_IPE);
 
@@ -910,7 +923,7 @@ static void ax88179_set_multicast(struct net_device *net)
 	} else if (netdev_mc_empty(net)) {
 		/* just broadcast and directed */
 	} else {
-		/* We use dev->data for our 8 byte filter buffer
+		/* We use the 20 byte dev->data for our 8 byte filter buffer
 		 * to avoid allocating memory that is tricky to free later
 		 */
 		u32 crc_bits;
@@ -1056,7 +1069,7 @@ static int ax88179_check_eeprom(struct usbnet *dev)
 		} while (buf & EEP_BUSY);
 
 		__ax88179_read_cmd(dev, AX_ACCESS_MAC, AX_SROM_DATA_LOW,
-				   2, 2, &eeprom[i * 2]);
+				   2, 2, &eeprom[i * 2], 0);
 
 		if ((i == 0) && (eeprom[0] == 0xFF))
 			return -EINVAL;
@@ -1309,15 +1322,46 @@ static void ax88179_get_mac_addr(struct usbnet *dev)
 
 static int ax88179_bind(struct usbnet *dev, struct usb_interface *intf)
 {
-	struct ax88179_data *ax179_data;
+	u8 buf[5];
+	u16 *tmp16;
+	u8 *tmp;
+	struct ax88179_data *ax179_data = (struct ax88179_data *)dev->data;
+	struct ethtool_eee eee_data;
 
 	usbnet_get_endpoints(dev, intf);
 
-	ax179_data = kzalloc(sizeof(*ax179_data), GFP_KERNEL);
-	if (!ax179_data)
-		return -ENOMEM;
+	tmp16 = (u16 *)buf;
+	tmp = (u8 *)buf;
 
-	dev->driver_priv = ax179_data;
+	memset(ax179_data, 0, sizeof(*ax179_data));
+
+	/* Power up ethernet PHY */
+	*tmp16 = 0;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL, 2, 2, tmp16);
+	*tmp16 = AX_PHYPWR_RSTCTL_IPRL;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL, 2, 2, tmp16);
+	msleep(200);
+
+	*tmp = AX_CLK_SELECT_ACS | AX_CLK_SELECT_BCS;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_CLK_SELECT, 1, 1, tmp);
+	msleep(100);
+
+	/* Read MAC address from DTB or asix chip */
+	ax88179_get_mac_addr(dev);
+	memcpy(dev->net->perm_addr, dev->net->dev_addr, ETH_ALEN);
+
+	/* RX bulk configuration */
+	memcpy(tmp, &AX88179_BULKIN_SIZE[0], 5);
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_RX_BULKIN_QCTRL, 5, 5, tmp);
+
+	dev->rx_urb_size = 1024 * 20;
+
+	*tmp = 0x34;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PAUSE_WATERLVL_LOW, 1, 1, tmp);
+
+	*tmp = 0x52;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PAUSE_WATERLVL_HIGH,
+			  1, 1, tmp);
 
 	dev->net->netdev_ops = &ax88179_netdev_ops;
 	dev->net->ethtool_ops = &ax88179_ethtool_ops;
@@ -1339,14 +1383,52 @@ static int ax88179_bind(struct usbnet *dev, struct usb_interface *intf)
 	dev->net->hw_features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
 				 NETIF_F_RXCSUM;
 
-	ax88179_reset(dev);
+	/* Enable checksum offload */
+	*tmp = AX_RXCOE_IP | AX_RXCOE_TCP | AX_RXCOE_UDP |
+	       AX_RXCOE_TCPV6 | AX_RXCOE_UDPV6;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_RXCOE_CTL, 1, 1, tmp);
+
+	*tmp = AX_TXCOE_IP | AX_TXCOE_TCP | AX_TXCOE_UDP |
+	       AX_TXCOE_TCPV6 | AX_TXCOE_UDPV6;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_TXCOE_CTL, 1, 1, tmp);
+
+	/* Configure RX control register => start operation */
+	*tmp16 = AX_RX_CTL_DROPCRCERR | AX_RX_CTL_IPE | AX_RX_CTL_START |
+		 AX_RX_CTL_AP | AX_RX_CTL_AMALL | AX_RX_CTL_AB;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_RX_CTL, 2, 2, tmp16);
+
+	*tmp = AX_MONITOR_MODE_PMETYPE | AX_MONITOR_MODE_PMEPOL |
+	       AX_MONITOR_MODE_RWMP;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_MONITOR_MOD, 1, 1, tmp);
+
+	/* Configure default medium type => giga */
+	*tmp16 = AX_MEDIUM_RECEIVE_EN | AX_MEDIUM_TXFLOW_CTRLEN |
+		 AX_MEDIUM_RXFLOW_CTRLEN | AX_MEDIUM_FULL_DUPLEX |
+		 AX_MEDIUM_GIGAMODE;
+	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_MEDIUM_STATUS_MODE,
+			  2, 2, tmp16);
+
+	ax88179_led_setting(dev);
+
+	ax179_data->eee_enabled = 0;
+	ax179_data->eee_active = 0;
+
+	ax88179_disable_eee(dev);
+
+	ax88179_ethtool_get_eee(dev, &eee_data);
+	eee_data.advertised = 0;
+	ax88179_ethtool_set_eee(dev, &eee_data);
+
+	/* Restart autoneg */
+	mii_nway_restart(&dev->mii);
+
+	usbnet_link_change(dev, 0, 0);
 
 	return 0;
 }
 
 static void ax88179_unbind(struct usbnet *dev, struct usb_interface *intf)
 {
-	struct ax88179_data *ax179_data = dev->driver_priv;
 	u16 tmp16;
 
 	/* Configure RX control register => stop operation */
@@ -1359,8 +1441,6 @@ static void ax88179_unbind(struct usbnet *dev, struct usb_interface *intf)
 	/* Power down ethernet PHY */
 	tmp16 = 0;
 	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL, 2, 2, &tmp16);
-
-	kfree(ax179_data);
 }
 
 static void
@@ -1478,16 +1558,21 @@ static int ax88179_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 			/* Skip IP alignment pseudo header */
 			skb_pull(skb, 2);
 
+			skb->truesize = SKB_TRUESIZE(pkt_len_plus_padd);
 			ax88179_rx_checksum(skb, pkt_hdr);
 			return 1;
 		}
 
-		ax_skb = netdev_alloc_skb_ip_align(dev->net, pkt_len);
+		ax_skb = skb_clone(skb, GFP_ATOMIC);
 		if (!ax_skb)
 			return 0;
-		skb_put(ax_skb, pkt_len);
-		memcpy(ax_skb->data, skb->data + 2, pkt_len);
+		skb_trim(ax_skb, pkt_len);
 
+		/* Skip IP alignment pseudo header */
+		skb_pull(ax_skb, 2);
+
+		skb->truesize = pkt_len_plus_padd +
+				SKB_DATA_ALIGN(sizeof(struct sk_buff));
 		ax88179_rx_checksum(ax_skb, pkt_hdr);
 		usbnet_skb_return(dev, ax_skb);
 
@@ -1528,7 +1613,7 @@ ax88179_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
 
 static int ax88179_link_reset(struct usbnet *dev)
 {
-	struct ax88179_data *ax179_data = dev->driver_priv;
+	struct ax88179_data *ax179_data = (struct ax88179_data *)dev->data;
 	u8 tmp[5], link_sts;
 	u16 mode, tmp16, delay = HZ / 10;
 	u32 tmp32 = 0x40000000;
@@ -1603,7 +1688,7 @@ static int ax88179_reset(struct usbnet *dev)
 	u8 buf[5];
 	u16 *tmp16;
 	u8 *tmp;
-	struct ax88179_data *ax179_data = dev->driver_priv;
+	struct ax88179_data *ax179_data = (struct ax88179_data *)dev->data;
 	struct ethtool_eee eee_data;
 
 	tmp16 = (u16 *)buf;
@@ -1622,11 +1707,10 @@ static int ax88179_reset(struct usbnet *dev)
 	msleep(200);
 
 	/* Ethernet PHY Auto Detach*/
-	ax88179_auto_detach(dev);
+	ax88179_auto_detach(dev, 0);
 
 	/* Read MAC address from DTB or asix chip */
 	ax88179_get_mac_addr(dev);
-	memcpy(dev->net->perm_addr, dev->net->dev_addr, ETH_ALEN);
 
 	/* RX bulk configuration */
 	memcpy(tmp, &AX88179_BULKIN_SIZE[0], 5);
@@ -1640,6 +1724,12 @@ static int ax88179_reset(struct usbnet *dev)
 	*tmp = 0x52;
 	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_PAUSE_WATERLVL_HIGH,
 			  1, 1, tmp);
+
+	dev->net->features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
+			      NETIF_F_RXCSUM;
+
+	dev->net->hw_features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
+				 NETIF_F_RXCSUM;
 
 	/* Enable checksum offload */
 	*tmp = AX_RXCOE_IP | AX_RXCOE_TCP | AX_RXCOE_UDP |
@@ -1665,12 +1755,6 @@ static int ax88179_reset(struct usbnet *dev)
 		 AX_MEDIUM_GIGAMODE;
 	ax88179_write_cmd(dev, AX_ACCESS_MAC, AX_MEDIUM_STATUS_MODE,
 			  2, 2, tmp16);
-
-	/* Check if WoL is supported */
-	ax179_data->wol_supported = 0;
-	if (ax88179_read_cmd(dev, AX_ACCESS_MAC, AX_MONITOR_MOD,
-			     1, 1, &tmp) > 0)
-		ax179_data->wol_supported = WAKE_MAGIC | WAKE_PHY;
 
 	ax88179_led_setting(dev);
 
@@ -1887,7 +1971,7 @@ static struct usb_driver ax88179_178a_driver = {
 	.suspend =	ax88179_suspend,
 	.resume =	ax88179_resume,
 	.reset_resume =	ax88179_resume,
-	.disconnect =	ax88179_disconnect,
+	.disconnect =	usbnet_disconnect,
 	.supports_autosuspend = 1,
 	.disable_hub_initiated_lpm = 1,
 };

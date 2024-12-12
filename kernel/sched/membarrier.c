@@ -162,8 +162,6 @@
 	| MEMBARRIER_PRIVATE_EXPEDITED_SYNC_CORE_BITMASK		\
 	| MEMBARRIER_PRIVATE_EXPEDITED_RSEQ_BITMASK)
 
-static DEFINE_MUTEX(membarrier_ipi_mutex);
-
 static void ipi_mb(void *info)
 {
 	smp_mb();	/* IPIs should be serializing but paranoid. */
@@ -261,7 +259,6 @@ static int membarrier_global_expedited(void)
 	if (!zalloc_cpumask_var(&tmpmask, GFP_KERNEL))
 		return -ENOMEM;
 
-	mutex_lock(&membarrier_ipi_mutex);
 	cpus_read_lock();
 	rcu_read_lock();
 	for_each_online_cpu(cpu) {
@@ -307,8 +304,6 @@ static int membarrier_global_expedited(void)
 	 * rq->curr modification in scheduler.
 	 */
 	smp_mb();	/* exit from system call is not a mb */
-	mutex_unlock(&membarrier_ipi_mutex);
-
 	return 0;
 }
 
@@ -352,7 +347,6 @@ static int membarrier_private_expedited(int flags, int cpu_id)
 	if (cpu_id < 0 && !zalloc_cpumask_var(&tmpmask, GFP_KERNEL))
 		return -ENOMEM;
 
-	mutex_lock(&membarrier_ipi_mutex);
 	cpus_read_lock();
 
 	if (cpu_id >= 0) {
@@ -425,7 +419,6 @@ out:
 	 * rq->curr modification in scheduler.
 	 */
 	smp_mb();	/* exit from system call is not a mb */
-	mutex_unlock(&membarrier_ipi_mutex);
 
 	return 0;
 }
@@ -467,7 +460,6 @@ static int sync_runqueues_membarrier_state(struct mm_struct *mm)
 	 * between threads which are users of @mm has its membarrier state
 	 * updated.
 	 */
-	mutex_lock(&membarrier_ipi_mutex);
 	cpus_read_lock();
 	rcu_read_lock();
 	for_each_online_cpu(cpu) {
@@ -484,7 +476,6 @@ static int sync_runqueues_membarrier_state(struct mm_struct *mm)
 
 	free_cpumask_var(tmpmask);
 	cpus_read_unlock();
-	mutex_unlock(&membarrier_ipi_mutex);
 
 	return 0;
 }

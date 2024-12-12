@@ -265,8 +265,7 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
 		if (nsegs < max_segs &&
 		    sectors + (bv.bv_len >> 9) <= max_sectors &&
 		    bv.bv_offset + bv.bv_len <= PAGE_SIZE) {
-			/* single-page bvec optimization */
-			nsegs += blk_segments(&q->limits, bv.bv_len);
+			nsegs++;
 			sectors += bv.bv_len >> 9;
 		} else if (bvec_split_segs(q, &bv, &nsegs, &sectors, max_segs,
 					 max_sectors)) {
@@ -334,17 +333,18 @@ void __blk_queue_split(struct bio **bio, unsigned int *nr_segs)
 		break;
 	default:
 		/*
-		 * Check whether bio splitting should be performed. This check may
-		 * trigger the bio splitting code even if splitting is not necessary.
+		 * All drivers must accept single-segments bios that are <=
+		 * PAGE_SIZE.  This is a quick and dirty check that relies on
+		 * the fact that bi_io_vec[0] is always valid if a bio has data.
+		 * The check might lead to occasional false negatives when bios
+		 * are cloned, but compared to the performance impact of cloned
+		 * bios themselves the loop below doesn't matter anyway.
 		 */
 		if (!q->limits.chunk_sectors &&
 		    (*bio)->bi_vcnt == 1 &&
-			(!blk_queue_sub_page_limits(&q->limits) ||
-			 (*bio)->bi_io_vec->bv_len <= q->limits.max_segment_size) &&
 		    ((*bio)->bi_io_vec[0].bv_len +
 		     (*bio)->bi_io_vec[0].bv_offset) <= PAGE_SIZE) {
-			*nr_segs = blk_segments(&q->limits,
-						(*bio)->bi_io_vec[0].bv_len);
+			*nr_segs = 1;
 			break;
 		}
 		split = blk_bio_segment_split(q, *bio, &q->bio_split, nr_segs);
@@ -519,10 +519,7 @@ static int __blk_bios_map_sg(struct request_queue *q, struct bio *bio,
 			    __blk_segment_map_sg_merge(q, &bvec, &bvprv, sg))
 				goto next_bvec;
 
-			if (bvec.bv_offset + bvec.bv_len <= PAGE_SIZE &&
-			    (!blk_queue_sub_page_limits(&q->limits) ||
-			     bvec.bv_len <= q->limits.max_segment_size))
-				/* single-segment bvec optimization */
+			if (bvec.bv_offset + bvec.bv_len <= PAGE_SIZE)
 				nsegs += __blk_bvec_map_sg(bvec, sglist, sg);
 			else
 				nsegs += blk_bvec_map_sg(q, &bvec, sglist, sg);

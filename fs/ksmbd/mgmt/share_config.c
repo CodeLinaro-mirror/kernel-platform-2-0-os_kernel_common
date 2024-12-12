@@ -16,7 +16,6 @@
 #include "user_config.h"
 #include "user_session.h"
 #include "../transport_ipc.h"
-#include "../misc.h"
 
 #define SHARE_HASH_BITS		3
 static DEFINE_HASHTABLE(shares_table, SHARE_HASH_BITS);
@@ -27,7 +26,7 @@ struct ksmbd_veto_pattern {
 	struct list_head	list;
 };
 
-static unsigned int share_name_hash(const char *name)
+static unsigned int share_name_hash(char *name)
 {
 	return jhash(name, strlen(name), 0);
 }
@@ -52,16 +51,12 @@ static void kill_share(struct ksmbd_share_config *share)
 	kfree(share);
 }
 
-void ksmbd_share_config_del(struct ksmbd_share_config *share)
+void __ksmbd_share_config_put(struct ksmbd_share_config *share)
 {
 	down_write(&shares_table_lock);
 	hash_del(&share->hlist);
 	up_write(&shares_table_lock);
-}
 
-void __ksmbd_share_config_put(struct ksmbd_share_config *share)
-{
-	ksmbd_share_config_del(share);
 	kill_share(share);
 }
 
@@ -73,7 +68,7 @@ __get_share_config(struct ksmbd_share_config *share)
 	return share;
 }
 
-static struct ksmbd_share_config *__share_lookup(const char *name)
+static struct ksmbd_share_config *__share_lookup(char *name)
 {
 	struct ksmbd_share_config *share;
 	unsigned int key = share_name_hash(name);
@@ -120,8 +115,7 @@ static int parse_veto_list(struct ksmbd_share_config *share,
 	return 0;
 }
 
-static struct ksmbd_share_config *share_config_request(struct unicode_map *um,
-						       const char *name)
+static struct ksmbd_share_config *share_config_request(char *name)
 {
 	struct ksmbd_share_config_response *resp;
 	struct ksmbd_share_config *share = NULL;
@@ -135,19 +129,6 @@ static struct ksmbd_share_config *share_config_request(struct unicode_map *um,
 	if (resp->flags == KSMBD_SHARE_FLAG_INVALID)
 		goto out;
 
-	if (*resp->share_name) {
-		char *cf_resp_name;
-		bool equal;
-
-		cf_resp_name = ksmbd_casefold_sharename(um, resp->share_name);
-		if (IS_ERR(cf_resp_name))
-			goto out;
-		equal = !strcmp(cf_resp_name, name);
-		kfree(cf_resp_name);
-		if (!equal)
-			goto out;
-	}
-
 	share = kzalloc(sizeof(struct ksmbd_share_config), GFP_KERNEL);
 	if (!share)
 		goto out;
@@ -158,12 +139,7 @@ static struct ksmbd_share_config *share_config_request(struct unicode_map *um,
 	share->name = kstrdup(name, GFP_KERNEL);
 
 	if (!test_share_config_flag(share, KSMBD_SHARE_FLAG_PIPE)) {
-		int path_len = PATH_MAX;
-
-		if (resp->payload_sz)
-			path_len = resp->payload_sz - resp->veto_list_sz;
-
-		share->path = kstrndup(ksmbd_share_config_path(resp), path_len,
+		share->path = kstrdup(ksmbd_share_config_path(resp),
 				      GFP_KERNEL);
 		if (share->path)
 			share->path_sz = strlen(share->path);
@@ -210,10 +186,19 @@ out:
 	return share;
 }
 
-struct ksmbd_share_config *ksmbd_share_config_get(struct unicode_map *um,
-						  const char *name)
+static void strtolower(char *share_name)
+{
+	while (*share_name) {
+		*share_name = tolower(*share_name);
+		share_name++;
+	}
+}
+
+struct ksmbd_share_config *ksmbd_share_config_get(char *name)
 {
 	struct ksmbd_share_config *share;
+
+	strtolower(name);
 
 	down_read(&shares_table_lock);
 	share = __share_lookup(name);
@@ -223,7 +208,7 @@ struct ksmbd_share_config *ksmbd_share_config_get(struct unicode_map *um,
 
 	if (share)
 		return share;
-	return share_config_request(um, name);
+	return share_config_request(name);
 }
 
 bool ksmbd_share_veto_filename(struct ksmbd_share_config *share,
@@ -236,4 +221,18 @@ bool ksmbd_share_veto_filename(struct ksmbd_share_config *share,
 			return true;
 	}
 	return false;
+}
+
+void ksmbd_share_configs_cleanup(void)
+{
+	struct ksmbd_share_config *share;
+	struct hlist_node *tmp;
+	int i;
+
+	down_write(&shares_table_lock);
+	hash_for_each_safe(shares_table, i, tmp, share, hlist) {
+		hash_del(&share->hlist);
+		kill_share(share);
+	}
+	up_write(&shares_table_lock);
 }

@@ -310,9 +310,9 @@ bool encl_measure(struct encl *encl)
 	struct sgx_sigstruct *sigstruct = &encl->sigstruct;
 	struct sgx_sigstruct_payload payload;
 	uint8_t digest[SHA256_DIGEST_LENGTH];
-	EVP_MD_CTX *ctx = NULL;
 	unsigned int siglen;
 	RSA *key = NULL;
+	EVP_MD_CTX *ctx;
 	int i;
 
 	memset(sigstruct, 0, sizeof(*sigstruct));
@@ -376,8 +376,7 @@ bool encl_measure(struct encl *encl)
 	return true;
 
 err:
-	if (ctx)
-		EVP_MD_CTX_destroy(ctx);
+	EVP_MD_CTX_destroy(ctx);
 	RSA_free(key);
 	return false;
 }

@@ -2571,8 +2571,7 @@ static int iwl_mvm_build_scan_cmd(struct iwl_mvm *mvm,
 		if (ver_handler->version != scan_ver)
 			continue;
 
-		err = ver_handler->handler(mvm, vif, params, type, uid);
-		return err ? : uid;
+		return ver_handler->handler(mvm, vif, params, type, uid);
 	}
 
 	err = iwl_mvm_scan_umac(mvm, vif, params, type, uid);

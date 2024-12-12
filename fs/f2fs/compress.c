@@ -1002,31 +1002,6 @@ static void set_cluster_writeback(struct compress_ctx *cc)
 	}
 }
 
-static void cancel_cluster_writeback(struct compress_ctx *cc,
-			struct compress_io_ctx *cic, int submitted)
-{
-	int i;
-
-	/* Wait for submitted IOs. */
-	if (submitted > 1) {
-		f2fs_submit_merged_write(F2FS_I_SB(cc->inode), DATA);
-		while (atomic_read(&cic->pending_pages) !=
-					(cc->valid_nr_cpages - submitted + 1))
-			f2fs_io_schedule_timeout(DEFAULT_IO_TIMEOUT);
-	}
-
-	/* Cancel writeback and stay locked. */
-	for (i = 0; i < cc->cluster_size; i++) {
-		if (i < submitted) {
-			inode_inc_dirty_pages(cc->inode);
-			lock_page(cc->rpages[i]);
-		}
-		clear_page_private_gcing(cc->rpages[i]);
-		if (PageWriteback(cc->rpages[i]))
-			end_page_writeback(cc->rpages[i]);
-	}
-}
-
 static void set_cluster_dirty(struct compress_ctx *cc)
 {
 	int i;
@@ -1226,6 +1201,7 @@ static int f2fs_write_compressed_pages(struct compress_ctx *cc,
 		.page = NULL,
 		.encrypted_page = NULL,
 		.compressed_page = NULL,
+		.submitted = 0,
 		.io_type = io_type,
 		.io_wbc = wbc,
 		.encrypted = fscrypt_inode_uses_fs_layer_crypto(cc->inode) ?
@@ -1350,16 +1326,7 @@ static int f2fs_write_compressed_pages(struct compress_ctx *cc,
 			fio.compressed_page = cc->cpages[i - 1];
 
 		cc->cpages[i - 1] = NULL;
-		fio.submitted = 0;
 		f2fs_outplace_write_data(&dn, &fio);
-		if (unlikely(!fio.submitted)) {
-			cancel_cluster_writeback(cc, cic, i);
-
-			/* To call fscrypt_finalize_bounce_page */
-			i = cc->valid_nr_cpages;
-			*submitted = 0;
-			goto out_destroy_crypt;
-		}
 		(*submitted)++;
 unlock_continue:
 		inode_dec_dirty_pages(cc->inode);
@@ -1395,11 +1362,8 @@ unlock_continue:
 out_destroy_crypt:
 	page_array_free(cc->inode, cic->rpages, cc->cluster_size);
 
-	for (--i; i >= 0; i--) {
-		if (!cc->cpages[i])
-			continue;
+	for (--i; i >= 0; i--)
 		fscrypt_finalize_bounce_page(&cc->cpages[i]);
-	}
 out_put_cic:
 	kmem_cache_free(cic_entry_slab, cic);
 out_put_dnode:
@@ -1447,14 +1411,12 @@ void f2fs_compress_write_end_io(struct bio *bio, struct page *page)
 }
 
 static int f2fs_write_raw_pages(struct compress_ctx *cc,
-					int *submitted_p,
+					int *submitted,
 					struct writeback_control *wbc,
 					enum iostat_type io_type)
 {
 	struct address_space *mapping = cc->inode->i_mapping;
-	struct f2fs_sb_info *sbi = F2FS_M_SB(mapping);
-	int submitted, compr_blocks, i;
-	int ret = 0;
+	int _submitted, compr_blocks, ret, i;
 
 	compr_blocks = f2fs_compressed_blocks(cc);
 
@@ -1468,10 +1430,6 @@ static int f2fs_write_raw_pages(struct compress_ctx *cc,
 
 	if (compr_blocks < 0)
 		return compr_blocks;
-
-	/* overwrite compressed cluster w/ normal cluster */
-	if (compr_blocks > 0)
-		f2fs_lock_op(sbi);
 
 	for (i = 0; i < cc->cluster_size; i++) {
 		if (!cc->rpages[i])
@@ -1497,7 +1455,7 @@ continue_unlock:
 		if (!clear_page_dirty_for_io(cc->rpages[i]))
 			goto continue_unlock;
 
-		ret = f2fs_write_single_data_page(cc->rpages[i], &submitted,
+		ret = f2fs_write_single_data_page(cc->rpages[i], &_submitted,
 						NULL, NULL, wbc, io_type,
 						compr_blocks, false);
 		if (ret) {
@@ -1505,7 +1463,6 @@ continue_unlock:
 				unlock_page(cc->rpages[i]);
 				ret = 0;
 			} else if (ret == -EAGAIN) {
-				ret = 0;
 				/*
 				 * for quota file, just redirty left pages to
 				 * avoid deadlock caused by cluster update race
@@ -1517,18 +1474,15 @@ continue_unlock:
 				f2fs_io_schedule_timeout(DEFAULT_IO_TIMEOUT);
 				goto retry_write;
 			}
-			goto out;
+			return ret;
 		}
 
-		*submitted_p += submitted;
+		*submitted += _submitted;
 	}
 
-out:
-	if (compr_blocks > 0)
-		f2fs_unlock_op(sbi);
+	f2fs_balance_fs(F2FS_M_SB(mapping), true);
 
-	f2fs_balance_fs(sbi, true);
-	return ret;
+	return 0;
 }
 
 int f2fs_write_multi_pages(struct compress_ctx *cc,

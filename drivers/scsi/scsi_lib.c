@@ -282,11 +282,9 @@ static void scsi_dec_host_busy(struct Scsi_Host *shost, struct scsi_cmnd *cmd)
 	rcu_read_lock();
 	__clear_bit(SCMD_STATE_INFLIGHT, &cmd->state);
 	if (unlikely(scsi_host_in_recovery(shost))) {
-		unsigned int busy = scsi_host_busy(shost);
-
 		spin_lock_irqsave(shost->host_lock, flags);
 		if (shost->host_failed || shost->host_eh_scheduled)
-			scsi_eh_wakeup(shost, busy);
+			scsi_eh_wakeup(shost);
 		spin_unlock_irqrestore(shost->host_lock, flags);
 	}
 	rcu_read_unlock();
@@ -548,9 +546,10 @@ static bool scsi_end_request(struct request *req, blk_status_t error,
 	if (blk_queue_add_random(q))
 		add_disk_randomness(req->rq_disk);
 
-	WARN_ON_ONCE(!blk_rq_is_passthrough(req) &&
-		     !(cmd->flags & SCMD_INITIALIZED));
-	cmd->flags = 0;
+	if (!blk_rq_is_passthrough(req)) {
+		WARN_ON_ONCE(!(cmd->flags & SCMD_INITIALIZED));
+		cmd->flags &= ~SCMD_INITIALIZED;
+	}
 
 	/*
 	 * Calling rcu_barrier() is not necessary here because the
