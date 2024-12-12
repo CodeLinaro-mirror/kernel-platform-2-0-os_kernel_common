@@ -197,7 +197,7 @@ int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request,
 	int				ret;
 
 	spin_lock_irqsave(&dwc->lock, flags);
-	if (!dep->endpoint.desc || !dwc->pullups_connected || !dwc->connected) {
+	if (!dep->endpoint.desc || !dwc->pullups_connected) {
 		dev_err(dwc->dev, "%s: can't queue to disabled endpoint\n",
 				dep->name);
 		ret = -ESHUTDOWN;
@@ -236,15 +236,12 @@ void dwc3_ep0_stall_and_restart(struct dwc3 *dwc)
 		struct dwc3_request	*req;
 
 		req = next_request(&dep->pending_list);
-        if (!dwc->connected)
-		dwc3_gadget_giveback(dep, req, -ESHUTDOWN);
-        else
-		dwc3_gadget_giveback(dep, req, -ECONNRESET);
-
+		if (!dwc->connected)
+			dwc3_gadget_giveback(dep, req, -ESHUTDOWN);
+		else
+			dwc3_gadget_giveback(dep, req, -ECONNRESET);
 	}
 
-	dwc->eps[0]->trb_enqueue = 0;
-	dwc->eps[1]->trb_enqueue = 0;
 	dwc->ep0state = EP0_SETUP_PHASE;
 	dwc3_ep0_out_start(dwc);
 }
@@ -297,10 +294,7 @@ void dwc3_ep0_out_start(struct dwc3 *dwc)
 			continue;
 
 		dwc3_ep->flags &= ~DWC3_EP_DELAY_STOP;
-		if (dwc->connected)
-			dwc3_stop_active_transfer(dwc3_ep, true, true);
-		else
-			dwc3_remove_requests(dwc, dwc3_ep, -ESHUTDOWN);
+		dwc3_stop_active_transfer(dwc3_ep, true, true);
 	}
 }
 
@@ -822,7 +816,7 @@ static void dwc3_ep0_inspect_setup(struct dwc3 *dwc,
 	int ret = -EINVAL;
 	u32 len;
 
-	if (!dwc->gadget_driver || !dwc->softconnect || !dwc->connected)
+	if (!dwc->gadget_driver || !dwc->connected)
 		goto out;
 
 	trace_dwc3_ctrl_req(ctrl);
@@ -1147,11 +1141,6 @@ static void dwc3_ep0_xfernotready(struct dwc3 *dwc,
 	case DEPEVT_STATUS_CONTROL_STATUS:
 		if (dwc->ep0_next_event != DWC3_EP0_NRDY_STATUS)
 			return;
-
-		if (dwc->setup_packet_pending) {
-			dwc3_ep0_stall_and_restart(dwc);
-			return;
-		}
 
 		dwc->ep0state = EP0_STATUS_PHASE;
 

@@ -282,7 +282,9 @@ int usb_ep_queue(struct usb_ep *ep,
 {
 	int ret = 0;
 
-	if (WARN_ON_ONCE(!ep->enabled && ep->address)) {
+	if (!ep->enabled && ep->address) {
+		pr_debug("USB gadget: queue request to disabled ep 0x%x (%s)\n",
+				 ep->address, ep->name);
 		ret = -ESHUTDOWN;
 		goto out;
 	}
@@ -1119,12 +1121,12 @@ EXPORT_SYMBOL_GPL(usb_gadget_set_state);
 /* ------------------------------------------------------------------------- */
 
 /* Acquire connect_lock before calling this function. */
-static int usb_udc_connect_control_locked(struct usb_udc *udc) __must_hold(&connect_lock)
+static void usb_udc_connect_control_locked(struct usb_udc *udc) __must_hold(&connect_lock)
 {
-	if (udc->vbus)
-		return usb_gadget_connect_locked(udc->gadget);
+	if (udc->vbus && udc->started)
+		usb_gadget_connect_locked(udc->gadget);
 	else
-		return usb_gadget_disconnect_locked(udc->gadget);
+		usb_gadget_disconnect_locked(udc->gadget);
 }
 
 /**
@@ -1414,6 +1416,11 @@ int usb_add_gadget(struct usb_gadget *gadget)
 	if (ret)
 		goto err_del_udc;
 
+	ret = sysfs_create_link(&udc->dev.kobj,
+				&gadget->dev.kobj, "gadget");
+	if (ret)
+		goto err_del_udc;
+
 	mutex_unlock(&udc_lock);
 
 	return 0;
@@ -1556,6 +1563,7 @@ void usb_del_gadget(struct usb_gadget *gadget)
 	mutex_unlock(&udc_lock);
 
 	kobject_uevent(&udc->dev.kobj, KOBJ_REMOVE);
+	sysfs_remove_link(&udc->dev.kobj, "gadget");
 	flush_work(&gadget->work);
 	device_unregister(&udc->dev);
 	device_del(&gadget->dev);
@@ -1594,28 +1602,17 @@ static int udc_bind_to_driver(struct usb_udc *udc, struct usb_gadget_driver *dri
 		goto err1;
 	mutex_lock(&connect_lock);
 	ret = usb_gadget_udc_start_locked(udc);
-	if (ret)
-		goto err_start;
-
+	if (ret) {
+		mutex_unlock(&connect_lock);
+		driver->unbind(udc->gadget);
+		goto err1;
+	}
 	usb_gadget_enable_async_callbacks(udc);
-	ret = usb_udc_connect_control_locked(udc);
-	if (ret)
-		goto err_connect_control;
-
+	usb_udc_connect_control_locked(udc);
 	mutex_unlock(&connect_lock);
 
 	kobject_uevent(&udc->dev.kobj, KOBJ_CHANGE);
 	return 0;
-
-err_connect_control:
-	usb_gadget_disable_async_callbacks(udc);
-	if (udc->gadget->irq)
-		synchronize_irq(udc->gadget->irq);
-	usb_gadget_udc_stop_locked(udc);
-
-err_start:
-	mutex_unlock(&connect_lock);
-	driver->unbind(udc->gadget);
 err1:
 	if (ret != -EISNAM)
 		dev_err(&udc->dev, "failed to start %s: %d\n",
