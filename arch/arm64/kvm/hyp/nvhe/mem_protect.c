@@ -154,21 +154,16 @@ static void prepare_host_vtcr(void)
 static int prepopulate_host_stage2(void)
 {
 	struct memblock_region *reg;
-	u64 addr = 0;
-	int i, ret;
+	int i, ret = 0;
 
 	for (i = 0; i < hyp_memblock_nr; i++) {
 		reg = &hyp_memory[i];
-		ret = host_stage2_idmap_locked(addr, reg->base - addr, PKVM_HOST_MMIO_PROT);
-		if (ret)
-			return ret;
 		ret = host_stage2_idmap_locked(reg->base, reg->size, PKVM_HOST_MEM_PROT);
 		if (ret)
 			return ret;
-		addr = reg->base + reg->size;
 	}
 
-	return host_stage2_idmap_locked(addr, BIT(host_mmu.pgt.ia_bits) - addr, PKVM_HOST_MMIO_PROT);
+	return ret;
 }
 
 int kvm_host_prepare_stage2(void *pgt_pool_base)
@@ -1076,7 +1071,9 @@ static int host_ack_donation(u64 addr, const struct pkvm_mem_transition *tx)
 
 static int host_ack_unshare(u64 addr, const struct pkvm_mem_transition *tx)
 {
-	return __host_ack_transition(addr, tx, PKVM_PAGE_SHARED_BORROWED);
+	u64 size = tx->nr_pages * PAGE_SIZE;
+
+	return __host_check_page_state_range(addr, size, PKVM_PAGE_SHARED_BORROWED);
 }
 
 static int host_complete_share(u64 addr, const struct pkvm_mem_transition *tx,
@@ -1190,9 +1187,6 @@ static int hyp_ack_unshare(u64 addr, const struct pkvm_mem_transition *tx)
 
 	if (tx->initiator.id == PKVM_ID_HOST && hyp_page_count((void *)addr))
 		return -EBUSY;
-
-	if (__hyp_ack_skip_pgtable_check(tx))
-		return 0;
 
 	return __hyp_check_page_state_range(addr, size,
 					    PKVM_PAGE_SHARED_BORROWED);

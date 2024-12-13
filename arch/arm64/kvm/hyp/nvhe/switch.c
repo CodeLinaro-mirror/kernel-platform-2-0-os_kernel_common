@@ -108,22 +108,10 @@ static void __deactivate_pvm_traps_hfgxtr(struct kvm_vcpu *vcpu)
 		write_sysreg_s(ctxt_sys_reg(hctxt, HAFGRTR_EL2), SYS_HAFGRTR_EL2);
 }
 
-static void __activate_traps(struct kvm_vcpu *vcpu)
+static void __activate_cptr_traps(struct kvm_vcpu *vcpu)
 {
-	u64 val;
+	u64 val = kvm_get_reset_cptr_el2(vcpu);
 
-	___activate_traps(vcpu, vcpu->arch.hcr_el2);
-	__activate_traps_common(vcpu);
-
-	if (unlikely(vcpu_is_protected(vcpu))) {
-		__activate_pvm_traps_hcrx(vcpu);
-		__activate_pvm_traps_hfgxtr(vcpu);
-	} else {
-		__activate_traps_hcrx(vcpu);
-		__activate_traps_hfgxtr(vcpu);
-	}
-
-	val = vcpu->arch.cptr_el2;
 	val |= CPTR_EL2_TAM;	/* Same bit irrespective of E2H */
 	val |= has_hvhe() ? CPACR_EL1_TTA : CPTR_EL2_TTA;
 	if (cpus_have_final_cap(ARM64_SME)) {
@@ -142,7 +130,37 @@ static void __activate_traps(struct kvm_vcpu *vcpu)
 		__activate_traps_fpsimd32(vcpu);
 	}
 
+	if (vcpu_is_protected(vcpu)) {
+		struct kvm *kvm = vcpu->kvm;
+
+		if (!kvm_has_feat(kvm, ID_AA64PFR0_EL1, AMU, IMP))
+			val |= CPTR_EL2_TAM;
+
+		if (!vcpu_has_sve(vcpu)) {
+			if (has_hvhe())
+				val &= ~CPACR_ELx_ZEN;
+			else
+				val |= CPTR_EL2_TZ;
+		}
+	}
+
 	kvm_write_cptr_el2(val);
+}
+
+static void __activate_traps(struct kvm_vcpu *vcpu)
+{
+	___activate_traps(vcpu, vcpu->arch.hcr_el2);
+	__activate_traps_common(vcpu);
+	__activate_cptr_traps(vcpu);
+
+	if (unlikely(vcpu_is_protected(vcpu))) {
+		__activate_pvm_traps_hcrx(vcpu);
+		__activate_pvm_traps_hfgxtr(vcpu);
+	} else {
+		__activate_traps_hcrx(vcpu);
+		__activate_traps_hfgxtr(vcpu);
+	}
+
 	write_sysreg(__this_cpu_read(kvm_hyp_vector), vbar_el2);
 
 	if (cpus_have_final_cap(ARM64_WORKAROUND_SPECULATIVE_AT)) {
@@ -328,30 +346,32 @@ static const exit_handler_fn *kvm_get_exit_handler_array(struct kvm_vcpu *vcpu)
 }
 
 /*
+ * As we have caught the guest red-handed, decide that it isn't fit for
+ * purpose anymore by making the vcpu invalid. The VMM can try and fix it by
+ * re-initializing the vcpu with KVM_ARM_VCPU_INIT, however, this is likely
+ * not possible for protected VMs.
+ */
+void vcpu_illegal_trap(struct kvm_vcpu *vcpu, u64 *exit_code)
+{
+	trace_vcpu_illegal_trap(kvm_vcpu_get_esr(vcpu));
+
+	vcpu_clear_flag(vcpu, VCPU_INITIALIZED);
+	*exit_code &= BIT(ARM_EXIT_WITH_SERROR_BIT);
+	*exit_code |= ARM_EXCEPTION_IL;
+}
+
+/*
  * Some guests (e.g., protected VMs) are not be allowed to run in AArch32.
  * The ARMv8 architecture does not give the hypervisor a mechanism to prevent a
  * guest from dropping to AArch32 EL0 if implemented by the CPU. If the
  * hypervisor spots a guest in such a state ensure it is handled, and don't
  * trust the host to spot or fix it.  The check below is based on the one in
  * kvm_arch_vcpu_ioctl_run().
- *
- * Returns false if the guest ran in AArch32 when it shouldn't have, and
- * thus should exit to the host, or true if a the guest run loop can continue.
  */
 static void early_exit_filter(struct kvm_vcpu *vcpu, u64 *exit_code)
 {
-	if (unlikely(vcpu_is_protected(vcpu) && vcpu_mode_is_32bit(vcpu))) {
-		/*
-		 * As we have caught the guest red-handed, decide that it isn't
-		 * fit for purpose anymore by making the vcpu invalid. The VMM
-		 * can try and fix it by re-initializing the vcpu with
-		 * KVM_ARM_VCPU_INIT, however, this is likely not possible for
-		 * protected VMs.
-		 */
-		vcpu_clear_flag(vcpu, VCPU_INITIALIZED);
-		*exit_code &= BIT(ARM_EXIT_WITH_SERROR_BIT);
-		*exit_code |= ARM_EXCEPTION_IL;
-	}
+	if (unlikely(vcpu_is_protected(vcpu) && vcpu_mode_is_32bit(vcpu)))
+		vcpu_illegal_trap(vcpu, exit_code);
 }
 
 /* Switch to the guest for legacy non-VHE systems */

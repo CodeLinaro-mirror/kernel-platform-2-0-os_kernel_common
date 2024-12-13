@@ -63,6 +63,30 @@ static void pkvm_vcpu_reset_hcr(struct kvm_vcpu *vcpu)
 		vcpu->arch.hcr_el2 |= (HCR_API | HCR_APK);
 }
 
+static void pkvm_vcpu_reset_hcrx(struct pkvm_hyp_vcpu *hyp_vcpu)
+{
+	struct kvm_vcpu *host_vcpu = hyp_vcpu->host_vcpu;
+	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
+
+	if (!cpus_have_final_cap(ARM64_HAS_HCX))
+		return;
+
+	/*
+	 * In general, all HCRX_EL2 bits are gated by a feature.
+	 * The only reason we can set SMPME without checking any
+	 * feature is that its effects are not directly observable
+	 * from the guest.
+	 */
+	vcpu->arch.hcrx_el2 = HCRX_EL2_SMPME;
+
+	/*
+	 * For non-protected VMs, the host is responsible for the guest's
+	 * features, so use the remaining host HCRX_EL2 bits.
+	 */
+	if ((!pkvm_hyp_vcpu_is_protected(hyp_vcpu)))
+		vcpu->arch.hcrx_el2 |= host_vcpu->arch.hcrx_el2;
+}
+
 static void pvm_init_traps_hcr(struct kvm_vcpu *vcpu)
 {
 	struct kvm *kvm = vcpu->kvm;
@@ -98,45 +122,24 @@ static void pvm_init_traps_hcr(struct kvm_vcpu *vcpu)
 	vcpu->arch.hcr_el2 &= ~hcr_clear;
 }
 
-static void pvm_init_traps_cptr(struct kvm_vcpu *vcpu)
+static void pvm_init_traps_hcrx(struct kvm_vcpu *vcpu)
 {
 	struct kvm *kvm = vcpu->kvm;
-	u64 cptr_clear = 0;
-	u64 cptr_set = 0;
+	u64 hcrx_set = 0;
 
-	if (!has_hvhe()) {
-		cptr_set |= CPTR_NVHE_EL2_RES1;
-		cptr_clear |= CPTR_NVHE_EL2_RES0;
-	}
+	if (!cpus_have_final_cap(ARM64_HAS_HCX))
+		return;
 
-	if (!kvm_has_feat(kvm, ID_AA64PFR0_EL1, AMU, IMP))
-		cptr_set |= CPTR_EL2_TAM;
+	if (kvm_has_feat(kvm, ID_AA64ISAR2_EL1, MOPS, IMP))
+		hcrx_set |= (HCRX_EL2_MSCEn | HCRX_EL2_MCE2);
 
-	/* SVE support can be toggled per-vcpu. */
-	if (!vcpu_has_sve(vcpu)) {
-		if (has_hvhe())
-			cptr_clear |= CPACR_ELx_ZEN;
-		else
-			cptr_set |= CPTR_EL2_TZ;
-	}
+	if (kvm_has_feat(kvm, ID_AA64MMFR3_EL1, TCRX, IMP))
+		hcrx_set |= HCRX_EL2_TCR2En;
 
-	/* No SME supprot in KVM. */
-	BUG_ON(kvm_has_feat(kvm, ID_AA64PFR1_EL1, SME, IMP));
-	if (has_hvhe())
-		cptr_clear |= CPACR_ELx_SMEN;
-	else
-		cptr_set |= CPTR_EL2_TSM;
+	if (kvm_has_fpmr(kvm))
+		hcrx_set |= HCRX_EL2_EnFPM;
 
-	/* Trap Trace */
-	if (!kvm_has_feat(kvm, ID_AA64DFR0_EL1, TraceVer, IMP)) {
-		if (has_hvhe())
-			cptr_set |= CPACR_EL1_TTA;
-		else
-			cptr_set |= CPTR_EL2_TTA;
-	}
-
-	vcpu->arch.cptr_el2 |= cptr_set;
-	vcpu->arch.cptr_el2 &= ~cptr_clear;
+	vcpu->arch.hcrx_el2 |= hcrx_set;
 }
 
 static void pvm_init_traps_mdcr(struct kvm_vcpu *vcpu)
@@ -212,10 +215,10 @@ static int pkvm_vcpu_init_traps(struct pkvm_hyp_vcpu *hyp_vcpu)
 	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
 	int ret;
 
-	vcpu->arch.cptr_el2 = kvm_get_reset_cptr_el2(vcpu);
 	vcpu->arch.mdcr_el2 = 0;
 
 	pkvm_vcpu_reset_hcr(vcpu);
+	pkvm_vcpu_reset_hcrx(hyp_vcpu);
 
 	if ((!pkvm_hyp_vcpu_is_protected(hyp_vcpu)))
 		return 0;
@@ -225,7 +228,7 @@ static int pkvm_vcpu_init_traps(struct pkvm_hyp_vcpu *hyp_vcpu)
 		return ret;
 
 	pvm_init_traps_hcr(vcpu);
-	pvm_init_traps_cptr(vcpu);
+	pvm_init_traps_hcrx(vcpu);
 	pvm_init_traps_mdcr(vcpu);
 
 	return 0;
@@ -571,51 +574,42 @@ static int pkvm_vcpu_init_sve(struct pkvm_hyp_vcpu *hyp_vcpu, struct kvm_vcpu *h
 	unsigned int sve_max_vl;
 	size_t sve_state_size;
 	void *sve_state;
-	int ret = 0;
 
-	if (!vcpu_has_feature(vcpu, KVM_ARM_VCPU_SVE)) {
-		vcpu_clear_flag(vcpu, GUEST_HAS_SVE);
-		vcpu_clear_flag(vcpu, VCPU_SVE_FINALIZED);
+	if (!vcpu_has_feature(vcpu, KVM_ARM_VCPU_SVE))
 		return 0;
-	}
 
 	/* Limit guest vector length to the maximum supported by the host. */
 	sve_max_vl = min(READ_ONCE(host_vcpu->arch.sve_max_vl), kvm_host_sve_max_vl);
 	sve_state_size = sve_state_size(sve_max_vl);
 	sve_state = kern_hyp_va(READ_ONCE(host_vcpu->arch.sve_state));
 
-	if (!sve_state && !pkvm_hyp_vcpu_is_protected(hyp_vcpu)) {
-		ret = -EINVAL;
-		goto err;
-	}
+	if (!sve_state && !pkvm_hyp_vcpu_is_protected(hyp_vcpu))
+		return -EINVAL;
 
-	if (!sve_state_size || (sve_max_vl > kvm_sve_max_vl)) {
-		ret = -EINVAL;
-		goto err;
-	}
+	if (!sve_state_size || (sve_max_vl > kvm_sve_max_vl))
+		return -EINVAL;
 
 	if (pkvm_hyp_vcpu_is_protected(hyp_vcpu)) {
 		struct pkvm_hyp_vm *hyp_vm = pkvm_hyp_vcpu_to_hyp_vm(hyp_vcpu);
 
 		sve_state = hyp_alloc_account(sve_state_size,
 					      hyp_vm->host_kvm);
-		if (!sve_state) {
-			ret = hyp_alloc_errno();
-			goto err;
-		}
+		if (!sve_state)
+			return hyp_alloc_errno();
 	} else {
+		int ret;
+
 		ret = hyp_pin_shared_mem(sve_state, sve_state + sve_state_size);
 		if (ret)
-			goto err;
+			return ret;
 	}
 
 	vcpu->arch.sve_state = sve_state;
 	vcpu->arch.sve_max_vl = sve_max_vl;
+	vcpu_set_flag(vcpu, GUEST_HAS_SVE);
+	vcpu_set_flag(vcpu, VCPU_SVE_FINALIZED);
 
 	return 0;
-err:
-	clear_bit(KVM_ARM_VCPU_SVE, vcpu->kvm->arch.vcpu_features);
-	return ret;
 }
 
 static int init_pkvm_hyp_vcpu(struct pkvm_hyp_vcpu *hyp_vcpu,
@@ -658,6 +652,8 @@ static int init_pkvm_hyp_vcpu(struct pkvm_hyp_vcpu *hyp_vcpu,
 	hyp_vcpu->vcpu.arch.debug_ptr = &host_vcpu->arch.vcpu_debug_state;
 	hyp_vcpu->vcpu.arch.hyp_reqs->type = KVM_HYP_LAST_REQ;
 
+	kvm_reset_pvm_sys_regs(&hyp_vcpu->vcpu);
+
 	ret = pkvm_vcpu_init_traps(hyp_vcpu);
 	if (ret)
 		goto done;
@@ -671,7 +667,6 @@ static int init_pkvm_hyp_vcpu(struct pkvm_hyp_vcpu *hyp_vcpu,
 		goto done;
 
 	pkvm_vcpu_init_ptrauth(hyp_vcpu);
-	kvm_reset_pvm_sys_regs(&hyp_vcpu->vcpu);
 done:
 	if (ret)
 		unpin_host_vcpu(hyp_vcpu);
