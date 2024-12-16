@@ -3135,6 +3135,3 @@ exports_files([
     "Makefile",
 ])
 
-load(":consolidate.bzl", "define_consolidate")
-
-define_consolidate()
