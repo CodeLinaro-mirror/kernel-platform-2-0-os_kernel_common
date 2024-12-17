@@ -1770,12 +1770,12 @@ static struct folio *shmem_alloc_folio(gfp_t gfp, int order,
 	pgoff_t ilx;
 	struct folio *folio = NULL;
 
+	mpol = shmem_get_pgoff_policy(info, index, order, &ilx);
 	trace_android_rvh_shmem_get_folio(info, &folio);
 	if (folio)
-		return folio;
-
-	mpol = shmem_get_pgoff_policy(info, index, order, &ilx);
+		goto done;
 	folio = folio_alloc_mpol(gfp, order, mpol, ilx, numa_node_id());
+done:
 	mpol_cond_put(mpol);
 
 	return folio;
@@ -2739,9 +2739,6 @@ static int shmem_mmap(struct file *file, struct vm_area_struct *vma)
 	ret = seal_check_write(info->seals, vma);
 	if (ret)
 		return ret;
-
-	/* arm64 - allow memory tagging on RAM-based files */
-	vm_flags_set(vma, VM_MTE_ALLOWED);
 
 	file_accessed(file);
 	/* This is anonymous shared memory if it is unlinked at the time of mmap */
