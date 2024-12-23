@@ -495,6 +495,7 @@
   dec_node_page_state
   dec_zone_page_state
   default_llseek
+  default_qdisc_ops
   default_wake_function
   deferred_free
   delayed_work_timer_fn
@@ -503,6 +504,7 @@
   del_timer_sync
   desc_to_gpio
   destroy_workqueue
+  dev_activate
   dev_add_pack
   dev_addr_mod
   dev_alloc_name
@@ -513,6 +515,7 @@
   dev_coredumpm
   dev_coredumpv
   _dev_crit
+  dev_deactivate
   dev_driver_string
   _dev_err
   dev_err_probe
@@ -538,6 +541,7 @@
   dev_get_regmap
   dev_get_stats
   dev_get_tstats64
+  dev_graft_qdisc
   device_add
   device_add_disk
   device_add_groups
@@ -1282,6 +1286,11 @@
   gic_v3_cpu_init
   gic_v3_dist_init
   gic_v3_dist_wait_for_rwp
+  gnet_stats_add_basic
+  gnet_stats_add_queue
+  gnet_stats_basic_sync_init
+  gnet_stats_copy_basic
+  gnet_stats_copy_queue
   gov_attr_set_init
   gov_attr_set_put
   governor_sysfs_ops
@@ -1995,6 +2004,7 @@
   module_layout
   module_put
   __module_put_and_kthread_exit
+  mq_change_real_num_tx
   __msecs_to_jiffies
   msi_first_desc
   msi_get_virq
@@ -2042,6 +2052,7 @@
   netdev_rx_handler_register
   netdev_rx_handler_unregister
   netdev_set_default_ethtool_ops
+  netdev_txq_to_tc
   netdev_update_features
   netdev_upper_dev_link
   netdev_upper_dev_unlink
@@ -2117,6 +2128,7 @@
   __nlmsg_put
   nonseekable_open
   noop_llseek
+  noop_qdisc
   nr_cpu_ids
   nr_ipi_get
   nr_irqs
@@ -2347,6 +2359,8 @@
   perf_pmu_unregister
   perf_trace_buf_alloc
   perf_trace_run_bpf_submit
+  pfifo_fast_ops
+  pfifo_qdisc_ops
   phy_attached_info
   phy_calibrate
   phy_config_aneg
@@ -2572,6 +2586,15 @@
   qcom_smem_state_register
   qcom_smem_state_unregister
   qcom_smem_state_update_bits
+  qdisc_create_dflt
+  qdisc_hash_add
+  qdisc_put
+  qdisc_reset
+  qdisc_tree_reduce_backlog
+  qdisc_watchdog_cancel
+  qdisc_watchdog_init
+  qdisc_watchdog_init_clockid
+  qdisc_watchdog_schedule_range_ns
   queue_delayed_work_on
   queue_work_on
   radix_tree_delete
@@ -2831,6 +2854,7 @@
   rt_mutex_trylock
   rt_mutex_unlock
   rtnl_is_locked
+  rtnl_kfree_skbs
   rtnl_link_register
   rtnl_link_unregister
   rtnl_lock
@@ -3153,6 +3177,7 @@
   sock_no_sendpage
   sock_no_shutdown
   sock_no_socketpair
+  sock_queue_err_skb
   __sock_queue_rcv_skb
   sock_queue_rcv_skb_reason
   __sock_recv_cmsgs
