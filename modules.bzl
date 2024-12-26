@@ -38,6 +38,7 @@ _COMMON_GKI_MODULES_LIST = [
     "drivers/usb/class/cdc-acm.ko",
     "drivers/usb/serial/ftdi_sio.ko",
     "drivers/usb/serial/usbserial.ko",
+    "drivers/virt/gunyah/gh_dbl.ko",
     "kernel/kheaders.ko",
     "lib/crypto/libarc4.ko",
     "mm/zsmalloc.ko",

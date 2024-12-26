@@ -1537,3 +1537,6 @@
   wait_woken
   wake_up_bit
   woken_wake_function
+
+# required by gh_dbl.ko
+  kasprintf
