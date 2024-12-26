@@ -1577,3 +1577,7 @@
 # required by rename_devices.ko
   blkdev_get_by_dev
   name_to_dev_t
+
+#  required by virtio_mmio.ko
+#  of_address_to_resource
+#  pfn_is_map_memory
