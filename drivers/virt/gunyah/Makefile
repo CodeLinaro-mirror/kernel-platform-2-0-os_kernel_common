@@ -11,3 +11,4 @@ obj-$(CONFIG_GUNYAH_IRQFD) += gunyah_irqfd.o
 obj-$(CONFIG_GUNYAH_IOEVENTFD) += gunyah_ioeventfd.o
 
 obj-$(CONFIG_GH_DBL) += gh_dbl.o
+obj-$(CONFIG_GH_MSGQ) += gh_msgq.o
