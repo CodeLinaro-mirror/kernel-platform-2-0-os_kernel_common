@@ -1538,6 +1538,7 @@ ddk_headers(
     name = "all_headers_allowlist_aarch64",
     hdrs = [
         "drivers/thermal/thermal_core.h",
+        "drivers/thermal/thermal_debugfs.h",
         "drivers/thermal/thermal_netlink.h",
         "sound/usb/card.h",
         "sound/usb/usbaudio.h",
@@ -1638,6 +1639,24 @@ filegroup(
 ddk_headers(
     name = "all_headers_unsafe",
     hdrs = [
+        "drivers/devfreq/governor.h",
+        "drivers/pinctrl/core.h",
+        "drivers/ufs/host/ufshcd-pltfrm.h",
+        "drivers/usb/dwc3/core.h",
+        "drivers/usb/dwc3/debug.h",
+        "drivers/usb/dwc3/gadget.h",
+        "drivers/usb/dwc3/io.h",
+        "drivers/usb/dwc3/trace.h",
+        "drivers/usb/gadget/configfs.h",
+        "drivers/usb/gadget/function/ndis.h",
+        "drivers/usb/gadget/function/u_ether.h",
+        "drivers/usb/gadget/function/u_rndis.h",
+        "drivers/usb/gadget/function/u_serial.h",
+        "drivers/usb/host/pci-quirks.h",
+        "drivers/usb/host/xhci.h",
+        "drivers/usb/host/xhci-caps.h",
+        "drivers/usb/host/xhci-ext-caps.h",
+        "drivers/usb/host/xhci-port.h",
         "//build/kernel/kleaf:user_ddk_unsafe_headers",
     ],
     # The list of include directories where source files can #include headers
@@ -3052,4 +3071,3 @@ pkg_zip(
 exports_files([
     "Makefile",
 ])
-
