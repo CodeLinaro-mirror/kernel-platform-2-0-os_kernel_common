@@ -1573,3 +1573,7 @@
 # required by hvc_gunyah.ko
   __kfifo_in
   __kfifo_out
+
+# required by rename_devices.ko
+  blkdev_get_by_dev
+  name_to_dev_t
