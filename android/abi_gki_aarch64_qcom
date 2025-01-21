@@ -2781,3 +2781,6 @@
   xsk_tx_release
   xsk_uses_need_wakeup
   zap_vma_ptes
+  from_kuid_munged
+  make_kgid
+  make_kuid
