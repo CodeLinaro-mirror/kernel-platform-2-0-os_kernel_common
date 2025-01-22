@@ -638,7 +638,7 @@ static void __host_update_page_state(phys_addr_t addr, u64 size, enum pkvm_page_
 }
 
 static int __host_stage2_set_owner_locked(phys_addr_t addr, u64 size, u8 owner_id, bool is_memory,
-					  enum pkvm_page_state nopage_state)
+					  enum pkvm_page_state nopage_state, bool update_iommu)
 {
 	kvm_pte_t annotation;
 	enum kvm_pgtable_prot prot;
@@ -656,8 +656,16 @@ static int __host_stage2_set_owner_locked(phys_addr_t addr, u64 size, u8 owner_i
 				      &host_mmu.pgt,
 				      addr, size, &host_s2_pool, annotation);
 	}
-	if (ret || !is_memory)
+	if (ret)
 		return ret;
+
+	if (update_iommu) {
+		prot = owner_id == PKVM_ID_HOST ? PKVM_HOST_MEM_PROT : 0;
+		kvm_iommu_host_stage2_idmap(addr, addr + size, prot);
+	}
+
+	if (!is_memory)
+		return 0;
 
 	/* Don't forget to update the vmemmap tracking for the host */
 	if (owner_id == PKVM_ID_HOST)
@@ -665,15 +673,12 @@ static int __host_stage2_set_owner_locked(phys_addr_t addr, u64 size, u8 owner_i
 	else
 		__host_update_page_state(addr, size, PKVM_NOPAGE | nopage_state);
 
-	prot = owner_id == PKVM_ID_HOST ? PKVM_HOST_MEM_PROT : 0;
-	kvm_iommu_host_stage2_idmap(addr, addr + size, prot);
-
 	return 0;
 }
 
 int host_stage2_set_owner_locked(phys_addr_t addr, u64 size, u8 owner_id)
 {
-	return __host_stage2_set_owner_locked(addr, size, owner_id, addr_is_memory(addr), 0);
+	return __host_stage2_set_owner_locked(addr, size, owner_id, addr_is_memory(addr), 0, true);
 }
 
 static bool host_stage2_force_pte(u64 addr, u64 end, enum kvm_pgtable_prot prot)
@@ -1389,7 +1394,8 @@ unlock:
 			       KVM_PGTABLE_PROT_PXN |		\
 			       KVM_PGTABLE_PROT_UXN)
 
-int module_change_host_page_prot(u64 pfn, enum kvm_pgtable_prot prot, u64 nr_pages)
+int module_change_host_page_prot(u64 pfn, enum kvm_pgtable_prot prot, u64 nr_pages,
+				 bool update_iommu)
 {
 	u64 i, addr = hyp_pfn_to_phys(pfn);
 	u64 end = addr + nr_pages * PAGE_SIZE;
@@ -1443,10 +1449,10 @@ update:
 	if (!prot) {
 		ret = __host_stage2_set_owner_locked(addr, nr_pages << PAGE_SHIFT,
 						     PKVM_ID_PROTECTED, !!reg,
-						     PKVM_MODULE_OWNED_PAGE);
+						     PKVM_MODULE_OWNED_PAGE, update_iommu);
 	} else {
 		ret = host_stage2_idmap_locked(
-			addr, nr_pages << PAGE_SHIFT, prot, false);
+			addr, nr_pages << PAGE_SHIFT, prot, update_iommu);
 	}
 
 	if (WARN_ON(ret) || !page || !prot)
@@ -1459,6 +1465,38 @@ update:
 			page[i].host_state = PKVM_PAGE_OWNED;
 		}
 	}
+
+unlock:
+	host_unlock_component();
+
+	return ret;
+}
+
+int __pkvm_host_lazy_pte(u64 pfn, u64 nr_pages, bool enable)
+{
+	u64 size = nr_pages << PAGE_SHIFT;
+	u64 addr = hyp_pfn_to_phys(pfn);
+	u64 end = addr + size;
+	struct memblock_region *reg;
+	struct kvm_mem_range range;
+	int ret;
+
+	/* Reject MMIO regions */
+	reg = find_mem_range(addr, &range);
+	if (!reg || !is_in_mem_range(end - 1, &range))
+		return -EPERM;
+
+	host_lock_component();
+
+	ret = ___host_check_page_state_range(addr, size, PKVM_PAGE_OWNED, reg, true);
+	if (ret)
+		goto unlock;
+
+	if (enable)
+		ret = kvm_pgtable_stage2_get_pages(&host_mmu.pgt, addr, size,
+						   &host_s2_pool);
+	else
+		ret = kvm_pgtable_stage2_put_pages(&host_mmu.pgt, addr, size);
 
 unlock:
 	host_unlock_component();
@@ -1977,5 +2015,170 @@ int host_stage2_get_leaf(phys_addr_t phys, kvm_pte_t *ptep, s8 *level)
 	ret = kvm_pgtable_get_leaf(&host_mmu.pgt, phys, ptep, level);
 	host_unlock_component();
 
+	return ret;
+}
+
+static u64 __pkvm_ptdump_get_host_config(enum pkvm_ptdump_ops op)
+{
+	u64 ret = 0;
+
+	host_lock_component();
+	if (op == PKVM_PTDUMP_GET_LEVEL)
+		ret = host_mmu.pgt.start_level;
+	else
+		ret = host_mmu.pgt.ia_bits;
+	host_unlock_component();
+
+	return ret;
+}
+
+static u64 __pkvm_ptdump_get_guest_config(pkvm_handle_t handle, enum pkvm_ptdump_ops op)
+{
+	struct pkvm_hyp_vm *vm;
+	u64 ret = 0;
+
+	vm = get_pkvm_hyp_vm(handle);
+	if (!vm)
+		return -EINVAL;
+
+	if (op == PKVM_PTDUMP_GET_LEVEL)
+		ret = vm->pgt.start_level;
+	else
+		ret = vm->pgt.ia_bits;
+
+	put_pkvm_hyp_vm(vm);
+	return ret;
+}
+
+u64 __pkvm_ptdump_get_config(pkvm_handle_t handle, enum pkvm_ptdump_ops op)
+{
+	if (!handle)
+		return __pkvm_ptdump_get_host_config(op);
+
+	return __pkvm_ptdump_get_guest_config(handle, op);
+}
+
+static int pkvm_ptdump_walker(const struct kvm_pgtable_visit_ctx *ctx,
+			      enum kvm_pgtable_walk_flags visit)
+{
+	struct pkvm_ptdump_log_hdr **log_hdr = ctx->arg;
+	ssize_t avail_space = PAGE_SIZE - (*log_hdr)->w_index - sizeof(struct pkvm_ptdump_log_hdr);
+	struct pkvm_ptdump_log *log;
+
+	if (avail_space < sizeof(struct pkvm_ptdump_log)) {
+		if ((*log_hdr)->pfn_next == INVALID_PTDUMP_PFN)
+			return -ENOMEM;
+
+		*log_hdr = hyp_phys_to_virt(hyp_pfn_to_phys((*log_hdr)->pfn_next));
+		WARN_ON((*log_hdr)->w_index);
+	}
+
+	log = (struct pkvm_ptdump_log *)((void *)*log_hdr + (*log_hdr)->w_index +
+					 sizeof(struct pkvm_ptdump_log_hdr));
+	log->pfn = ctx->addr >> PAGE_SHIFT;
+	log->valid = ctx->old & PTE_VALID;
+	log->r = FIELD_GET(KVM_PTE_LEAF_ATTR_LO_S2_S2AP_R, ctx->old);
+	log->w = FIELD_GET(KVM_PTE_LEAF_ATTR_LO_S2_S2AP_W, ctx->old);
+	log->xn = FIELD_GET(KVM_PTE_LEAF_ATTR_HI_S2_XN, ctx->old);
+	log->table = FIELD_GET(KVM_PTE_TYPE, ctx->old);
+	log->level = ctx->level;
+	log->page_state = FIELD_GET(PKVM_PAGE_STATE_PROT_MASK, ctx->old);
+
+	(*log_hdr)->w_index += sizeof(struct pkvm_ptdump_log);
+	return 0;
+}
+
+static void pkvm_ptdump_teardown_log(struct pkvm_ptdump_log_hdr *log_hva,
+				     struct pkvm_ptdump_log_hdr *cur)
+{
+	struct pkvm_ptdump_log_hdr *tmp, *log = (void *)kern_hyp_va(log_hva);
+	bool next_log_invalid = false;
+
+	while (log != cur && !next_log_invalid) {
+		next_log_invalid = log->pfn_next == INVALID_PTDUMP_PFN;
+		tmp = hyp_phys_to_virt(hyp_pfn_to_phys(log->pfn_next));
+		WARN_ON(__pkvm_hyp_donate_host(hyp_virt_to_pfn(log), 1));
+		log = tmp;
+	}
+}
+
+static int pkvm_ptdump_setup_log(struct pkvm_ptdump_log_hdr *log_hva)
+{
+	int ret;
+	struct pkvm_ptdump_log_hdr *log = (void *)kern_hyp_va(log_hva);
+
+	if (!PAGE_ALIGNED(log))
+		return -EINVAL;
+
+	for (;;) {
+		ret = __pkvm_host_donate_hyp(hyp_virt_to_pfn(log), 1);
+		if (ret) {
+			pkvm_ptdump_teardown_log(log_hva, log);
+			return ret;
+		}
+
+		log->w_index = 0;
+		if (log->pfn_next == INVALID_PTDUMP_PFN)
+			break;
+
+		log = hyp_phys_to_virt(hyp_pfn_to_phys(log->pfn_next));
+	}
+
+	return 0;
+}
+
+static int pkvm_ptdump_walk_host(struct kvm_pgtable_walker *walker)
+{
+	int ret;
+
+	host_lock_component();
+	ret = kvm_pgtable_walk(&host_mmu.pgt, 0, BIT(host_mmu.pgt.ia_bits), walker);
+	host_unlock_component();
+
+	return ret;
+}
+
+static int pkvm_ptdump_walk_guest(struct pkvm_hyp_vm *vm, struct kvm_pgtable_walker *walker)
+{
+	int ret;
+
+	guest_lock_component(vm);
+
+	ret = kvm_pgtable_walk(&vm->pgt, 0, BIT(vm->pgt.ia_bits), walker);
+
+	guest_unlock_component(vm);
+
+	return ret;
+}
+
+u64 __pkvm_ptdump_walk_range(pkvm_handle_t handle, struct pkvm_ptdump_log_hdr *log)
+{
+	struct pkvm_hyp_vm *vm;
+	int ret;
+	struct pkvm_ptdump_log_hdr *log_hyp = kern_hyp_va(log);
+	struct kvm_pgtable_walker walker = {
+		.cb     = pkvm_ptdump_walker,
+		.flags  = KVM_PGTABLE_WALK_LEAF,
+		.arg    = &log_hyp,
+	};
+
+	ret = pkvm_ptdump_setup_log(log);
+	if (ret)
+		return ret;
+
+	if (!handle)
+		ret = pkvm_ptdump_walk_host(&walker);
+	else {
+		vm = get_pkvm_hyp_vm(handle);
+		if (!vm) {
+			ret = -EINVAL;
+			goto teardown;
+		}
+
+		ret = pkvm_ptdump_walk_guest(vm, &walker);
+		put_pkvm_hyp_vm(vm);
+	}
+teardown:
+	pkvm_ptdump_teardown_log(log, NULL);
 	return ret;
 }

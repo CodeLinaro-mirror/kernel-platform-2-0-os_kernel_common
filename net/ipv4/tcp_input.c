@@ -81,6 +81,7 @@
 #include <linux/jump_label_ratelimit.h>
 #include <net/busy_poll.h>
 #include <net/mptcp.h>
+#include <trace/hooks/net.h>
 
 int sysctl_tcp_max_orphans __read_mostly = NR_FILE;
 
@@ -3467,6 +3468,7 @@ static int tcp_clean_rtx_queue(struct sock *sk, const struct sk_buff *ack_skb,
 		sack_rtt_us = tcp_stamp_us_delta(tp->tcp_mstamp, sack->first_sackt);
 		ca_rtt_us = tcp_stamp_us_delta(tp->tcp_mstamp, sack->last_sackt);
 	}
+	trace_android_vh_tcp_clean_rtx_queue(sk, flag, seq_rtt_us);
 	rtt_update = tcp_ack_update_rtt(sk, flag, seq_rtt_us, sack_rtt_us,
 					ca_rtt_us, sack->rate);
 
@@ -6226,6 +6228,7 @@ void tcp_rcv_established(struct sock *sk, struct sk_buff *skb)
 
 			__tcp_ack_snd_check(sk, 0);
 no_ack:
+			trace_android_vh_tcp_rcv_established_fast_path(sk);
 			if (eaten)
 				kfree_skb_partial(skb, fragstolen);
 			tcp_data_ready(sk);
@@ -6265,6 +6268,8 @@ step5:
 
 	tcp_data_snd_check(sk);
 	tcp_ack_snd_check(sk);
+
+	trace_android_vh_tcp_rcv_established_slow_path(sk);
 	return;
 
 csum_error:
@@ -6503,6 +6508,7 @@ consume:
 
 		tcp_ecn_rcv_synack(tp, th);
 
+		trace_android_vh_tcp_rcv_synack(icsk);
 		tcp_init_wl(tp, TCP_SKB_CB(skb)->seq);
 		tcp_try_undo_spurious_syn(sk);
 		tcp_ack(sk, skb, FLAG_SLOWPATH);

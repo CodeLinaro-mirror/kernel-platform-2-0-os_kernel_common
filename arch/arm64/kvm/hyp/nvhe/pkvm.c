@@ -90,36 +90,35 @@ static void pkvm_vcpu_reset_hcrx(struct pkvm_hyp_vcpu *hyp_vcpu)
 static void pvm_init_traps_hcr(struct kvm_vcpu *vcpu)
 {
 	struct kvm *kvm = vcpu->kvm;
-	u64 hcr_clear = 0;
-	u64 hcr_set = 0;
+	u64 val = vcpu->arch.hcr_el2;
 
-	hcr_set |= HCR_RW;
+	/* No support for AArch32. */
+	val |= HCR_RW;
 
 	/*
 	 * Always trap:
 	 * - Feature id registers: to control features exposed to guests
 	 * - Implementation-defined features
 	 */
-	hcr_set |= HCR_TACR | HCR_TIDCP | HCR_TID3 | HCR_TID1;
+	val |= HCR_TACR | HCR_TIDCP | HCR_TID3 | HCR_TID1;
 
 	if (!kvm_has_feat(kvm, ID_AA64PFR0_EL1, RAS, IMP)) {
-		hcr_set |= HCR_TERR | HCR_TEA;
-		hcr_clear |= HCR_FIEN;
+		val |= HCR_TERR | HCR_TEA;
+		val &= ~(HCR_FIEN);
 	}
 
 	if (!kvm_has_feat(kvm, ID_AA64PFR0_EL1, AMU, IMP))
-		hcr_clear |= HCR_AMVOFFEN;
+		val &= ~(HCR_AMVOFFEN);
 
 	if (!kvm_has_feat(kvm, ID_AA64PFR1_EL1, MTE, IMP)) {
-		hcr_set |= HCR_TID5;
-		hcr_clear |= HCR_DCT | HCR_ATA;
+		val |= HCR_TID5;
+		val &= ~(HCR_DCT | HCR_ATA);
 	}
 
 	if (!kvm_has_feat(kvm, ID_AA64MMFR1_EL1, LO, IMP))
-		hcr_set |= HCR_TLOR;
+		val |= HCR_TLOR;
 
-	vcpu->arch.hcr_el2 |= hcr_set;
-	vcpu->arch.hcr_el2 &= ~hcr_clear;
+	vcpu->arch.hcr_el2 = val;
 }
 
 static void pvm_init_traps_hcrx(struct kvm_vcpu *vcpu)
@@ -145,38 +144,35 @@ static void pvm_init_traps_hcrx(struct kvm_vcpu *vcpu)
 static void pvm_init_traps_mdcr(struct kvm_vcpu *vcpu)
 {
 	struct kvm *kvm = vcpu->kvm;
-	u64 mdcr_clear = 0;
-	u64 mdcr_set = 0;
+	u64 val = vcpu->arch.mdcr_el2;
 
 	if (!kvm_has_feat(kvm, ID_AA64DFR0_EL1, PMUVer, IMP)) {
-		mdcr_set |= MDCR_EL2_TPM | MDCR_EL2_TPMCR;
-		mdcr_clear |= MDCR_EL2_HPME | MDCR_EL2_MTPME |
-			      MDCR_EL2_HPMN_MASK;
+		val |= MDCR_EL2_TPM | MDCR_EL2_TPMCR;
+		val &= ~(MDCR_EL2_HPME | MDCR_EL2_MTPME | MDCR_EL2_HPMN_MASK);
 	}
 
 	if (!kvm_has_feat(kvm, ID_AA64DFR0_EL1, DebugVer, IMP))
-		mdcr_set |= MDCR_EL2_TDRA | MDCR_EL2_TDA;
+		val |= MDCR_EL2_TDRA | MDCR_EL2_TDA;
 
 	if (!kvm_has_feat(kvm, ID_AA64DFR0_EL1, DoubleLock, IMP))
-		mdcr_set |= MDCR_EL2_TDOSA;
+		val |= MDCR_EL2_TDOSA;
 
 	if (!kvm_has_feat(kvm, ID_AA64DFR0_EL1, PMSVer, IMP)) {
-		mdcr_set |= MDCR_EL2_TPMS;
-		mdcr_clear |= MDCR_EL2_E2PB_MASK << MDCR_EL2_E2PB_SHIFT;
+		val |= MDCR_EL2_TPMS;
+		val &= ~(MDCR_EL2_E2PB_MASK << MDCR_EL2_E2PB_SHIFT);
 	}
 
 	if (!kvm_has_feat(kvm, ID_AA64DFR0_EL1, TraceFilt, IMP))
-		mdcr_set |= MDCR_EL2_TTRF;
+		val |= MDCR_EL2_TTRF;
 
 	if (!kvm_has_feat(kvm, ID_AA64DFR0_EL1, ExtTrcBuff, IMP))
-		mdcr_clear |= MDCR_EL2_E2TB_MASK << MDCR_EL2_E2TB_SHIFT;
+		val |= MDCR_EL2_E2TB_MASK << MDCR_EL2_E2TB_SHIFT;
 
 	/* Trap Debug Communications Channel registers */
 	if (!kvm_has_feat(kvm, ID_AA64MMFR0_EL1, FGT, IMP))
-		mdcr_set |= MDCR_EL2_TDCC;
+		val |= MDCR_EL2_TDCC;
 
-	vcpu->arch.mdcr_el2 |= mdcr_set;
-	vcpu->arch.mdcr_el2 &= ~mdcr_clear;
+	vcpu->arch.mdcr_el2 = val;
 }
 
 /*
@@ -425,10 +421,13 @@ struct pkvm_hyp_vcpu *pkvm_get_loaded_hyp_vcpu(void)
 static void pkvm_init_features_from_host(struct pkvm_hyp_vm *hyp_vm, const struct kvm *host_kvm)
 {
 	struct kvm *kvm = &hyp_vm->kvm;
+	unsigned long host_arch_flags = READ_ONCE(host_kvm->arch.flags);
 	DECLARE_BITMAP(allowed_features, KVM_VCPU_MAX_FEATURES);
 
 	/* No restrictions for non-protected VMs. */
 	if (!kvm_vm_is_protected(kvm)) {
+		hyp_vm->kvm.arch.flags = host_arch_flags;
+
 		bitmap_copy(kvm->arch.vcpu_features,
 			    host_kvm->arch.vcpu_features,
 			    KVM_VCPU_MAX_FEATURES);
@@ -438,25 +437,23 @@ static void pkvm_init_features_from_host(struct pkvm_hyp_vm *hyp_vm, const struc
 	bitmap_zero(allowed_features, KVM_VCPU_MAX_FEATURES);
 
 	set_bit(KVM_ARM_VCPU_PSCI_0_2, allowed_features);
-	set_bit(KVM_ARM_VCPU_PMU_V3, allowed_features);
-	set_bit(KVM_ARM_VCPU_SVE, allowed_features);
-	set_bit(KVM_ARM_VCPU_PTRAUTH_ADDRESS, allowed_features);
-	set_bit(KVM_ARM_VCPU_PTRAUTH_GENERIC, allowed_features);
+
+	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_PMU_V3))
+		set_bit(KVM_ARM_VCPU_PMU_V3, allowed_features);
+
+	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_PTRAUTH_ADDRESS))
+		set_bit(KVM_ARM_VCPU_PTRAUTH_ADDRESS, allowed_features);
+
+	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_PTRAUTH_GENERIC))
+		set_bit(KVM_ARM_VCPU_PTRAUTH_GENERIC, allowed_features);
+
+	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_SVE)) {
+		set_bit(KVM_ARM_VCPU_SVE, allowed_features);
+		kvm->arch.flags |= host_arch_flags & BIT(KVM_ARCH_FLAG_GUEST_HAS_SVE);
+	}
 
 	bitmap_and(kvm->arch.vcpu_features, host_kvm->arch.vcpu_features,
 		   allowed_features, KVM_VCPU_MAX_FEATURES);
-}
-
-static void pkvm_vcpu_init_ptrauth(struct pkvm_hyp_vcpu *hyp_vcpu)
-{
-	struct kvm_vcpu *vcpu = &hyp_vcpu->vcpu;
-
-	if (vcpu_has_feature(vcpu, KVM_ARM_VCPU_PTRAUTH_ADDRESS) ||
-	    vcpu_has_feature(vcpu, KVM_ARM_VCPU_PTRAUTH_GENERIC)) {
-		kvm_vcpu_enable_ptrauth(vcpu);
-	} else {
-		vcpu_clear_flag(&hyp_vcpu->vcpu, GUEST_HAS_PTRAUTH);
-	}
 }
 
 static int pkvm_vcpu_init_psci(struct pkvm_hyp_vcpu *hyp_vcpu, u32 mp_state)
@@ -556,13 +553,13 @@ static void init_pkvm_hyp_vm(struct kvm *host_kvm, struct pkvm_hyp_vm *hyp_vm,
 	hyp_vm->kvm.created_vcpus = nr_vcpus;
 	hyp_vm->kvm.arch.mmu.vtcr = host_mmu.arch.mmu.vtcr;
 	hyp_vm->kvm.arch.pkvm.enabled = READ_ONCE(host_kvm->arch.pkvm.enabled);
+	hyp_vm->kvm.arch.flags = 0;
 
 	if (hyp_vm->kvm.arch.pkvm.enabled)
 		pvmfw_load_addr = READ_ONCE(host_kvm->arch.pkvm.pvmfw_load_addr);
 	hyp_vm->kvm.arch.pkvm.pvmfw_load_addr = pvmfw_load_addr;
 
 	hyp_vm->kvm.arch.mmu.last_vcpu_ran = (int __percpu *)last_ran;
-	hyp_vm->kvm.arch.flags = 0;
 	memset(last_ran, -1, pkvm_get_last_ran_size());
 	pkvm_init_features_from_host(hyp_vm, host_kvm);
 	hyp_spin_lock_init(&hyp_vm->vcpus_lock);
@@ -606,7 +603,6 @@ static int pkvm_vcpu_init_sve(struct pkvm_hyp_vcpu *hyp_vcpu, struct kvm_vcpu *h
 
 	vcpu->arch.sve_state = sve_state;
 	vcpu->arch.sve_max_vl = sve_max_vl;
-	vcpu_set_flag(vcpu, GUEST_HAS_SVE);
 	vcpu_set_flag(vcpu, VCPU_SVE_FINALIZED);
 
 	return 0;
@@ -652,7 +648,10 @@ static int init_pkvm_hyp_vcpu(struct pkvm_hyp_vcpu *hyp_vcpu,
 	hyp_vcpu->vcpu.arch.debug_ptr = &host_vcpu->arch.vcpu_debug_state;
 	hyp_vcpu->vcpu.arch.hyp_reqs->type = KVM_HYP_LAST_REQ;
 
-	kvm_reset_pvm_sys_regs(&hyp_vcpu->vcpu);
+	if (pkvm_hyp_vcpu_is_protected(hyp_vcpu)) {
+		kvm_init_pvm_id_regs(&hyp_vcpu->vcpu);
+		kvm_reset_pvm_sys_regs(&hyp_vcpu->vcpu);
+	}
 
 	ret = pkvm_vcpu_init_traps(hyp_vcpu);
 	if (ret)
@@ -665,8 +664,6 @@ static int init_pkvm_hyp_vcpu(struct pkvm_hyp_vcpu *hyp_vcpu,
 	ret = pkvm_vcpu_init_psci(hyp_vcpu, mp_state);
 	if (ret)
 		goto done;
-
-	pkvm_vcpu_init_ptrauth(hyp_vcpu);
 done:
 	if (ret)
 		unpin_host_vcpu(hyp_vcpu);
