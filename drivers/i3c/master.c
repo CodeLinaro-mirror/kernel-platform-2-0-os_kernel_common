@@ -1080,6 +1080,7 @@ static int i3c_master_getmxds_locked(struct i3c_master_controller *master,
 	struct i3c_ccc_cmd cmd;
 	int ret;
 
+	return 0;
 	getmaxds = i3c_ccc_cmd_dest_init(&dest, info->dyn_addr,
 					 sizeof(*getmaxds));
 	if (!getmaxds)
