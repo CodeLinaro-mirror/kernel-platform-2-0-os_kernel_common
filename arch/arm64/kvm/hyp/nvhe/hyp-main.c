@@ -1083,7 +1083,8 @@ static void handle___pkvm_host_map_guest(struct kvm_cpu_context *host_ctxt)
 {
 	DECLARE_REG(u64, pfn, host_ctxt, 1);
 	DECLARE_REG(u64, gfn, host_ctxt, 2);
-	DECLARE_REG(enum kvm_pgtable_prot, prot, host_ctxt, 3);
+	DECLARE_REG(u64, nr_pages, host_ctxt, 3);
+	DECLARE_REG(enum kvm_pgtable_prot, prot, host_ctxt, 4);
 	struct pkvm_hyp_vcpu *hyp_vcpu;
 	int ret = -EINVAL;
 
@@ -1100,9 +1101,9 @@ static void handle___pkvm_host_map_guest(struct kvm_cpu_context *host_ctxt)
 		goto out;
 
 	if (pkvm_hyp_vcpu_is_protected(hyp_vcpu))
-		ret = __pkvm_host_donate_guest(pfn, gfn, hyp_vcpu);
+		ret = __pkvm_host_donate_guest(hyp_vcpu, pfn, gfn, nr_pages);
 	else
-		ret = __pkvm_host_share_guest(pfn, gfn, hyp_vcpu, prot);
+		ret = __pkvm_host_share_guest(hyp_vcpu, pfn, gfn, nr_pages, prot);
 out:
 	cpu_reg(host_ctxt, 1) =  ret;
 }
@@ -1111,6 +1112,7 @@ static void handle___pkvm_host_unmap_guest(struct kvm_cpu_context *host_ctxt)
 {
 	DECLARE_REG(pkvm_handle_t, handle, host_ctxt, 1);
 	DECLARE_REG(u64, gfn, host_ctxt, 2);
+	DECLARE_REG(u64, order, host_ctxt, 3);
 	struct pkvm_hyp_vm *hyp_vm;
 	int ret = -EINVAL;
 
@@ -1121,8 +1123,9 @@ static void handle___pkvm_host_unmap_guest(struct kvm_cpu_context *host_ctxt)
 	if (!hyp_vm)
 		goto out;
 
-	ret = __pkvm_host_unshare_guest(gfn, hyp_vm);
+	ret = __pkvm_host_unshare_guest(hyp_vm, gfn, order);
 	put_pkvm_hyp_vm(hyp_vm);
+
 out:
 	cpu_reg(host_ctxt, 1) =  ret;
 }
@@ -1130,7 +1133,8 @@ out:
 static void handle___pkvm_host_relax_guest_perms(struct kvm_cpu_context *host_ctxt)
 {
 	DECLARE_REG(u64, gfn, host_ctxt, 1);
-	DECLARE_REG(enum kvm_pgtable_prot, prot, host_ctxt, 2);
+	DECLARE_REG(u64, order, host_ctxt, 2);
+	DECLARE_REG(enum kvm_pgtable_prot, prot, host_ctxt, 3);
 	struct pkvm_hyp_vcpu *hyp_vcpu;
 	int ret = -EINVAL;
 
@@ -1141,7 +1145,7 @@ static void handle___pkvm_host_relax_guest_perms(struct kvm_cpu_context *host_ct
 	if (!hyp_vcpu || pkvm_hyp_vcpu_is_protected(hyp_vcpu))
 		goto out;
 
-	ret = __pkvm_host_relax_guest_perms(gfn, prot, hyp_vcpu);
+	ret = __pkvm_host_relax_guest_perms(gfn, order, prot, hyp_vcpu);
 out:
 	cpu_reg(host_ctxt, 1) = ret;
 }
@@ -1150,6 +1154,7 @@ static void handle___pkvm_host_wrprotect_guest(struct kvm_cpu_context *host_ctxt
 {
 	DECLARE_REG(pkvm_handle_t, handle, host_ctxt, 1);
 	DECLARE_REG(u64, gfn, host_ctxt, 2);
+	DECLARE_REG(u64, order, host_ctxt, 3);
 	struct pkvm_hyp_vm *hyp_vm;
 	int ret = -EINVAL;
 
@@ -1160,8 +1165,26 @@ static void handle___pkvm_host_wrprotect_guest(struct kvm_cpu_context *host_ctxt
 	if (!hyp_vm)
 		goto out;
 
-	ret = __pkvm_host_wrprotect_guest(gfn, hyp_vm);
+	ret = __pkvm_host_wrprotect_guest(gfn, order, hyp_vm);
 	put_pkvm_hyp_vm(hyp_vm);
+out:
+	cpu_reg(host_ctxt, 1) = ret;
+}
+
+static void handle___pkvm_host_dirty_log_guest(struct kvm_cpu_context *host_ctxt)
+{
+	DECLARE_REG(u64, gfn, host_ctxt, 1);
+	struct pkvm_hyp_vcpu *hyp_vcpu;
+	int ret = -EINVAL;
+
+	if (!is_protected_kvm_enabled())
+		goto out;
+
+	hyp_vcpu = pkvm_get_loaded_hyp_vcpu();
+	if (!hyp_vcpu)
+		goto out;
+
+	ret = __pkvm_host_dirty_log_guest(gfn, hyp_vcpu);
 out:
 	cpu_reg(host_ctxt, 1) = ret;
 }
@@ -1381,9 +1404,11 @@ static void handle___pkvm_reclaim_dying_guest_page(struct kvm_cpu_context *host_
 {
 	DECLARE_REG(pkvm_handle_t, handle, host_ctxt, 1);
 	DECLARE_REG(u64, pfn, host_ctxt, 2);
-	DECLARE_REG(u64, ipa, host_ctxt, 3);
+	DECLARE_REG(u64, gfn, host_ctxt, 3);
+	DECLARE_REG(u64, order, host_ctxt, 4);
 
-	cpu_reg(host_ctxt, 1) = __pkvm_reclaim_dying_guest_page(handle, pfn, ipa);
+	cpu_reg(host_ctxt, 1) =
+		__pkvm_reclaim_dying_guest_page(handle, pfn, gfn, order);
 }
 
 static void handle___pkvm_create_private_mapping(struct kvm_cpu_context *host_ctxt)
@@ -1546,9 +1571,9 @@ static void handle___pkvm_unmap_module_page(struct kvm_cpu_context *host_ctxt)
 
 static void handle___pkvm_init_module(struct kvm_cpu_context *host_ctxt)
 {
-	DECLARE_REG(void *, ptr, host_ctxt, 1);
+	DECLARE_REG(void *, host_mod, host_ctxt, 1);
 
-	cpu_reg(host_ctxt, 1) = __pkvm_init_module(ptr);
+	cpu_reg(host_ctxt, 1) = __pkvm_init_module(host_mod);
 }
 
 static void handle___pkvm_register_hcall(struct kvm_cpu_context *host_ctxt)
@@ -1749,6 +1774,7 @@ static const hcall_t host_hcall[] = {
 	HANDLE_FUNC(__pkvm_host_unmap_guest),
 	HANDLE_FUNC(__pkvm_host_relax_guest_perms),
 	HANDLE_FUNC(__pkvm_host_wrprotect_guest),
+	HANDLE_FUNC(__pkvm_host_dirty_log_guest),
 	HANDLE_FUNC(__kvm_adjust_pc),
 	HANDLE_FUNC(__kvm_vcpu_run),
 	HANDLE_FUNC(__kvm_timer_set_cntvoff),

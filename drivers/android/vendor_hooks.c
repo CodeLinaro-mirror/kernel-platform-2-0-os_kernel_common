@@ -26,6 +26,7 @@
 #include <trace/hooks/cgroup.h>
 #include <trace/hooks/sys.h>
 #include <trace/hooks/iommu.h>
+#include <trace/hooks/fs.h>
 #include <trace/hooks/net.h>
 #include <trace/hooks/pm_domain.h>
 #include <trace/hooks/cpuidle_psci.h>
@@ -111,6 +112,9 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_send_uic_command);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_send_tm_command);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_check_int_errors);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_update_sdev);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_f2fs_down_read);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_f2fs_improve_priority);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_f2fs_restore_priority);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_io_statistics);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_cgroup_attach);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_iommu_setup_dma_ops);
@@ -236,6 +240,9 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_do_sp_pc_abort);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_dma_buf_stats_teardown);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_dpm_wait_start);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_dpm_wait_finish);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_uplink_send_msg);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_inet_create);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sock_create);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_tcp_v4_connect);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_tcp_v6_connect);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_udp_v4_connect);
@@ -255,10 +262,13 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sk_alloc);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sk_free);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_enable_thermal_genl_check);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_alloc_pages_entry);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_count_workingset_refault);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sk_clone_lock);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_free_unref_folios_to_pcp_bypass);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_cma_alloc_fail);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_vmalloc_node_bypass);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_vfree_bypass);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_modify_scan_control);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_should_continue_reclaim);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_async_psi_bypass);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_cma_alloc_retry);

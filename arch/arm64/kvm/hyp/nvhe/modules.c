@@ -5,6 +5,7 @@
 #include <asm/kvm_host.h>
 #include <asm/kvm_pkvm_module.h>
 #include <asm/kvm_hypevents.h>
+#include <asm/module.h>
 
 #include <nvhe/alloc.h>
 #include <nvhe/iommu.h>
@@ -243,7 +244,6 @@ const struct pkvm_module_ops module_ops = {
 	.hyp_pa = hyp_virt_to_phys,
 	.hyp_va = hyp_phys_to_virt,
 	.kern_hyp_va = __kern_hyp_va,
-	.register_hyp_event_ids = register_hyp_event_ids,
 	.tracing_reserve_entry = tracing_reserve_entry,
 	.tracing_commit_entry = tracing_commit_entry,
 	.tracing_mod_hyp_printk = tracing_mod_hyp_printk,
@@ -267,9 +267,23 @@ const struct pkvm_module_ops module_ops = {
 	.hyp_smp_processor_id = __hyp_smp_processor_id,
 };
 
-int __pkvm_init_module(void *module_init)
+static void *pkvm_module_hyp_va(struct pkvm_el2_module *mod, void *kern_va)
 {
-	int (*do_module_init)(const struct pkvm_module_ops *ops) = module_init;
+	return kern_va - mod->sections.start + mod->hyp_va;
+}
+
+int __pkvm_init_module(void *host_mod)
+{
+	int (*do_module_init)(const struct pkvm_module_ops *ops);
+	struct pkvm_el2_module *mod = kern_hyp_va(host_mod);
+	void *event_ids;
+
+	event_ids = pkvm_module_hyp_va(mod, mod->event_ids.start);
+
+	if (mod->nr_hyp_events)
+		register_hyp_event_ids(event_ids, mod->nr_hyp_events);
+
+	do_module_init = pkvm_module_hyp_va(mod, (void *)mod->init);
 
 	return do_module_init(&module_ops);
 }
