@@ -25,6 +25,7 @@
 #include <linux/uio.h>
 #include <linux/namei.h>
 #include <linux/security.h>
+#include <linux/cleancache.h>
 #include <linux/part_stat.h>
 #include <linux/uaccess.h>
 #include <linux/stat.h>
@@ -101,6 +102,10 @@ void invalidate_bdev(struct block_device *bdev)
 		lru_add_drain_all();	/* make sure all lru add caches are flushed */
 		invalidate_mapping_pages(mapping, 0, -1);
 	}
+	/* 99% of the time, we don't need to flush the cleancache on the bdev.
+	 * But, for the strange corners, lets be cautious
+	 */
+	cleancache_invalidate_inode(mapping);
 }
 EXPORT_SYMBOL(invalidate_bdev);
 
@@ -555,7 +560,7 @@ retry:
 
 	/* if claiming is already in progress, wait for it to finish */
 	if (whole->bd_claiming) {
-		wait_queue_head_t *wq = bit_waitqueue(&whole->bd_claiming, 0);
+		wait_queue_head_t *wq = __var_waitqueue(&whole->bd_claiming);
 		DEFINE_WAIT(wait);
 
 		prepare_to_wait(wq, &wait, TASK_UNINTERRUPTIBLE);
@@ -578,7 +583,7 @@ static void bd_clear_claiming(struct block_device *whole, void *holder)
 	/* tell others that we're done */
 	BUG_ON(whole->bd_claiming != holder);
 	whole->bd_claiming = NULL;
-	wake_up_bit(&whole->bd_claiming, 0);
+	wake_up_var(&whole->bd_claiming);
 }
 
 /**

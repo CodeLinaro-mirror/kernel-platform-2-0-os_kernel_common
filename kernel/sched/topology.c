@@ -222,20 +222,15 @@ static bool sched_is_eas_possible(const struct cpumask *cpu_mask)
 	struct cpufreq_policy *policy;
 	struct cpufreq_governor *gov;
 	int i;
-	bool eas_check = false;
 
-	/* EAS is enabled for asymmetric CPU capacity topologies.
-	 * Allow vendor to override if desired.
-	 */
-	trace_android_rvh_build_perf_domains(&eas_check);
-
+	/* EAS is enabled for asymmetric CPU capacity topologies. */
 	for_each_cpu(i, cpu_mask) {
 		if (rcu_access_pointer(per_cpu(sd_asym_cpucapacity, i))) {
 			any_asym_capacity = true;
 			break;
 		}
 	}
-	if (!any_asym_capacity && !eas_check) {
+	if (!any_asym_capacity) {
 		if (sched_debug()) {
 			pr_info("rd %*pbl: Checking EAS, CPUs do not have asymmetric capacities\n",
 				cpumask_pr_args(cpu_mask));
@@ -260,9 +255,6 @@ static bool sched_is_eas_possible(const struct cpumask *cpu_mask)
 		return false;
 	}
 
-	if (eas_check)
-		goto out;
-
 	/* Do not attempt EAS if schedutil is not being used. */
 	for_each_cpu(i, cpu_mask) {
 		policy = cpufreq_cpu_get(i);
@@ -284,7 +276,6 @@ static bool sched_is_eas_possible(const struct cpumask *cpu_mask)
 		}
 	}
 
-out:
 	return true;
 }
 
@@ -529,6 +520,14 @@ void rq_attach_root(struct rq *rq, struct root_domain *rd)
 	cpumask_set_cpu(rq->cpu, rd->span);
 	if (cpumask_test_cpu(rq->cpu, cpu_active_mask))
 		set_rq_online(rq);
+
+	/*
+	 * Because the rq is not a task, dl_add_task_root_domain() did not
+	 * move the fair server bw to the rd if it already started.
+	 * Add it now.
+	 */
+	if (rq->fair_server.dl_server)
+		__dl_server_attach_root(&rq->fair_server, rq);
 
 	rq_unlock_irqrestore(rq, &rf);
 

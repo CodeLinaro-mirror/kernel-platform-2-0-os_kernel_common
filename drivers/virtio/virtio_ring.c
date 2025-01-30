@@ -2588,7 +2588,7 @@ irqreturn_t vring_interrupt(int irq, void *_vq)
 
 	/* Just a hint for performance: so it's ok that this can be racy! */
 	if (vq->event)
-		vq->event_triggered = true;
+		data_race(vq->event_triggered = true);
 
 	pr_debug("virtqueue callback for %p (%p)\n", vq, vq->vq.callback);
 	if (vq->vq.callback)
@@ -3245,6 +3245,16 @@ void virtqueue_dma_sync_single_range_for_device(struct virtqueue *_vq,
 	dma_sync_single_range_for_device(dev, addr, offset, size, dir);
 }
 EXPORT_SYMBOL_GPL(virtqueue_dma_sync_single_range_for_device);
+
+/*
+ * Prevents use of DMA API for buffers passed via the specified virtqueue.
+ * DMA API may still be used for the vrings themselves.
+ */
+void virtqueue_disable_dma_api_for_buffers(struct virtqueue *vq)
+{
+	to_vvq(vq)->use_dma_api = false;
+}
+EXPORT_SYMBOL_GPL(virtqueue_disable_dma_api_for_buffers);
 
 MODULE_DESCRIPTION("Virtio ring implementation");
 MODULE_LICENSE("GPL");

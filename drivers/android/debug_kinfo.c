@@ -20,9 +20,9 @@
  * These will be re-linked against their real values
  * during the second link stage.
  */
-extern const unsigned long kallsyms_addresses[] __weak;
 extern const int kallsyms_offsets[] __weak;
 extern const u8 kallsyms_names[] __weak;
+extern const u8 kallsyms_seqs_of_names[] __weak;
 
 /*
  * Tell the compiler that the count isn't in the small data section if the arch
@@ -142,6 +142,7 @@ static int debug_kinfo_probe(struct platform_device *pdev)
 	info->symbol_len = KSYM_SYMBOL_LEN;
 	info->_relative_pa = (u64)__pa_symbol((volatile void *)kallsyms_relative_base);
 	info->_offsets_pa = (u64)__pa_symbol((volatile void *)kallsyms_offsets);
+	info->_text_pa = (u64)__pa_symbol(_text);
 	info->_stext_pa = (u64)__pa_symbol(_stext);
 	info->_etext_pa = (u64)__pa_symbol(_etext);
 	info->_sinittext_pa = (u64)__pa_symbol(_sinittext);
@@ -151,6 +152,7 @@ static int debug_kinfo_probe(struct platform_device *pdev)
 	info->_token_table_pa = (u64)__pa_symbol((volatile void *)kallsyms_token_table);
 	info->_token_index_pa = (u64)__pa_symbol((volatile void *)kallsyms_token_index);
 	info->_markers_pa = (u64)__pa_symbol((volatile void *)kallsyms_markers);
+	info->_seqs_of_names_pa = (u64)__pa_symbol((volatile void *)kallsyms_seqs_of_names);
 	info->thread_size = THREAD_SIZE;
 	info->swapper_pg_dir_pa = (u64)__pa_symbol(swapper_pg_dir);
 	strscpy(info->last_uts_release, init_utsname()->release, sizeof(info->last_uts_release));

@@ -1169,8 +1169,8 @@ static void tcp_v6_timewait_ack(struct sock *sk, struct sk_buff *skb)
 			if (tcp_parse_auth_options(tcp_hdr(skb), NULL, &aoh))
 				goto out;
 			if (aoh)
-				key.ao_key = tcp_ao_established_key(ao_info,
-						aoh->rnext_keyid, -1);
+				key.ao_key = tcp_ao_established_key(sk, ao_info,
+								    aoh->rnext_keyid, -1);
 		}
 	}
 	if (key.ao_key) {
@@ -1618,7 +1618,7 @@ int tcp_v6_do_rcv(struct sock *sk, struct sk_buff *skb)
 	   by tcp. Feel free to propose better solution.
 					       --ANK (980728)
 	 */
-	if (np->rxopt.all)
+	if (np->rxopt.all && sk->sk_state != TCP_LISTEN)
 		opt_skb = skb_clone_and_charge_r(skb, sk);
 
 	if (sk->sk_state == TCP_ESTABLISHED) { /* Fast path */
@@ -1656,8 +1656,6 @@ int tcp_v6_do_rcv(struct sock *sk, struct sk_buff *skb)
 				if (reason)
 					goto reset;
 			}
-			if (opt_skb)
-				__kfree_skb(opt_skb);
 			return 0;
 		}
 	} else

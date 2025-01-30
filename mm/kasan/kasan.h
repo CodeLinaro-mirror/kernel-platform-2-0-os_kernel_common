@@ -7,6 +7,7 @@
 #include <linux/kasan-tags.h>
 #include <linux/kfence.h>
 #include <linux/stackdepot.h>
+#include <asm/cacheflush.h>
 
 #if defined(CONFIG_KASAN_SW_TAGS) || defined(CONFIG_KASAN_HW_TAGS)
 
@@ -468,25 +469,37 @@ static inline u8 kasan_random_tag(void) { return 0; }
 
 #ifdef CONFIG_KASAN_HW_TAGS
 
+DECLARE_STATIC_KEY_FALSE(kasan_inval_dcache);
+
 static inline void kasan_poison(const void *addr, size_t size, u8 value, bool init)
 {
+	addr = kasan_reset_tag(addr);
+
 	if (WARN_ON((unsigned long)addr & KASAN_GRANULE_MASK))
 		return;
 	if (WARN_ON(size & KASAN_GRANULE_MASK))
 		return;
 
-	hw_set_mem_tag_range(kasan_reset_tag(addr), size, value, init);
+	hw_set_mem_tag_range((void *)addr, size, value, init);
+
+	if (static_branch_unlikely(&kasan_inval_dcache) && size)
+		dcache_clean_inval_poc((unsigned long)addr, (unsigned long)addr + size);
 }
 
 static inline void kasan_unpoison(const void *addr, size_t size, bool init)
 {
 	u8 tag = get_tag(addr);
 
+	addr = kasan_reset_tag(addr);
+
 	if (WARN_ON((unsigned long)addr & KASAN_GRANULE_MASK))
 		return;
 	size = round_up(size, KASAN_GRANULE_SIZE);
 
-	hw_set_mem_tag_range(kasan_reset_tag(addr), size, tag, init);
+	hw_set_mem_tag_range((void *)addr, size, tag, init);
+
+	if (static_branch_unlikely(&kasan_inval_dcache) && size)
+		dcache_clean_inval_poc((unsigned long)addr, (unsigned long)addr + size);
 }
 
 static inline bool kasan_byte_accessible(const void *addr)
@@ -554,6 +567,12 @@ static inline bool kasan_arch_is_ready(void)	{ return true; }
 
 void kasan_kunit_test_suite_start(void);
 void kasan_kunit_test_suite_end(void);
+
+#ifdef CONFIG_RUST
+char kasan_test_rust_uaf(void);
+#else
+static inline char kasan_test_rust_uaf(void) { return '\0'; }
+#endif
 
 #else /* CONFIG_KASAN_KUNIT_TEST */
 

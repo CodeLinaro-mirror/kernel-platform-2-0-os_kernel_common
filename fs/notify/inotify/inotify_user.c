@@ -569,7 +569,7 @@ static int inotify_update_existing_watch(struct fsnotify_group *group,
 		/* more bits in old than in new? */
 		int dropped = (old_mask & ~new_mask);
 		/* more bits in this fsn_mark than the inode's mask? */
-		int do_inode = (new_mask & ~inode->i_fsnotify_mask);
+		int do_inode = (new_mask & ~READ_ONCE(inode->i_fsnotify_mask));
 
 		/* update the inode with this new fsn_mark */
 		if (dropped || do_inode)
@@ -755,7 +755,7 @@ SYSCALL_DEFINE3(inotify_add_watch, int, fd, const char __user *, pathname,
 		return -EINVAL;
 
 	f = fdget(fd);
-	if (unlikely(!f.file))
+	if (unlikely(!fd_file(f)))
 		return -EBADF;
 
 	/* IN_MASK_ADD and IN_MASK_CREATE don't make sense together */
@@ -765,7 +765,7 @@ SYSCALL_DEFINE3(inotify_add_watch, int, fd, const char __user *, pathname,
 	}
 
 	/* verify that this is indeed an inotify instance */
-	if (unlikely(f.file->f_op != &inotify_fops)) {
+	if (unlikely(fd_file(f)->f_op != &inotify_fops)) {
 		ret = -EINVAL;
 		goto fput_and_out;
 	}
@@ -783,19 +783,25 @@ SYSCALL_DEFINE3(inotify_add_watch, int, fd, const char __user *, pathname,
 	/* support stacked filesystems */
 	if (path.dentry && path.dentry->d_op) {
 		if (path.dentry->d_op->d_canonical_path) {
-			path.dentry->d_op->d_canonical_path(&path,
+			ret = path.dentry->d_op->d_canonical_path(&path,
 							    &alteredpath);
-			canonical_path = &alteredpath;
-			path_put(&path);
+			if (ret != -ENOSYS) {
+				if (ret) {
+					goto path_put_and_out;
+				}
+				canonical_path = &alteredpath;
+				path_put(&path);
+			}
 		}
 	}
 
 	/* inode held in place by reference to path; group by fget on fd */
 	inode = canonical_path->dentry->d_inode;
-	group = f.file->private_data;
+	group = fd_file(f)->private_data;
 
 	/* create/update an inode mark */
 	ret = inotify_update_watch(group, inode, mask);
+path_put_and_out:
 	path_put(canonical_path);
 fput_and_out:
 	fdput(f);
@@ -810,14 +816,14 @@ SYSCALL_DEFINE2(inotify_rm_watch, int, fd, __s32, wd)
 	int ret = -EINVAL;
 
 	f = fdget(fd);
-	if (unlikely(!f.file))
+	if (unlikely(!fd_file(f)))
 		return -EBADF;
 
 	/* verify that this is indeed an inotify instance */
-	if (unlikely(f.file->f_op != &inotify_fops))
+	if (unlikely(fd_file(f)->f_op != &inotify_fops))
 		goto out;
 
-	group = f.file->private_data;
+	group = fd_file(f)->private_data;
 
 	i_mark = inotify_idr_find(group, wd);
 	if (unlikely(!i_mark))

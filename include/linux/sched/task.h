@@ -56,6 +56,9 @@ extern spinlock_t mmlist_lock;
 
 extern union thread_union init_thread_union;
 extern struct task_struct init_task;
+#ifdef CONFIG_GKI_DYNAMIC_TASK_STRUCT_SIZE
+extern u64 vendor_data_pad[CONFIG_GKI_TASK_STRUCT_VENDOR_SIZE_MAX / sizeof(u64)];
+#endif
 
 extern int lockdep_tasklist_lock_is_held(void);
 
@@ -63,7 +66,8 @@ extern asmlinkage void schedule_tail(struct task_struct *prev);
 extern void init_idle(struct task_struct *idle, int cpu);
 
 extern int sched_fork(unsigned long clone_flags, struct task_struct *p);
-extern void sched_cgroup_fork(struct task_struct *p, struct kernel_clone_args *kargs);
+extern int sched_cgroup_fork(struct task_struct *p, struct kernel_clone_args *kargs);
+extern void sched_cancel_fork(struct task_struct *p);
 extern void sched_post_fork(struct task_struct *p);
 extern void sched_dead(struct task_struct *p);
 
@@ -117,6 +121,11 @@ static inline struct task_struct *get_task_struct(struct task_struct *t)
 {
 	refcount_inc(&t->usage);
 	return t;
+}
+
+static inline struct task_struct *tryget_task_struct(struct task_struct *t)
+{
+	return refcount_inc_not_zero(&t->usage) ? t : NULL;
 }
 
 extern void __put_task_struct(struct task_struct *t);
@@ -229,5 +238,24 @@ static inline void task_unlock(struct task_struct *p)
 }
 
 DEFINE_GUARD(task_lock, struct task_struct *, task_lock(_T), task_unlock(_T))
+
+#ifdef CONFIG_GKI_DYNAMIC_TASK_STRUCT_SIZE
+static inline void *android_task_vendor_data(struct task_struct *p)
+{
+	if (p == &init_task)
+		return &vendor_data_pad[0];
+
+	return p + 1;
+}
+
+static inline void android_init_dynamic_vendor_data(struct task_struct *p)
+{
+	if (arch_task_struct_size > sizeof(struct task_struct))
+		memset((void *)android_task_vendor_data(p), 0x0,
+		       arch_task_struct_size - sizeof(struct task_struct));
+}
+#else /* !CONFIG_GKI_DYNAMIC_TASK_STRUCT_SIZE */
+static inline void android_init_dynamic_vendor_data(struct task_struct *p) {}
+#endif /* CONFIG_GKI_DYNAMIC_TASK_STRUCT_SIZE */
 
 #endif /* _LINUX_SCHED_TASK_H */

@@ -23,6 +23,7 @@
 #include <linux/freezer.h>
 #include <linux/page_owner.h>
 #include <linux/psi.h>
+#include <linux/cpuset.h>
 #include "internal.h"
 
 #ifdef CONFIG_COMPACTION
@@ -62,6 +63,7 @@ static inline bool is_via_compact_memory(int order) { return false; }
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/compaction.h>
+#undef CREATE_TRACE_POINTS
 
 #define block_start_pfn(pfn, order)	round_down(pfn, 1UL << (order))
 #define block_end_pfn(pfn, order)	ALIGN((pfn) + 1, 1UL << (order))
@@ -85,33 +87,6 @@ static struct page *mark_allocated_noprof(struct page *page, unsigned int order,
 	return page;
 }
 #define mark_allocated(...)	alloc_hooks(mark_allocated_noprof(__VA_ARGS__))
-
-static void split_map_pages(struct list_head *freepages)
-{
-	unsigned int i, order;
-	struct page *page, *next;
-	LIST_HEAD(tmp_list);
-
-	for (order = 0; order < NR_PAGE_ORDERS; order++) {
-		list_for_each_entry_safe(page, next, &freepages[order], lru) {
-			unsigned int nr_pages;
-
-			list_del(&page->lru);
-
-			nr_pages = 1 << order;
-
-			mark_allocated(page, order, __GFP_MOVABLE);
-			if (order)
-				split_page(page, order);
-
-			for (i = 0; i < nr_pages; i++) {
-				list_add(&page->lru, &tmp_list);
-				page++;
-			}
-		}
-		list_splice_init(&tmp_list, &freepages[0]);
-	}
-}
 
 static unsigned long release_free_list(struct list_head *freepages)
 {
@@ -742,11 +717,11 @@ isolate_fail:
  *
  * Non-free pages, invalid PFNs, or zone boundaries within the
  * [start_pfn, end_pfn) range are considered errors, cause function to
- * undo its actions and return zero.
+ * undo its actions and return zero. cc->freepages[] are empty.
  *
  * Otherwise, function returns one-past-the-last PFN of isolated page
  * (which may be greater then end_pfn if end fell in a middle of
- * a free page).
+ * a free page). cc->freepages[] contain free pages isolated.
  */
 unsigned long
 isolate_freepages_range(struct compact_control *cc,
@@ -754,10 +729,9 @@ isolate_freepages_range(struct compact_control *cc,
 {
 	unsigned long isolated, pfn, block_start_pfn, block_end_pfn;
 	int order;
-	struct list_head tmp_freepages[NR_PAGE_ORDERS];
 
 	for (order = 0; order < NR_PAGE_ORDERS; order++)
-		INIT_LIST_HEAD(&tmp_freepages[order]);
+		INIT_LIST_HEAD(&cc->freepages[order]);
 
 	pfn = start_pfn;
 	block_start_pfn = pageblock_start_pfn(pfn);
@@ -788,7 +762,7 @@ isolate_freepages_range(struct compact_control *cc,
 			break;
 
 		isolated = isolate_freepages_block(cc, &isolate_start_pfn,
-					block_end_pfn, tmp_freepages, 0, true);
+					block_end_pfn, cc->freepages, 0, true);
 
 		/*
 		 * In strict mode, isolate_freepages_block() returns 0 if
@@ -807,12 +781,9 @@ isolate_freepages_range(struct compact_control *cc,
 
 	if (pfn < end_pfn) {
 		/* Loop terminated early, cleanup. */
-		release_free_list(tmp_freepages);
+		release_free_list(cc->freepages);
 		return 0;
 	}
-
-	/* __isolate_free_page() does not map the pages */
-	split_map_pages(tmp_freepages);
 
 	/* We don't use freelists for anything. */
 	return pfn;
@@ -1418,6 +1389,7 @@ isolate_migratepages_range(struct compact_control *cc, unsigned long start_pfn,
 }
 
 #endif /* CONFIG_COMPACTION || CONFIG_CMA */
+#include <trace/hooks/mm.h>
 #ifdef CONFIG_COMPACTION
 
 static bool suitable_migration_source(struct compact_control *cc,
@@ -1747,6 +1719,7 @@ static void isolate_freepages(struct compact_control *cc)
 	unsigned long block_end_pfn;	/* end of current pageblock */
 	unsigned long low_pfn;	     /* lowest pfn scanner is able to scan */
 	unsigned int stride;
+	bool bypass = false;
 
 	/* Try a small search of the free lists for a candidate */
 	fast_isolate_freepages(cc);
@@ -1807,6 +1780,10 @@ static void isolate_freepages(struct compact_control *cc)
 
 		/* If isolation recently failed, do not retry */
 		if (!isolation_suitable(cc, page))
+			continue;
+
+		trace_android_vh_isolate_freepages(cc, page, &bypass);
+		if (bypass)
 			continue;
 
 		/* Found a block suitable for isolating free pages from. */
@@ -2852,6 +2829,11 @@ enum compact_result try_to_compact_pages(gfp_t gfp_mask, unsigned int order,
 	for_each_zone_zonelist_nodemask(zone, z, ac->zonelist,
 					ac->highest_zoneidx, ac->nodemask) {
 		enum compact_result status;
+
+		if (cpusets_enabled() &&
+			(alloc_flags & ALLOC_CPUSET) &&
+			!__cpuset_zone_allowed(zone, gfp_mask))
+				continue;
 
 		if (prio > MIN_COMPACT_PRIORITY
 					&& compaction_deferred(zone, order)) {

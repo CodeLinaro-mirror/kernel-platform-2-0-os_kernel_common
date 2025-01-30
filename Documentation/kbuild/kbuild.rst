@@ -22,6 +22,11 @@ modules.builtin.modinfo
 This file contains modinfo from all modules that are built into the kernel.
 Unlike modinfo of a separate module, all fields are prefixed with module name.
 
+modules.builtin.ranges
+----------------------
+This file contains address offset ranges (per ELF section) for all modules
+that are built into the kernel. Together with System.map, it can be used
+to associate module names with symbols.
 
 Environment variables
 =====================
@@ -91,6 +96,17 @@ HOSTRUSTFLAGS
 -------------
 Additional flags to be passed to $(HOSTRUSTC) when building host programs.
 
+PROCMACROLDFLAGS
+----------------
+Flags to be passed when linking Rust proc macros. Since proc macros are loaded
+by rustc at build time, they must be linked in a way that is compatible with
+the rustc toolchain being used.
+
+For instance, it can be useful when rustc uses a different C library than
+the one the user wants to use for host programs.
+
+If unset, it defaults to the flags passed when linking host programs.
+
 HOSTLDFLAGS
 -----------
 Additional flags to be passed when linking host programs.
@@ -133,6 +149,11 @@ Setting "M=..." takes precedence over KBUILD_EXTMOD.
 KBUILD_OUTPUT
 -------------
 Specify the output directory when building the kernel.
+
+This variable can also be used to point to the kernel output directory when
+building external modules against a pre-built kernel in a separate build
+directory. Please note that this does NOT specify the output directory for the
+external modules themselves.
 
 The output directory can also be specified using "O=...".
 

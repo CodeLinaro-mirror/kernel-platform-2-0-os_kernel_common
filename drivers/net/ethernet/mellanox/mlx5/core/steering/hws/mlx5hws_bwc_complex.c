@@ -33,12 +33,14 @@ bool mlx5hws_bwc_match_params_is_complex(struct mlx5hws_context *ctx,
 		 * and let the usual match creation path handle it,
 		 * both for good and bad flows.
 		 */
-		if (ret == E2BIG) {
+		if (ret == -E2BIG) {
 			is_complex = true;
 			mlx5hws_dbg(ctx, "Matcher definer layout: need complex matcher\n");
 		} else {
 			mlx5hws_err(ctx, "Failed to calculate matcher definer layout\n");
 		}
+	} else {
+		kfree(mt->fc);
 	}
 
 	mlx5hws_match_template_destroy(mt);

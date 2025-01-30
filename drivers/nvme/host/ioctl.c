@@ -3,7 +3,6 @@
  * Copyright (c) 2011-2014, Intel Corporation.
  * Copyright (c) 2017-2021 Christoph Hellwig.
  */
-#include <linux/bio-integrity.h>
 #include <linux/blk-integrity.h>
 #include <linux/ptrace.h>	/* for force_successful_syscall_return */
 #include <linux/nvme_ioctl.h>
@@ -153,11 +152,10 @@ static int nvme_map_user_request(struct request *req, u64 ubuffer,
 		bio_set_dev(bio, bdev);
 
 	if (has_metadata) {
-		ret = bio_integrity_map_user(bio, meta_buffer, meta_len,
-					     meta_seed);
+		ret = blk_rq_integrity_map_user(req, meta_buffer, meta_len,
+						meta_seed);
 		if (ret)
 			goto out_unmap;
-		req->cmd_flags |= REQ_INTEGRITY;
 	}
 
 	return ret;
@@ -423,10 +421,13 @@ static enum rq_end_io_ret nvme_uring_cmd_end_io(struct request *req,
 	struct io_uring_cmd *ioucmd = req->end_io_data;
 	struct nvme_uring_cmd_pdu *pdu = nvme_uring_cmd_pdu(ioucmd);
 
-	if (nvme_req(req)->flags & NVME_REQ_CANCELLED)
+	if (nvme_req(req)->flags & NVME_REQ_CANCELLED) {
 		pdu->status = -EINTR;
-	else
+	} else {
 		pdu->status = nvme_req(req)->status;
+		if (!pdu->status)
+			pdu->status = blk_status_to_errno(err);
+	}
 	pdu->result = le64_to_cpu(nvme_req(req)->result.u64);
 
 	/*

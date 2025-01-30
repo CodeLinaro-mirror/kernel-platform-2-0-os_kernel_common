@@ -89,23 +89,6 @@ static void pidfd_show_fdinfo(struct seq_file *m, struct file *f)
 }
 #endif
 
-
-static bool pidfd_task_exited(struct pid *pid, bool thread)
-{
-       struct task_struct *task;
-       bool exited;
-
-       rcu_read_lock();
-       task = pid_task(pid, PIDTYPE_PID);
-       exited = !task ||
-               (READ_ONCE(task->exit_state) && (thread || thread_group_empty(task)));
-       rcu_read_unlock();
-
-       return exited;
-}
-
-
-
 /*
  * Poll support for process exit notification.
  */
@@ -113,6 +96,7 @@ static __poll_t pidfd_poll(struct file *file, struct poll_table_struct *pts)
 {
 	struct pid *pid = pidfd_pid(file);
 	bool thread = file->f_flags & PIDFD_THREAD;
+	struct task_struct *task;
 	__poll_t poll_flags = 0;
 
 	poll_wait(file, &pid->wait_pidfd, pts);
@@ -120,8 +104,12 @@ static __poll_t pidfd_poll(struct file *file, struct poll_table_struct *pts)
 	 * Depending on PIDFD_THREAD, inform pollers when the thread
 	 * or the whole thread-group exits.
 	 */
-        if(pidfd_task_exited(pid, thread))
-            poll_flags = EPOLLIN | EPOLLRDNORM;
+	guard(rcu)();
+	task = pid_task(pid, PIDTYPE_PID);
+	if (!task)
+		poll_flags = EPOLLIN | EPOLLRDNORM | EPOLLHUP;
+	else if (task->exit_state && (thread || thread_group_empty(task)))
+		poll_flags = EPOLLIN | EPOLLRDNORM;
 
 	return poll_flags;
 }
@@ -132,6 +120,7 @@ static long pidfd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	struct nsproxy *nsp __free(put_nsproxy) = NULL;
 	struct pid *pid = pidfd_pid(file);
 	struct ns_common *ns_common = NULL;
+	struct pid_namespace *pid_ns;
 
 	if (arg)
 		return -EINVAL;
@@ -214,7 +203,9 @@ static long pidfd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case PIDFD_GET_PID_NAMESPACE:
 		if (IS_ENABLED(CONFIG_PID_NS)) {
 			rcu_read_lock();
-			ns_common = to_ns_common( get_pid_ns(task_active_pid_ns(task)));
+			pid_ns = task_active_pid_ns(task);
+			if (pid_ns)
+				ns_common = to_ns_common(get_pid_ns(pid_ns));
 			rcu_read_unlock();
 		}
 		break;
