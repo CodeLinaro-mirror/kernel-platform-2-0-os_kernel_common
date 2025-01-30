@@ -1169,7 +1169,7 @@ int __meminit vmemmap_check_pmd(pmd_t *pmdp, int node,
 				unsigned long addr, unsigned long next)
 {
 	vmemmap_verify((pte_t *)pmdp, node, addr, next);
-#ifdef CONFIG_ARCH_QTI_VM
+#ifdef CONFIG_QCOM_VM_MEMORY_FEATURES_NONGKI
 	return pmd_sect(*pmdp);
 #else
 	return 1;
