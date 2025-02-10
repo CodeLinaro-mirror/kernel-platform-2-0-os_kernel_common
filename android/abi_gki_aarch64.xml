@@ -7205,6 +7205,8 @@
       <elf-symbol name='ttm_bo_glob' size='200' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x685376c6'/>
       <elf-symbol name='tty_std_termios' size='44' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x67b27ec1'/>
       <elf-symbol name='udp_table' size='24' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x95a67b07'/>
+      <elf-symbol name='usb_bus_idr' size='24' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x790be0b9'/>
+      <elf-symbol name='usb_bus_idr_lock' size='48' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x2b1943cd'/>
       <elf-symbol name='usb_debug_root' size='8' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xbc6f9adc'/>
       <elf-symbol name='usb_hcd_pci_pm_ops' size='192' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x57b277fa'/>
       <elf-symbol name='usb_hcds_loaded' size='8' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xc17515d7'/>
@@ -149287,6 +149289,8 @@
         <parameter type-id='95e97e5e' name='timeout' filepath='drivers/usb/core/message.c' line='368' column='1'/>
         <return type-id='95e97e5e'/>
       </function-decl>
+      <var-decl name='usb_bus_idr' type-id='37ce495e' mangled-name='usb_bus_idr' visibility='default' filepath='drivers/usb/core/hcd.c' line='85' column='1' elf-symbol-id='usb_bus_idr'/>
+      <var-decl name='usb_bus_idr_lock' type-id='925167dc' mangled-name='usb_bus_idr_lock' visibility='default' filepath='drivers/usb/core/hcd.c' line='92' column='1' elf-symbol-id='usb_bus_idr_lock'/>
       <function-decl name='usb_calc_bus_time' mangled-name='usb_calc_bus_time' filepath='drivers/usb/core/hcd.c' line='1097' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='usb_calc_bus_time'>
         <parameter type-id='95e97e5e' name='speed' filepath='drivers/usb/core/hcd.c' line='1097' column='1'/>
         <parameter type-id='95e97e5e' name='is_input' filepath='drivers/usb/core/hcd.c' line='1097' column='1'/>
