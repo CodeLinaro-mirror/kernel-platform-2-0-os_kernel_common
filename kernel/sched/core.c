@@ -7473,6 +7473,7 @@ find_proxy_task(struct rq *rq, struct task_struct *donor, struct rq_flags *rf)
 	return owner;
 
 needs_return:
+#ifdef CONFIG_SMP
 	WARN_ON(!is_cpu_allowed(p, p->wake_cpu));
 	if (p->wake_cpu == this_cpu) {
 		/* We can actually run here fine */
@@ -7490,7 +7491,11 @@ needs_return:
 	_trace_sched_pe_return_migration(p);
 	proxy_migrate_task(rq, rf, p, p->wake_cpu);
 	return NULL;
-
+#else
+	/* Nowhere else to migrate on UP */
+	p->blocked_on_state = BO_RUNNABLE;
+	ret = p;
+#endif
 out:
 	raw_spin_unlock(&p->blocked_lock);
 	raw_spin_unlock(&mutex->wait_lock);
@@ -7569,7 +7574,6 @@ static void __sched notrace __schedule(int sched_mode)
 	 * as a preemption by schedule_debug() and RCU.
 	 */
 	bool preempt = sched_mode > SM_NONE;
-	bool block = false;
 	unsigned long *switch_count;
 	unsigned long prev_state;
 	struct rq_flags rf;
@@ -7632,8 +7636,7 @@ static void __sched notrace __schedule(int sched_mode)
 			goto picked;
 		}
 	} else if (!preempt && prev_state) {
-		block = try_to_block_task(rq, prev, prev_state,
-					  !task_is_blocked(prev));
+		try_to_block_task(rq, prev, prev_state, !task_is_blocked(prev));
 		switch_count = &prev->nvcsw;
 	}
 
@@ -7701,7 +7704,8 @@ picked:
 
 		migrate_disable_switch(rq, prev);
 		psi_account_irqtime(rq, prev, next);
-		psi_sched_switch(prev, next, block);
+		psi_sched_switch(prev, next, !task_on_rq_queued(prev) ||
+					     prev->se.sched_delayed);
 
 		trace_sched_switch(preempt, prev, next, prev_state);
 
