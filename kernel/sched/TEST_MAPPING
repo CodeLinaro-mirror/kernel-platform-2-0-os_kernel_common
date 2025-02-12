@@ -258,12 +258,35 @@
       ]
     },
     {
+      "name": "CtsIncrementalInstallHostTestCases",
+      "options": [
+        {
+          "include-filter": "android.incrementalinstall.cts.IncrementalFeatureTest"
+        },
+        {
+          "include-filter": "android.incrementalinstall.cts.IncrementalInstallTest"
+        }
+      ]
+    },
+    {
       "name": "CtsLibcoreLegacy22TestCases",
       "options": [
         {
           "include-filter": "android.util.cts.FloatMathTest"
         }
       ]
+    },
+    {
+      "name": "vts_kernel_net_tests"
+    },
+    {
+      "name": "KernelAbilistTest"
+    },
+    {
+      "name": "VtsAidlHalSensorsTargetTest"
+    },
+    {
+      "name": "VtsBootconfigTest"
     }
   ]
 }

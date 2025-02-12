@@ -56,18 +56,18 @@ int __exfat_write_inode(struct inode *inode, int sync)
 			&ep->dentry.file.create_time,
 			&ep->dentry.file.create_date,
 			&ep->dentry.file.create_time_cs);
+	ts = inode_get_mtime(inode);
 	exfat_set_entry_time(sbi, &ts,
 			     &ep->dentry.file.modify_tz,
 			     &ep->dentry.file.modify_time,
 			     &ep->dentry.file.modify_date,
 			     &ep->dentry.file.modify_time_cs);
-	inode_set_mtime_to_ts(inode, ts);
+	ts = inode_get_atime(inode);
 	exfat_set_entry_time(sbi, &ts,
 			     &ep->dentry.file.access_tz,
 			     &ep->dentry.file.access_time,
 			     &ep->dentry.file.access_date,
 			     NULL);
-	inode_set_atime_to_ts(inode, ts);
 
 	/* File size should be zero if there is no cluster allocated */
 	on_disk_size = i_size_read(inode);
@@ -101,6 +101,9 @@ int __exfat_write_inode(struct inode *inode, int sync)
 int exfat_write_inode(struct inode *inode, struct writeback_control *wbc)
 {
 	int ret;
+
+	if (unlikely(exfat_forced_shutdown(inode->i_sb)))
+		return -EIO;
 
 	mutex_lock(&EXFAT_SB(inode->i_sb)->s_lock);
 	ret = __exfat_write_inode(inode, wbc->sync_mode == WB_SYNC_ALL);
@@ -432,6 +435,9 @@ static void exfat_readahead(struct readahead_control *rac)
 static int exfat_writepages(struct address_space *mapping,
 		struct writeback_control *wbc)
 {
+	if (unlikely(exfat_forced_shutdown(mapping->host->i_sb)))
+		return -EIO;
+
 	return mpage_writepages(mapping, wbc, exfat_get_block);
 }
 
@@ -452,7 +458,11 @@ static int exfat_write_begin(struct file *file, struct address_space *mapping,
 {
 	int ret;
 
+	if (unlikely(exfat_forced_shutdown(mapping->host->i_sb)))
+		return -EIO;
+
 	*pagep = NULL;
+
 	ret = block_write_begin(mapping, pos, len, pagep, exfat_get_block);
 
 	if (ret < 0)
