@@ -108,27 +108,22 @@ static int dwc3_get_dr_mode(struct dwc3 *dwc)
 void dwc3_enable_susphy(struct dwc3 *dwc, bool enable)
 {
 	u32 reg;
-	int i;
 
-	for (i = 0; i < dwc->num_usb3_ports; i++) {
-		reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(i));
-		if (enable && !dwc->dis_u3_susphy_quirk)
-			reg |= DWC3_GUSB3PIPECTL_SUSPHY;
-		else
-			reg &= ~DWC3_GUSB3PIPECTL_SUSPHY;
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(0));
+	if (enable && !dwc->dis_u3_susphy_quirk)
+		reg |= DWC3_GUSB3PIPECTL_SUSPHY;
+	else
+		reg &= ~DWC3_GUSB3PIPECTL_SUSPHY;
 
-		dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(i), reg);
-	}
+	dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(0), reg);
 
-	for (i = 0; i < dwc->num_usb2_ports; i++) {
-		reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(i));
-		if (enable && !dwc->dis_u2_susphy_quirk)
-			reg |= DWC3_GUSB2PHYCFG_SUSPHY;
-		else
-			reg &= ~DWC3_GUSB2PHYCFG_SUSPHY;
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
+	if (enable && !dwc->dis_u2_susphy_quirk)
+		reg |= DWC3_GUSB2PHYCFG_SUSPHY;
+	else
+		reg &= ~DWC3_GUSB2PHYCFG_SUSPHY;
 
-		dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(i), reg);
-	}
+	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
 }
 
 void dwc3_set_prtcap(struct dwc3 *dwc, u32 mode)
@@ -149,7 +144,6 @@ static void __dwc3_set_mode(struct work_struct *work)
 	unsigned long flags;
 	int ret;
 	u32 reg;
-	int i;
 	u32 desired_dr_role;
 
 	mutex_lock(&dwc->mutex);
@@ -228,10 +222,8 @@ static void __dwc3_set_mode(struct work_struct *work)
 		} else {
 			if (dwc->usb2_phy)
 				otg_set_vbus(dwc->usb2_phy->otg, true);
-			for (i = 0; i < dwc->num_usb2_ports; i++)
-				phy_set_mode(dwc->usb2_generic_phy[i], PHY_MODE_USB_HOST);
-			for (i = 0; i < dwc->num_usb3_ports; i++)
-				phy_set_mode(dwc->usb3_generic_phy[i], PHY_MODE_USB_HOST);
+			phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_HOST);
+			phy_set_mode(dwc->usb3_generic_phy, PHY_MODE_USB_HOST);
 			if (dwc->dis_split_quirk) {
 				reg = dwc3_readl(dwc->regs, DWC3_GUCTL3);
 				reg |= DWC3_GUCTL3_SPLITDISABLE;
@@ -246,8 +238,8 @@ static void __dwc3_set_mode(struct work_struct *work)
 
 		if (dwc->usb2_phy)
 			otg_set_vbus(dwc->usb2_phy->otg, false);
-		phy_set_mode(dwc->usb2_generic_phy[0], PHY_MODE_USB_DEVICE);
-		phy_set_mode(dwc->usb3_generic_phy[0], PHY_MODE_USB_DEVICE);
+		phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_DEVICE);
+		phy_set_mode(dwc->usb3_generic_phy, PHY_MODE_USB_DEVICE);
 
 		ret = dwc3_gadget_init(dwc);
 		if (ret)
@@ -702,11 +694,19 @@ static int dwc3_core_ulpi_init(struct dwc3 *dwc)
 	return ret;
 }
 
-static int dwc3_ss_phy_setup(struct dwc3 *dwc, int index)
+/**
+ * dwc3_phy_setup - Configure USB PHY Interface of DWC3 Core
+ * @dwc: Pointer to our controller context structure
+ *
+ * Returns 0 on success. The USB PHY interfaces are configured but not
+ * initialized. The PHY interfaces and the PHYs get initialized together with
+ * the core in dwc3_core_init.
+ */
+static int dwc3_phy_setup(struct dwc3 *dwc)
 {
 	u32 reg;
 
-	reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(index));
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(0));
 
 	/*
 	 * Make sure UX_EXIT_PX is cleared as that causes issues with some
@@ -753,18 +753,9 @@ static int dwc3_ss_phy_setup(struct dwc3 *dwc, int index)
 	if (dwc->dis_del_phy_power_chg_quirk)
 		reg &= ~DWC3_GUSB3PIPECTL_DEPOCHANGE;
 
-	dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(index), reg);
+	dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(0), reg);
 
-	return 0;
-}
-
-static int dwc3_hs_phy_setup(struct dwc3 *dwc, int index)
-{
-	unsigned int hw_mode;
-	u32 reg;
-
-	hw_mode = DWC3_GHWPARAMS0_MODE(dwc->hwparams.hwparams0);
-	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(index));
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
 
 	/* Select the HS PHY interface */
 	switch (DWC3_GHWPARAMS3_HSPHY_IFC(dwc->hwparams.hwparams3)) {
@@ -776,7 +767,7 @@ static int dwc3_hs_phy_setup(struct dwc3 *dwc, int index)
 		} else if (dwc->hsphy_interface &&
 				!strncmp(dwc->hsphy_interface, "ulpi", 4)) {
 			reg |= DWC3_GUSB2PHYCFG_ULPI_UTMI;
-			dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(index), reg);
+			dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
 		} else {
 			/* Relying on default value. */
 			if (!(reg & DWC3_GUSB2PHYCFG_ULPI_UTMI))
@@ -824,35 +815,7 @@ static int dwc3_hs_phy_setup(struct dwc3 *dwc, int index)
 	if (dwc->dis_u2_freeclk_exists_quirk || dwc->gfladj_refclk_lpm_sel)
 		reg &= ~DWC3_GUSB2PHYCFG_U2_FREECLK_EXISTS;
 
-	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(index), reg);
-
-	return 0;
-}
-
-/**
- * dwc3_phy_setup - Configure USB PHY Interface of DWC3 Core
- * @dwc: Pointer to our controller context structure
- *
- * Returns 0 on success. The USB PHY interfaces are configured but not
- * initialized. The PHY interfaces and the PHYs get initialized together with
- * the core in dwc3_core_init.
- */
-static int dwc3_phy_setup(struct dwc3 *dwc)
-{
-	int i;
-	int ret;
-
-	for (i = 0; i < dwc->num_usb3_ports; i++) {
-		ret = dwc3_ss_phy_setup(dwc, i);
-		if (ret)
-			return ret;
-	}
-
-	for (i = 0; i < dwc->num_usb2_ports; i++) {
-		ret = dwc3_hs_phy_setup(dwc, i);
-		if (ret)
-			return ret;
-	}
+	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
 
 	return 0;
 }
@@ -891,25 +854,17 @@ static void dwc3_clk_disable(struct dwc3 *dwc)
 
 static void dwc3_core_exit(struct dwc3 *dwc)
 {
-	int i;
-
 	dwc3_event_buffers_cleanup(dwc);
 
 	usb_phy_set_suspend(dwc->usb2_phy, 1);
 	usb_phy_set_suspend(dwc->usb3_phy, 1);
-
-	for (i = 0; i < dwc->num_usb2_ports; i++)
-		phy_power_off(dwc->usb2_generic_phy[i]);
-	for (i = 0; i < dwc->num_usb3_ports; i++)
-		phy_power_off(dwc->usb3_generic_phy[i]);
+	phy_power_off(dwc->usb2_generic_phy);
+	phy_power_off(dwc->usb3_generic_phy);
 
 	usb_phy_shutdown(dwc->usb2_phy);
 	usb_phy_shutdown(dwc->usb3_phy);
-
-	for (i = 0; i < dwc->num_usb2_ports; i++)
-		phy_exit(dwc->usb2_generic_phy[i]);
-	for (i = 0; i < dwc->num_usb3_ports; i++)
-		phy_exit(dwc->usb3_generic_phy[i]);
+	phy_exit(dwc->usb2_generic_phy);
+	phy_exit(dwc->usb3_generic_phy);
 
 	dwc3_clk_disable(dwc);
 	reset_control_assert(dwc->reset);
@@ -1145,7 +1100,6 @@ static int dwc3_core_init(struct dwc3 *dwc)
 	unsigned int		hw_mode;
 	u32			reg;
 	int			ret;
-	int			i, j;
 
 	hw_mode = DWC3_GHWPARAMS0_MODE(dwc->hwparams.hwparams0);
 
@@ -1180,29 +1134,26 @@ static int dwc3_core_init(struct dwc3 *dwc)
 
 	usb_phy_init(dwc->usb2_phy);
 	usb_phy_init(dwc->usb3_phy);
+	ret = phy_init(dwc->usb2_generic_phy);
+	if (ret < 0)
+		goto err0a;
 
-	for (i = 0; i < dwc->num_usb2_ports; i++) {
-		ret = phy_init(dwc->usb2_generic_phy[i]);
-		if (ret < 0)
-			goto exit_usb2_phy;
-	}
-
-	for (i = 0; i < dwc->num_usb3_ports; i++) {
-		ret = phy_init(dwc->usb3_generic_phy[i]);
-		if (ret < 0)
-			goto exit_usb3_phy;
+	ret = phy_init(dwc->usb3_generic_phy);
+	if (ret < 0) {
+		phy_exit(dwc->usb2_generic_phy);
+		goto err0a;
 	}
 
 	ret = dwc3_core_soft_reset(dwc);
 	if (ret)
-		goto exit_usb3_phy;
+		goto err1;
 
 	dwc3_core_setup_global_control(dwc);
 	dwc3_core_num_eps(dwc);
 
 	ret = dwc3_setup_scratch_buffers(dwc);
 	if (ret)
-		goto exit_usb3_phy;
+		goto err1;
 
 	/* Set power down scale of suspend_clk */
 	dwc3_set_power_down_clk_scale(dwc);
@@ -1217,23 +1168,18 @@ static int dwc3_core_init(struct dwc3 *dwc)
 
 	usb_phy_set_suspend(dwc->usb2_phy, 0);
 	usb_phy_set_suspend(dwc->usb3_phy, 0);
+	ret = phy_power_on(dwc->usb2_generic_phy);
+	if (ret < 0)
+		goto err2;
 
-	for (i = 0; i < dwc->num_usb2_ports; i++) {
-		ret = phy_power_on(dwc->usb2_generic_phy[i]);
-		if (ret < 0)
-			goto power_off_usb2_phy;
-	}
-
-	for (i = 0; i < dwc->num_usb3_ports; i++) {
-		ret = phy_power_on(dwc->usb3_generic_phy[i]);
-		if (ret < 0)
-			goto power_off_usb3_phy;
-	}
+	ret = phy_power_on(dwc->usb3_generic_phy);
+	if (ret < 0)
+		goto err3;
 
 	ret = dwc3_event_buffers_setup(dwc);
 	if (ret) {
 		dev_err(dwc->dev, "failed to setup event buffers\n");
-		goto power_off_usb3_phy;
+		goto err4;
 	}
 
 	/*
@@ -1349,34 +1295,21 @@ static int dwc3_core_init(struct dwc3 *dwc)
 
 	return 0;
 
-/*
- * Modified error handling for multiport phys:
- * (http://b/233985973)
- */
-power_off_usb3_phy:
-	for (j = i - 1; j >= 0; j--)
-		phy_power_off(dwc->usb3_generic_phy[j]);
-	i = dwc->num_usb2_ports;
+err4:
+	phy_power_off(dwc->usb3_generic_phy);
 
-power_off_usb2_phy:
-	for (j = i - 1; j >= 0; j--)
-		phy_power_off(dwc->usb2_generic_phy[j]);
-	i = dwc->num_usb3_ports;
+err3:
+	phy_power_off(dwc->usb2_generic_phy);
 
+err2:
 	usb_phy_set_suspend(dwc->usb2_phy, 1);
 	usb_phy_set_suspend(dwc->usb3_phy, 1);
 
-exit_usb3_phy:
-	for (j = i - 1; j >= 0; j--)
-		phy_exit(dwc->usb3_generic_phy[j]);
-	i = dwc->num_usb2_ports;
-
-exit_usb2_phy:
-	for (j = i - 1; j >= 0; j--)
-		phy_exit(dwc->usb2_generic_phy[j]);
-
+err1:
 	usb_phy_shutdown(dwc->usb2_phy);
 	usb_phy_shutdown(dwc->usb3_phy);
+	phy_exit(dwc->usb2_generic_phy);
+	phy_exit(dwc->usb3_generic_phy);
 
 err0a:
 	dwc3_ulpi_exit(dwc);
@@ -1389,9 +1322,7 @@ static int dwc3_core_get_phy(struct dwc3 *dwc)
 {
 	struct device		*dev = dwc->dev;
 	struct device_node	*node = dev->of_node;
-	char phy_name[9];
 	int ret;
-	int i;
 
 	if (node) {
 		dwc->usb2_phy = devm_usb_get_phy_by_phandle(dev, "usb-phy", 0);
@@ -1417,38 +1348,22 @@ static int dwc3_core_get_phy(struct dwc3 *dwc)
 			return dev_err_probe(dev, ret, "no usb3 phy configured\n");
 	}
 
-	for (i = 0; i < dwc->num_usb2_ports; i++) {
-		if (dwc->num_usb2_ports == 1)
-			snprintf(phy_name, sizeof(phy_name), "usb2-phy");
+	dwc->usb2_generic_phy = devm_phy_get(dev, "usb2-phy");
+	if (IS_ERR(dwc->usb2_generic_phy)) {
+		ret = PTR_ERR(dwc->usb2_generic_phy);
+		if (ret == -ENOSYS || ret == -ENODEV)
+			dwc->usb2_generic_phy = NULL;
 		else
-			snprintf(phy_name, sizeof(phy_name),  "usb2-%d", i);
-
-		dwc->usb2_generic_phy[i] = devm_phy_get(dev, phy_name);
-		if (IS_ERR(dwc->usb2_generic_phy[i])) {
-			ret = PTR_ERR(dwc->usb2_generic_phy[i]);
-			if (ret == -ENOSYS || ret == -ENODEV)
-				dwc->usb2_generic_phy[i] = NULL;
-			else
-				return dev_err_probe(dev, ret, "failed to lookup phy %s\n",
-							phy_name);
-		}
+			return dev_err_probe(dev, ret, "no usb2 phy configured\n");
 	}
 
-	for (i = 0; i < dwc->num_usb3_ports; i++) {
-		if (dwc->num_usb3_ports == 1)
-			snprintf(phy_name, sizeof(phy_name), "usb3-phy");
+	dwc->usb3_generic_phy = devm_phy_get(dev, "usb3-phy");
+	if (IS_ERR(dwc->usb3_generic_phy)) {
+		ret = PTR_ERR(dwc->usb3_generic_phy);
+		if (ret == -ENOSYS || ret == -ENODEV)
+			dwc->usb3_generic_phy = NULL;
 		else
-			snprintf(phy_name, sizeof(phy_name), "usb3-%d", i);
-
-		dwc->usb3_generic_phy[i] = devm_phy_get(dev, phy_name);
-		if (IS_ERR(dwc->usb3_generic_phy[i])) {
-			ret = PTR_ERR(dwc->usb3_generic_phy[i]);
-			if (ret == -ENOSYS || ret == -ENODEV)
-				dwc->usb3_generic_phy[i] = NULL;
-			else
-				return dev_err_probe(dev, ret, "failed to lookup phy %s\n",
-							phy_name);
-		}
+			return dev_err_probe(dev, ret, "no usb3 phy configured\n");
 	}
 
 	return 0;
@@ -1458,7 +1373,6 @@ static int dwc3_core_init_mode(struct dwc3 *dwc)
 {
 	struct device *dev = dwc->dev;
 	int ret;
-	int i;
 
 	switch (dwc->dr_mode) {
 	case USB_DR_MODE_PERIPHERAL:
@@ -1466,8 +1380,8 @@ static int dwc3_core_init_mode(struct dwc3 *dwc)
 
 		if (dwc->usb2_phy)
 			otg_set_vbus(dwc->usb2_phy->otg, false);
-		phy_set_mode(dwc->usb2_generic_phy[0], PHY_MODE_USB_DEVICE);
-		phy_set_mode(dwc->usb3_generic_phy[0], PHY_MODE_USB_DEVICE);
+		phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_DEVICE);
+		phy_set_mode(dwc->usb3_generic_phy, PHY_MODE_USB_DEVICE);
 
 		ret = dwc3_gadget_init(dwc);
 		if (ret)
@@ -1478,11 +1392,8 @@ static int dwc3_core_init_mode(struct dwc3 *dwc)
 
 		if (dwc->usb2_phy)
 			otg_set_vbus(dwc->usb2_phy->otg, true);
-
-		for (i = 0; i < dwc->num_usb2_ports; i++)
-			phy_set_mode(dwc->usb2_generic_phy[i], PHY_MODE_USB_HOST);
-		for (i = 0; i < dwc->num_usb3_ports; i++)
-			phy_set_mode(dwc->usb3_generic_phy[i], PHY_MODE_USB_HOST);
+		phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_HOST);
+		phy_set_mode(dwc->usb3_generic_phy, PHY_MODE_USB_HOST);
 
 		ret = dwc3_host_init(dwc);
 		if (ret)
@@ -1881,9 +1792,6 @@ static int dwc3_get_num_ports(struct dwc3 *dwc)
 		dwc->num_usb2_ports, dwc->num_usb3_ports);
 
 	iounmap(base);
-	if (dwc->num_usb2_ports > DWC3_USB2_MAX_PORTS ||
-	    dwc->num_usb3_ports > DWC3_USB3_MAX_PORTS)
-		return -EINVAL;
 
 	return 0;
 }
@@ -1896,7 +1804,6 @@ static int dwc3_probe(struct platform_device *pdev)
 	struct dwc3		*dwc;
 
 	int			ret;
-	int			i;
 
 	void __iomem		*regs;
 
@@ -2091,21 +1998,13 @@ err5:
 
 	usb_phy_set_suspend(dwc->usb2_phy, 1);
 	usb_phy_set_suspend(dwc->usb3_phy, 1);
-
-	for (i = 0; i < dwc->num_usb3_ports; i++)
-		phy_power_off(dwc->usb3_generic_phy[i]);
-
-	for (i = 0; i < dwc->num_usb2_ports; i++)
-		phy_power_off(dwc->usb2_generic_phy[i]);
+	phy_power_off(dwc->usb2_generic_phy);
+	phy_power_off(dwc->usb3_generic_phy);
 
 	usb_phy_shutdown(dwc->usb2_phy);
 	usb_phy_shutdown(dwc->usb3_phy);
-
-	for (i = 0; i < dwc->num_usb3_ports; i++)
-		phy_exit(dwc->usb3_generic_phy[i]);
-
-	for (i = 0; i < dwc->num_usb2_ports; i++)
-		phy_exit(dwc->usb2_generic_phy[i]);
+	phy_exit(dwc->usb2_generic_phy);
+	phy_exit(dwc->usb3_generic_phy);
 
 	dwc3_ulpi_exit(dwc);
 
@@ -2193,7 +2092,6 @@ static int dwc3_suspend_common(struct dwc3 *dwc, pm_message_t msg)
 {
 	unsigned long	flags;
 	u32 reg;
-	int i;
 
 	switch (dwc->current_dr_role) {
 	case DWC3_GCTL_PRTCAP_DEVICE:
@@ -2212,20 +2110,17 @@ static int dwc3_suspend_common(struct dwc3 *dwc, pm_message_t msg)
 		/* Let controller to suspend HSPHY before PHY driver suspends */
 		if (dwc->dis_u2_susphy_quirk ||
 		    dwc->dis_enblslpm_quirk) {
-			for (i = 0; i < dwc->num_usb2_ports; i++) {
-				reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(i));
-				reg |=  DWC3_GUSB2PHYCFG_ENBLSLPM |
-					DWC3_GUSB2PHYCFG_SUSPHY;
-				dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(i), reg);
-			}
+			reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
+			reg |=  DWC3_GUSB2PHYCFG_ENBLSLPM |
+				DWC3_GUSB2PHYCFG_SUSPHY;
+			dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
+
 			/* Give some time for USB2 PHY to suspend */
 			usleep_range(5000, 6000);
 		}
 
-		for (i = 0; i < dwc->num_usb2_ports; i++)
-			phy_pm_runtime_put_sync(dwc->usb2_generic_phy[i]);
-		for (i = 0; i < dwc->num_usb3_ports; i++)
-			phy_pm_runtime_put_sync(dwc->usb3_generic_phy[i]);
+		phy_pm_runtime_put_sync(dwc->usb2_generic_phy);
+		phy_pm_runtime_put_sync(dwc->usb3_generic_phy);
 		break;
 	case DWC3_GCTL_PRTCAP_OTG:
 		/* do nothing during runtime_suspend */
@@ -2255,7 +2150,6 @@ static int dwc3_resume_common(struct dwc3 *dwc, pm_message_t msg)
 	unsigned long	flags;
 	int		ret;
 	u32		reg;
-	int		i;
 
 	switch (dwc->current_dr_role) {
 	case DWC3_GCTL_PRTCAP_DEVICE:
@@ -2275,21 +2169,17 @@ static int dwc3_resume_common(struct dwc3 *dwc, pm_message_t msg)
 			break;
 		}
 		/* Restore GUSB2PHYCFG bits that were modified in suspend */
-		for (i = 0; i < dwc->num_usb2_ports; i++) {
-			reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(i));
-			if (dwc->dis_u2_susphy_quirk)
-				reg &= ~DWC3_GUSB2PHYCFG_SUSPHY;
+		reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
+		if (dwc->dis_u2_susphy_quirk)
+			reg &= ~DWC3_GUSB2PHYCFG_SUSPHY;
 
-			if (dwc->dis_enblslpm_quirk)
-				reg &= ~DWC3_GUSB2PHYCFG_ENBLSLPM;
+		if (dwc->dis_enblslpm_quirk)
+			reg &= ~DWC3_GUSB2PHYCFG_ENBLSLPM;
 
-			dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(i), reg);
-		}
+		dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
 
-		for (i = 0; i < dwc->num_usb2_ports; i++)
-			phy_pm_runtime_get_sync(dwc->usb2_generic_phy[i]);
-		for (i = 0; i < dwc->num_usb3_ports; i++)
-			phy_pm_runtime_get_sync(dwc->usb3_generic_phy[i]);
+		phy_pm_runtime_get_sync(dwc->usb2_generic_phy);
+		phy_pm_runtime_get_sync(dwc->usb3_generic_phy);
 		break;
 	case DWC3_GCTL_PRTCAP_OTG:
 		/* nothing to do on runtime_resume */
