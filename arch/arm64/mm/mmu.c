@@ -1172,7 +1172,7 @@ int __meminit vmemmap_check_pmd(pmd_t *pmdp, int node,
 #ifdef CONFIG_QCOM_VM_MEMORY_FEATURES_NONGKI
 	return pmd_sect(*pmdp);
 #else
-	return 1;
+	return pmd_sect(READ_ONCE(*pmdp));
 #endif
 }
 
