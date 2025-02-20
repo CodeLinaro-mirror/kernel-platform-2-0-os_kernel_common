@@ -220,7 +220,7 @@ static void do_metadata(struct work_struct *work)
 {
 	struct mdata_req *req = container_of(work, struct mdata_req, work);
 
-	req->result = dm_io(req->io_req, 1, req->where, NULL);
+	req->result = dm_io(req->io_req, 1, req->where, NULL, IOPRIO_DEFAULT);
 }
 
 /*
@@ -244,7 +244,7 @@ static int chunk_io(struct pstore *ps, void *area, chunk_t chunk, blk_opf_t opf,
 	struct mdata_req req;
 
 	if (!metadata)
-		return dm_io(&io_req, 1, &where, NULL);
+		return dm_io(&io_req, 1, &where, NULL, IOPRIO_DEFAULT);
 
 	req.where = &where;
 	req.io_req = &io_req;
@@ -354,8 +354,7 @@ static int read_header(struct pstore *ps, int *new_snapshot)
 		return 0;
 
 	if (chunk_size_supplied)
-		DMWARN("chunk size %u in device metadata overrides "
-		       "table chunk size of %u.",
+		DMWARN("chunk size %u in device metadata overrides table chunk size of %u.",
 		       chunk_size, ps->store->chunk_size);
 
 	/* We had a bogus chunk_size. Fix stuff up. */
@@ -958,8 +957,7 @@ int dm_persistent_snapshot_init(void)
 
 	r = dm_exception_store_type_register(&_persistent_compat_type);
 	if (r) {
-		DMERR("Unable to register old-style persistent exception "
-		      "store type");
+		DMERR("Unable to register old-style persistent exception store type");
 		dm_exception_store_type_unregister(&_persistent_type);
 		return r;
 	}
