@@ -133,6 +133,13 @@ struct slabinfo;
 DECLARE_HOOK(android_vh_cache_show,
 	TP_PROTO(struct seq_file *m, struct slabinfo *sinfo, struct kmem_cache *s),
 	TP_ARGS(m, sinfo, s));
+DECLARE_HOOK(android_vh_madvise_swapin_walk_pmd_entry,
+	TP_PROTO(swp_entry_t entry),
+	TP_ARGS(entry));
+DECLARE_HOOK(android_vh_process_madvise,
+	TP_PROTO(int behavior, ssize_t *ret, void *priv),
+	TP_ARGS(behavior, ret, priv));
+
 DECLARE_HOOK(android_vh_count_workingset_refault,
 	TP_PROTO(struct folio *folio),
 	TP_ARGS(folio));
@@ -244,6 +251,12 @@ DECLARE_HOOK(android_vh_filemap_fault_start,
 DECLARE_HOOK(android_vh_filemap_fault_end,
 	TP_PROTO(struct file *file, pgoff_t pgoff),
 	TP_ARGS(file, pgoff));
+DECLARE_HOOK(android_vh_zs_shrinker_adjust,
+	TP_PROTO(unsigned long *pages_to_free),
+	TP_ARGS(pages_to_free));
+DECLARE_HOOK(android_vh_zs_shrinker_bypass,
+	TP_PROTO(bool *bypass),
+	TP_ARGS(bypass));
 #endif /* _TRACE_HOOK_MM_H */
 
 /* This part must be outside protection */
