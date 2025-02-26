@@ -262,6 +262,9 @@
 #define DWC3_GUCTL1_DEV_L1_EXIT_BY_HW		BIT(24)
 #define DWC3_GUCTL1_PARKMODE_DISABLE_SS		BIT(17)
 
+/* Global User Control Register */
+#define DWC3_GUCTL_RESBWHSEPS		BIT(16)
+
 /* Global Status Register */
 #define DWC3_GSTS_OTG_IP	BIT(10)
 #define DWC3_GSTS_BC_IP		BIT(9)
@@ -1177,6 +1180,7 @@ struct dwc3 {
 	u32			current_otg_role;
 	u32			desired_otg_role;
 	bool			otg_restart_host;
+	bool			dwc3_guctl_resbwhseps_quirk;
 	u32			nr_scratch;
 	u32			u1u2;
 	u32			maximum_speed;
