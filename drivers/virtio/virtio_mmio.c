@@ -526,31 +526,10 @@ static const char *vm_bus_name(struct virtio_device *vdev)
 static bool vm_get_shm_region(struct virtio_device *vdev,
 			      struct virtio_shm_region *region, u8 id)
 {
-	struct virtio_mmio_device *vm_dev = to_virtio_mmio_device(vdev);
-	u64 len, addr;
-
-	/* Select the region we're interested in */
-	writel(id, vm_dev->base + VIRTIO_MMIO_SHM_SEL);
-
-	/* Read the region size */
-	len = (u64) readl(vm_dev->base + VIRTIO_MMIO_SHM_LEN_LOW);
-	len |= (u64) readl(vm_dev->base + VIRTIO_MMIO_SHM_LEN_HIGH) << 32;
-
-	region->len = len;
-
-	/* Check if region length is -1. If that's the case, the shared memory
-	 * region does not exist and there is no need to proceed further.
-	 */
-	if (len == ~(u64)0)
-		return false;
-
-	/* Read the region base address */
-	addr = (u64) readl(vm_dev->base + VIRTIO_MMIO_SHM_BASE_LOW);
-	addr |= (u64) readl(vm_dev->base + VIRTIO_MMIO_SHM_BASE_HIGH) << 32;
-
-	region->addr = addr;
-
-	return true;
+	(void)vdev;
+	(void)region;
+	(void)id;
+	return false;
 }
 
 static const struct virtio_config_ops virtio_mmio_config_ops = {
