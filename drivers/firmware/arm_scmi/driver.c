@@ -2517,6 +2517,50 @@ static int scmi_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_SLEEP
+static int scmi_pm_suspend(struct device *dev)
+{
+	struct scmi_info *info = dev_get_drvdata(dev);
+	struct scmi_chan_info *cinfo;
+	struct idr *idr = &info->tx_idr;
+
+	cinfo = idr_find(idr, SCMI_PROTOCOL_POWER);
+	if (cinfo) {
+		cinfo->no_completion_irq = true;
+	}
+
+	cinfo = idr_find(idr, SCMI_PROTOCOL_PERF);
+	if (cinfo) {
+		cinfo->no_completion_irq = true;
+	}
+
+	return 0;
+}
+
+static int scmi_pm_resume(struct device *dev)
+{
+	struct scmi_info *info = dev_get_drvdata(dev);
+	struct scmi_chan_info *cinfo;
+	struct idr *idr = &info->tx_idr;
+
+	cinfo = idr_find(idr, SCMI_PROTOCOL_POWER);
+	if (cinfo) {
+		cinfo->no_completion_irq = false;
+	}
+
+	cinfo = idr_find(idr, SCMI_PROTOCOL_PERF);
+	if (cinfo) {
+		cinfo->no_completion_irq = false;
+	}
+
+	return 0;
+}
+#endif
+
+static const struct dev_pm_ops scmi_pm_ops = {
+	SET_SYSTEM_SLEEP_PM_OPS(scmi_pm_suspend, scmi_pm_resume)
+};
+
 static ssize_t protocol_version_show(struct device *dev,
 				     struct device_attribute *attr, char *buf)
 {
@@ -2587,6 +2631,7 @@ static struct platform_driver scmi_driver = {
 		   .name = "arm-scmi",
 		   .suppress_bind_attrs = true,
 		   .of_match_table = scmi_of_match,
+		   .pm = &scmi_pm_ops,
 		   .dev_groups = versions_groups,
 		   },
 	.probe = scmi_probe,
