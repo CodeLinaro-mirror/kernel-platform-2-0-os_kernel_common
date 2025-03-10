@@ -14,13 +14,20 @@ struct folio;
 struct folio_batch;
 
 DECLARE_RESTRICTED_HOOK(android_rvh_shmem_get_folio,
-			TP_PROTO(struct shmem_inode_info *info, struct folio **folio),
-			TP_ARGS(info, folio), 2);
+			TP_PROTO(struct shmem_inode_info *info, struct folio **folio, int order),
+			TP_ARGS(info, folio, order), 3);
 DECLARE_RESTRICTED_HOOK(android_rvh_try_alloc_pages_gfp,
 			TP_PROTO(struct page **page, unsigned int order,
 				gfp_t gfp, enum zone_type highest_zoneidx),
 			TP_ARGS(page, order, gfp, highest_zoneidx), 1);
-
+DECLARE_RESTRICTED_HOOK(android_rvh_shmem_suitable_orders,
+			TP_PROTO(struct inode *inode, pgoff_t index,
+				unsigned long orders, unsigned long *suitable_orders),
+			TP_ARGS(inode, index, orders, suitable_orders), 4);
+DECLARE_RESTRICTED_HOOK(android_rvh_shmem_allowable_huge_orders,
+			TP_PROTO(struct inode *inode, pgoff_t index,
+				struct vm_area_struct *vma, unsigned long *orders),
+			TP_ARGS(inode, index, vma, orders), 4);
 /*
 
 DECLARE_RESTRICTED_HOOK(android_rvh_set_skip_swapcache_flags,

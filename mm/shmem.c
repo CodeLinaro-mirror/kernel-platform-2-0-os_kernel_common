@@ -1776,7 +1776,7 @@ static struct folio *shmem_alloc_folio(gfp_t gfp, int order,
 	struct folio *folio = NULL;
 
 	mpol = shmem_get_pgoff_policy(info, index, order, &ilx);
-	trace_android_rvh_shmem_get_folio(info, &folio);
+	trace_android_rvh_shmem_get_folio(info, &folio, order);
 	if (folio)
 		goto done;
 	folio = folio_alloc_mpol(gfp, order, mpol, ilx, numa_node_id());
@@ -1804,6 +1804,8 @@ static struct folio *shmem_alloc_and_add_folio(struct vm_fault *vmf,
 		suitable_orders = shmem_suitable_orders(inode, vmf,
 							mapping, index, orders);
 
+		trace_android_rvh_shmem_suitable_orders(inode, index,
+							orders, &suitable_orders);
 		order = highest_order(suitable_orders);
 		while (suitable_orders) {
 			pages = 1UL << order;
@@ -2322,6 +2324,13 @@ repeat:
 
 	/* Find hugepage orders that are allowed for anonymous shmem and tmpfs. */
 	orders = shmem_allowable_huge_orders(inode, vma, index, write_end, false);
+	trace_android_rvh_shmem_allowable_huge_orders(inode, index, vma, &orders);
+	/*
+	 * With the above hook `order` is not always 0 anymore and the following
+	 * if block does not get compiled out. With CONFIG_TRANSPARENT_HUGEPAGE=n
+	 * vma_thp_gfp_mask() becomes undefined and linker fails.
+	 */
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	if (orders > 0) {
 		gfp_t huge_gfp;
 
@@ -2338,6 +2347,7 @@ repeat:
 		if (PTR_ERR(folio) == -EEXIST)
 			goto repeat;
 	}
+#endif
 
 	folio = shmem_alloc_and_add_folio(vmf, gfp, inode, index, fault_mm, 0);
 	if (IS_ERR(folio)) {
