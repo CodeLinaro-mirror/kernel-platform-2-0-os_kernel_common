@@ -12,7 +12,6 @@
 #include <linux/bitops.h>
 #include <linux/cpu.h>
 #include <linux/workqueue.h>
-#include <trace/hooks/iommu.h>
 
 /* The anchor node sits above the top of the usable address space */
 #define IOVA_ANCHOR	~0UL
@@ -56,7 +55,6 @@ init_iova_domain(struct iova_domain *iovad, unsigned long granule,
 	iovad->anchor.pfn_lo = iovad->anchor.pfn_hi = IOVA_ANCHOR;
 	rb_link_node(&iovad->anchor.node, NULL, &iovad->rbroot.rb_node);
 	rb_insert_color(&iovad->anchor.node, &iovad->rbroot);
-	android_init_vendor_data(iovad, 1);
 }
 EXPORT_SYMBOL_GPL(init_iova_domain);
 
@@ -255,18 +253,14 @@ alloc_iova(struct iova_domain *iovad, unsigned long size,
 	bool size_aligned)
 {
 	struct iova *new_iova;
-	int ret = -1;
+	int ret;
 
 	new_iova = alloc_iova_mem();
 	if (!new_iova)
 		return NULL;
 
-	trace_android_rvh_iommu_alloc_insert_iova(iovad, size, limit_pfn + 1,
-			new_iova, size_aligned, &ret);
-	if (ret) {
-		ret = __alloc_and_insert_iova_range(iovad, size,
-			limit_pfn + 1, new_iova, size_aligned);
-	}
+	ret = __alloc_and_insert_iova_range(iovad, size, limit_pfn + 1,
+			new_iova, size_aligned);
 
 	if (ret) {
 		free_iova_mem(new_iova);
