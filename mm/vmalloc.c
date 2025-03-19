@@ -47,6 +47,9 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/vmalloc.h>
 
+#undef CREATE_TRACE_POINTS
+#include <trace/hooks/mm.h>
+
 #include "internal.h"
 #include "pgalloc-track.h"
 
@@ -996,6 +999,7 @@ unsigned long vmalloc_nr_pages(void)
 {
 	return atomic_long_read(&nr_vmalloc_pages);
 }
+EXPORT_SYMBOL_GPL(vmalloc_nr_pages);
 
 static struct vmap_area *__find_vmap_area(unsigned long addr, struct rb_root *root)
 {
@@ -3341,8 +3345,13 @@ void vfree_atomic(const void *addr)
  */
 void vfree(const void *addr)
 {
+	bool bypass = false;
 	struct vm_struct *vm;
 	int i;
+
+	trace_android_rvh_vfree_bypass(addr, &bypass);
+	if (bypass)
+		return;
 
 	if (unlikely(in_interrupt())) {
 		vfree_atomic(addr);
@@ -3369,7 +3378,8 @@ void vfree(const void *addr)
 		struct page *page = vm->pages[i];
 
 		BUG_ON(!page);
-		mod_memcg_page_state(page, MEMCG_VMALLOC, -1);
+		if (!(vm->flags & VM_MAP_PUT_PAGES))
+			mod_memcg_page_state(page, MEMCG_VMALLOC, -1);
 		/*
 		 * High-order allocs for huge vmallocs are split, so
 		 * can be freed as an array of order-0 allocations
@@ -3377,7 +3387,8 @@ void vfree(const void *addr)
 		__free_page(page);
 		cond_resched();
 	}
-	atomic_long_sub(vm->nr_pages, &nr_vmalloc_pages);
+	if (!(vm->flags & VM_MAP_PUT_PAGES))
+		atomic_long_sub(vm->nr_pages, &nr_vmalloc_pages);
 	kvfree(vm->pages);
 	kfree(vm);
 }
@@ -3906,6 +3917,12 @@ fail:
 void *__vmalloc_node_noprof(unsigned long size, unsigned long align,
 			    gfp_t gfp_mask, int node, const void *caller)
 {
+	void *addr = NULL;
+
+	trace_android_rvh_vmalloc_node_bypass(size, gfp_mask, &addr);
+	if (addr)
+		return addr;
+
 	return __vmalloc_node_range_noprof(size, align, VMALLOC_START, VMALLOC_END,
 				gfp_mask, PAGE_KERNEL, 0, node, caller);
 }

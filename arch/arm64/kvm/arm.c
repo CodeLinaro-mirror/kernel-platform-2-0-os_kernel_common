@@ -84,38 +84,12 @@ int kvm_arch_vcpu_should_kick(struct kvm_vcpu *vcpu)
 	return kvm_vcpu_exiting_guest_mode(vcpu) == IN_GUEST_MODE;
 }
 
-/*
- * This functions as an allow-list of protected VM capabilities.
- * Features not explicitly allowed by this function are denied.
- */
-static bool pkvm_ext_allowed(struct kvm *kvm, long ext)
-{
-	switch (ext) {
-	case KVM_CAP_IRQCHIP:
-	case KVM_CAP_ARM_PSCI:
-	case KVM_CAP_ARM_PSCI_0_2:
-	case KVM_CAP_NR_VCPUS:
-	case KVM_CAP_MAX_VCPUS:
-	case KVM_CAP_MAX_VCPU_ID:
-	case KVM_CAP_MSI_DEVID:
-	case KVM_CAP_ARM_VM_IPA_SIZE:
-	case KVM_CAP_ARM_PROTECTED_VM:
-	case KVM_CAP_ARM_PTRAUTH_ADDRESS:
-	case KVM_CAP_ARM_PTRAUTH_GENERIC:
-	case KVM_CAP_ARM_PMU_V3:
-	case KVM_CAP_ARM_SVE:
-		return true;
-	default:
-		return false;
-	}
-}
-
 int kvm_vm_ioctl_enable_cap(struct kvm *kvm,
 			    struct kvm_enable_cap *cap)
 {
 	int r = -EINVAL;
 
-	if (kvm_vm_is_protected(kvm) && !pkvm_ext_allowed(kvm, cap->cap))
+	if (kvm_vm_is_protected(kvm) && !kvm_pvm_ext_allowed(cap->cap))
 		return -EINVAL;
 
 	/* Capabilities with flags */
@@ -331,7 +305,7 @@ int kvm_vm_ioctl_check_extension(struct kvm *kvm, long ext)
 {
 	int r;
 
-	if (kvm && kvm_vm_is_protected(kvm) && !pkvm_ext_allowed(kvm, ext))
+	if (kvm && kvm_vm_is_protected(kvm) && !kvm_pvm_ext_allowed(ext))
 		return 0;
 
 	switch (ext) {
@@ -528,7 +502,14 @@ void kvm_arch_vcpu_postcreate(struct kvm_vcpu *vcpu)
 
 void kvm_arch_vcpu_destroy(struct kvm_vcpu *vcpu)
 {
-	kvm_mmu_free_memory_cache(&vcpu->arch.mmu_page_cache);
+	if (is_protected_kvm_enabled()) {
+		atomic64_sub(vcpu->arch.stage2_mc.nr_pages << PAGE_SHIFT,
+			     &vcpu->kvm->stat.protected_hyp_mem);
+		free_hyp_memcache(&vcpu->arch.stage2_mc);
+	} else {
+		kvm_mmu_free_memory_cache(&vcpu->arch.mmu_page_cache);
+	}
+
 	kvm_timer_vcpu_terminate(vcpu);
 	kvm_pmu_vcpu_destroy(vcpu);
 	kvm_vgic_vcpu_destroy(vcpu);
@@ -2037,7 +2018,7 @@ static int kvm_init_vector_slots(void)
 	return 0;
 }
 
-static void __init cpu_prepare_hyp_mode(int cpu, u32 hyp_va_bits)
+static void __init cpu_prepare_hyp_mode(int cpu)
 {
 	struct kvm_nvhe_init_params *params = per_cpu_ptr_nvhe_sym(kvm_init_params, cpu);
 	u64 mmfr0 = read_sanitised_ftr_reg(SYS_ID_AA64MMFR0_EL1);
@@ -2408,7 +2389,7 @@ static void __init teardown_hyp_mode(void)
 	}
 }
 
-static int __init do_pkvm_init(u32 hyp_va_bits)
+static int __init do_pkvm_init(void)
 {
 	void *per_cpu_base = kvm_ksym_ref(kvm_nvhe_sym(kvm_arm_hyp_percpu_base));
 	int ret;
@@ -2469,6 +2450,12 @@ static void kvm_hyp_init_symbols(void)
 	kvm_nvhe_sym(__icache_flags) = __icache_flags;
 	kvm_nvhe_sym(kvm_arm_vmid_bits) = kvm_arm_vmid_bits;
 	kvm_nvhe_sym(smccc_trng_available) = smccc_trng_available;
+
+	/*
+	 * Flush entire BSS since part of its data is read while the MMU is off.
+	 */
+	kvm_flush_dcache_to_poc(kvm_ksym_ref(__hyp_bss_start),
+				kvm_ksym_ref(__hyp_bss_end) - kvm_ksym_ref(__hyp_bss_start));
 }
 
 static unsigned long kvm_hyp_shrinker_count(struct shrinker *shrinker,
@@ -2485,7 +2472,7 @@ static unsigned long kvm_hyp_shrinker_scan(struct shrinker *shrinker,
 	return __pkvm_reclaim_hyp_alloc_mgt(sc->nr_to_scan);
 }
 
-static int __init kvm_hyp_init_protection(u32 hyp_va_bits)
+static int __init kvm_hyp_init_protection(void)
 {
 	void *addr = phys_to_virt(hyp_mem_base);
 	struct shrinker *shrinker;
@@ -2495,7 +2482,7 @@ static int __init kvm_hyp_init_protection(u32 hyp_va_bits)
 	if (ret)
 		return ret;
 
-	ret = do_pkvm_init(hyp_va_bits);
+	ret = do_pkvm_init();
 	if (ret)
 		return ret;
 
@@ -2590,7 +2577,6 @@ static void pkvm_hyp_init_ptrauth(void)
 /* Inits Hyp-mode on all online CPUs */
 static int __init init_hyp_mode(void)
 {
-	u32 hyp_va_bits;
 	int cpu;
 	int err = -ENOMEM;
 
@@ -2604,7 +2590,7 @@ static int __init init_hyp_mode(void)
 	/*
 	 * Allocate Hyp PGD and setup Hyp identity mapping
 	 */
-	err = kvm_mmu_init(&hyp_va_bits);
+	err = kvm_mmu_init();
 	if (err)
 		goto out_err;
 
@@ -2725,7 +2711,7 @@ static int __init init_hyp_mode(void)
 		}
 
 		/* Prepare the CPU initialization parameters */
-		cpu_prepare_hyp_mode(cpu, hyp_va_bits);
+		cpu_prepare_hyp_mode(cpu);
 	}
 
 	kvm_hyp_init_symbols();
@@ -2748,7 +2734,7 @@ static int __init init_hyp_mode(void)
 		if (err)
 			goto out_err;
 
-		err = kvm_hyp_init_protection(hyp_va_bits);
+		err = kvm_hyp_init_protection();
 		if (err) {
 			kvm_err("Failed to init hyp memory protection\n");
 			goto out_err;

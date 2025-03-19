@@ -163,7 +163,22 @@ static bool cpus_have_group0 __ro_after_init;
 
 static void __init gic_prio_init(void)
 {
-	cpus_have_security_disabled = gic_dist_security_disabled();
+	bool ds;
+
+	ds = gic_dist_security_disabled();
+	if (!ds) {
+		u32 val;
+
+		val = readl_relaxed(gic_data.dist_base + GICD_CTLR);
+		val |= GICD_CTLR_DS;
+		writel_relaxed(val, gic_data.dist_base + GICD_CTLR);
+
+		ds = gic_dist_security_disabled();
+		if (ds)
+			pr_warn("Broken GIC integration, security disabled");
+	}
+
+	cpus_have_security_disabled = ds;
 	cpus_have_group0 = gic_has_group0();
 
 	/*
@@ -948,7 +963,7 @@ static void __exception_irq_entry gic_handle_irq(struct pt_regs *regs)
 		__gic_handle_irq_from_irqson(regs);
 }
 
-void __init gic_v3_dist_init(void)
+void gic_v3_dist_init(void)
 {
 	unsigned int i;
 	u64 affinity;
@@ -1515,7 +1530,7 @@ static int gic_retrigger(struct irq_data *data)
 static int gic_cpu_pm_notifier(struct notifier_block *self,
 			       unsigned long cmd, void *v)
 {
-	if (cmd == CPU_PM_EXIT) {
+	if (cmd == CPU_PM_EXIT || cmd == CPU_PM_ENTER_FAILED) {
 		if (gic_dist_security_disabled())
 			gic_enable_redist(true);
 		gic_cpu_sys_reg_enable();
