@@ -250,6 +250,7 @@ common_kernel(
 common_kernel(
     name = "kernel_aarch64_16k",
     outs = DEFAULT_GKI_OUTS,
+    additional_kmi_symbol_lists = [":aarch64_additional_kmi_symbol_lists"],
     arch = "arm64",
     build_gki_artifacts = True,
     ddk_headers_archive = ":kernel_aarch64_ddk_headers_archive",
@@ -262,11 +263,49 @@ common_kernel(
     gki_boot_img_sizes = _GKI_AARCH64_BOOT_IMAGE_SIZES,
     gki_system_dlkm_modules = "android/gki_system_dlkm_modules_arm64",
     kcflags = COMMON_KCFLAGS,
+    # We don't guarantee ABI stability for 16k target
+    kmi_enforced = False,
+    kmi_symbol_list = "gki/aarch64/symbols/base",
+    kmi_symbol_list_strict_mode = True,
     make_goals = _GKI_AARCH64_MAKE_GOALS,
     makefile = ":Makefile",
     module_implicit_outs = get_gki_modules_list("arm64") + get_kunit_modules_list("arm64"),
     page_size = "16k",
+    protected_exports_list = "gki/aarch64/protected_exports",
+    protected_modules_list = ":gki_aarch64_protected_modules",
     system_dlkm_extra_archive_files = [":generate_gki_module_info_arm64"],
+    trim_nonlisted_kmi = True,
+    visibility = ["//visibility:public"],
+)
+
+common_kernel(
+    name = "kernel_aarch64_tv",
+    outs = DEFAULT_GKI_OUTS,
+    additional_kmi_symbol_lists = [":aarch64_additional_kmi_symbol_lists"],
+    arch = "arm64",
+    build_gki_artifacts = True,
+    ddk_headers_archive = ":kernel_aarch64_ddk_headers_archive",
+    ddk_module_headers = [":all_headers_aarch64"],
+    defconfig = "arch/arm64/configs/gki_defconfig",
+    extra_dist = [
+        ":test_mappings_zip",
+        ":tests_zip_arm64",
+    ],
+    gki_boot_img_sizes = _GKI_AARCH64_BOOT_IMAGE_SIZES,
+    gki_system_dlkm_modules = ":gki_system_dlkm_modules_arm64",
+    kcflags = COMMON_KCFLAGS,
+    # We don't guarantee ABI stability for TV target
+    kmi_enforced = False,
+    kmi_symbol_list = "gki/aarch64/symbols/base",
+    kmi_symbol_list_strict_mode = True,
+    make_goals = _GKI_AARCH64_MAKE_GOALS,
+    makefile = ":Makefile",
+    module_implicit_outs = get_gki_modules_list("arm64") + get_kunit_modules_list("arm64"),
+    pre_defconfig_fragments = ["arch/arm64/configs/tv_gki.fragment"],
+    protected_exports_list = "gki/aarch64/protected_exports",
+    protected_modules_list = ":gki_aarch64_protected_modules",
+    system_dlkm_extra_archive_files = [":generate_gki_module_info_arm64"],
+    trim_nonlisted_kmi = True,
     visibility = ["//visibility:public"],
 )
 
@@ -282,6 +321,7 @@ Consider building @@//common:kernel_aarch64 with:
 common_kernel(
     name = "kernel_aarch64_autofdo",
     outs = DEFAULT_GKI_OUTS,
+    additional_kmi_symbol_lists = [":aarch64_additional_kmi_symbol_lists"],
     arch = "arm64",
     build_gki_artifacts = True,
     clang_autofdo_profile = "//toolchain/pgo-profiles/kernel:aarch64/" + BRANCH + "/kernel.afdo",
@@ -294,9 +334,18 @@ common_kernel(
     ],
     gki_boot_img_sizes = _GKI_AARCH64_BOOT_IMAGE_SIZES,
     gki_system_dlkm_modules = ":gki_system_dlkm_modules_arm64",
+    kcflags = COMMON_KCFLAGS,
+    # We don't guarantee ABI stability for AutoFDO target
+    kmi_enforced = False,
+    kmi_symbol_list = "gki/aarch64/symbols/base",
+    kmi_symbol_list_strict_mode = True,
     make_goals = _GKI_AARCH64_MAKE_GOALS,
     makefile = ":Makefile",
     module_implicit_outs = get_gki_modules_list("arm64") + get_kunit_modules_list("arm64"),
+    protected_exports_list = "gki/aarch64/protected_exports",
+    protected_modules_list = ":gki_aarch64_protected_modules",
+    system_dlkm_extra_archive_files = [":generate_gki_module_info_arm64"],
+    trim_nonlisted_kmi = True,
     visibility = ["//visibility:public"],
 )
 
