@@ -969,6 +969,15 @@ static inline struct kvm_io_bus *kvm_get_bus(struct kvm *kvm, enum kvm_bus idx)
 static inline struct kvm_vcpu *kvm_get_vcpu(struct kvm *kvm, int i)
 {
 	int num_vcpus = atomic_read(&kvm->online_vcpus);
+
+	/*
+	 * Explicitly verify the target vCPU is online, as the anti-speculation
+	 * logic only limits the CPU's ability to speculate, e.g. given a "bad"
+	 * index, clamping the index to 0 would return vCPU0, not NULL.
+	 */
+	if (i >= num_vcpus)
+		return NULL;
+
 	i = array_index_nospec(i, num_vcpus);
 
 	/* Pairs with smp_wmb() in kvm_vm_ioctl_create_vcpu.  */
@@ -1631,6 +1640,31 @@ static inline void kvm_arch_end_assignment(struct kvm *kvm)
 static __always_inline bool kvm_arch_has_assigned_device(struct kvm *kvm)
 {
 	return false;
+}
+#endif
+
+#ifdef __KVM_HAVE_ARCH_ASSIGNED_DEVICE_GROUP
+int kvm_arch_assign_device(struct device *dev);
+int kvm_arch_assign_group(struct iommu_group *group);
+void kvm_arch_reclaim_device(struct device *dev);
+void kvm_arch_reclaim_group(struct iommu_group *group);
+#else
+static inline int kvm_arch_assign_device(struct device *dev)
+{
+	return 0;
+}
+
+static inline int kvm_arch_assign_group(struct iommu_group *group)
+{
+	return 0;
+}
+
+static inline void kvm_arch_reclaim_device(struct device *dev)
+{
+}
+
+static inline void kvm_arch_reclaim_group(struct iommu_group *group)
+{
 }
 #endif
 

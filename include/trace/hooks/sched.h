@@ -261,6 +261,10 @@ DECLARE_HOOK(android_vh_free_task,
 	TP_PROTO(struct task_struct *p),
 	TP_ARGS(p));
 
+DECLARE_HOOK(android_vh_irqtime_account_process_tick,
+	TP_PROTO(struct task_struct *p, struct rq *rq, int user_tick, int ticks),
+	TP_ARGS(p, rq, user_tick, ticks));
+
 enum uclamp_id;
 struct uclamp_se;
 DECLARE_RESTRICTED_HOOK(android_rvh_uclamp_eff_get,
@@ -273,8 +277,8 @@ DECLARE_RESTRICTED_HOOK(android_rvh_after_enqueue_task,
 	TP_ARGS(rq, p, flags), 1);
 
 DECLARE_RESTRICTED_HOOK(android_rvh_after_dequeue_task,
-	TP_PROTO(struct rq *rq, struct task_struct *p, int flags),
-	TP_ARGS(rq, p, flags), 1);
+	TP_PROTO(struct rq *rq, struct task_struct *p, int flags, bool *dequeue_task_result),
+	TP_ARGS(rq, p, flags, dequeue_task_result), 1);
 
 struct cfs_rq;
 struct sched_entity;
@@ -400,6 +404,42 @@ DECLARE_RESTRICTED_HOOK(android_rvh_update_load_avg_cfs_rq,
 DECLARE_RESTRICTED_HOOK(android_rvh_update_rt_rq_load_avg_internal,
 	TP_PROTO(u64 now, struct rq *rq, int running, int *ret),
 	TP_ARGS(now, rq, running, ret), 1);
+
+DECLARE_HOOK(android_vh_account_task_time,
+	TP_PROTO(struct task_struct *p, struct rq *rq, int user_tick),
+	TP_ARGS(p, rq, user_tick));
+
+DECLARE_HOOK(android_vh_map_util_freq,
+	TP_PROTO(unsigned long util, unsigned long freq,
+		unsigned long cap, unsigned long *next_freq),
+	TP_ARGS(util, freq, cap, next_freq));
+
+DECLARE_RESTRICTED_HOOK(android_rvh_set_cpus_allowed_comm,
+	TP_PROTO(struct task_struct *p, const struct cpumask *new_mask),
+	TP_ARGS(p, new_mask), 1);
+
+DECLARE_HOOK(android_vh_sched_setaffinity_early,
+	TP_PROTO(struct task_struct *p, const struct cpumask *new_mask, bool *retval),
+	TP_ARGS(p, new_mask, retval));
+
+DECLARE_HOOK(android_vh_reweight_entity,
+	TP_PROTO(struct sched_entity *se),
+	TP_ARGS(se));
+
+struct cgroup_subsys_state;
+DECLARE_HOOK(android_vh_sched_move_task,
+	TP_PROTO(struct task_struct *tsk),
+	TP_ARGS(tsk));
+DECLARE_HOOK(android_vh_cpu_cgroup_css_alloc,
+	TP_PROTO(struct task_group *tg, struct cgroup_subsys_state *parent_css),
+	TP_ARGS(tg, parent_css));
+DECLARE_HOOK(android_vh_cpu_cgroup_css_alloc_early,
+	TP_PROTO(struct task_group *parent),
+	TP_ARGS(parent));
+DECLARE_HOOK(android_vh_cpu_cgroup_css_free,
+	TP_PROTO(struct cgroup_subsys_state *css),
+	TP_ARGS(css));
+
 /* macro versions of hooks are no longer required */
 
 #endif /* _TRACE_HOOK_SCHED_H */

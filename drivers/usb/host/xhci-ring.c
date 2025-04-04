@@ -422,7 +422,8 @@ static void xhci_handle_stopped_cmd_ring(struct xhci_hcd *xhci,
 	if ((xhci->cmd_ring->dequeue != xhci->cmd_ring->enqueue) &&
 	    !(xhci->xhc_state & XHCI_STATE_DYING)) {
 		xhci->current_cmd = cur_cmd;
-		xhci_mod_cmd_timer(xhci);
+		if (cur_cmd)
+			xhci_mod_cmd_timer(xhci);
 		xhci_ring_cmd_db(xhci);
 	}
 }
@@ -2970,21 +2971,13 @@ err_out:
 }
 
 /*
- * This function handles one OS-owned event on the event ring, or ignores one event
- * on interrupters which are non-OS owned. It may drop xhci->lock between event
- * processing (e.g. to pass up port status changes).
+ * This function handles one OS-owned event on the event ring. It may drop
+ * xhci->lock between event processing (e.g. to pass up port status changes).
  */
 static int xhci_handle_event_trb(struct xhci_hcd *xhci, struct xhci_interrupter *ir,
 				 union xhci_trb *event)
 {
 	u32 trb_type;
-
-	/*
-	 * Some interrupters do not need to handle event TRBs, as they may be
-	 * managed by another entity, but rely on the OS to clean up.
-	 */
-	if (ir->skip_events)
-		return 0;
 
 	trace_xhci_handle_event(ir->event_ring, &event->generic);
 
@@ -3073,14 +3066,14 @@ static void xhci_clear_interrupt_pending(struct xhci_interrupter *ir)
 }
 
 /*
- * Handle all OS-owned events on an interrupter event ring, or skip pending events
- * for non OS owned interrupter event ring. It may drop and reacquire xhci->lock
- * between event processing.
+ * Handle all OS-owned events on an interrupter event ring. It may drop
+ * and reaquire xhci->lock between event processing.
  */
-static int xhci_handle_events(struct xhci_hcd *xhci, struct xhci_interrupter *ir)
+static int xhci_handle_events(struct xhci_hcd *xhci, struct xhci_interrupter *ir,
+			      bool skip_events)
 {
 	int event_loop = 0;
-	int err;
+	int err = 0;
 	u64 temp;
 
 	xhci_clear_interrupt_pending(ir);
@@ -3103,7 +3096,8 @@ static int xhci_handle_events(struct xhci_hcd *xhci, struct xhci_interrupter *ir
 
 	/* Process all OS owned event TRBs on this event ring */
 	while (unhandled_event_trb(ir->event_ring)) {
-		err = xhci_handle_event_trb(xhci, ir, ir->event_ring->dequeue);
+		if (!skip_events)
+			err = xhci_handle_event_trb(xhci, ir, ir->event_ring->dequeue);
 
 		/*
 		 * If half a segment of events have been handled in one go then
@@ -3158,7 +3152,7 @@ void xhci_skip_sec_intr_events(struct xhci_hcd *xhci,
 	/* read cycle state of the last acked trb to find out CCS */
 	ring->cycle_state = le32_to_cpu(current_trb->event_cmd.flags) & TRB_CYCLE;
 
-	xhci_handle_events(xhci, ir);
+	xhci_handle_events(xhci, ir, true);
 }
 
 /*
@@ -3205,7 +3199,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd)
 	writel(status, &xhci->op_regs->status);
 
 	/* This is the handler of the primary interrupter */
-	xhci_handle_events(xhci, xhci->interrupters[0]);
+	xhci_handle_events(xhci, xhci->interrupters[0], false);
 out:
 	spin_unlock(&xhci->lock);
 
