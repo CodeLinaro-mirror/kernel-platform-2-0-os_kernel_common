@@ -387,11 +387,8 @@ usb_role_switch_register(struct device *parent,
 	dev_set_name(&sw->dev, "%s-role-switch",
 		     desc->name ? desc->name : dev_name(parent));
 
-	sw->registered = true;
-
 	ret = device_register(&sw->dev);
 	if (ret) {
-		sw->registered = false;
 		put_device(&sw->dev);
 		return ERR_PTR(ret);
 	}
@@ -401,6 +398,8 @@ usb_role_switch_register(struct device *parent,
 		if (ret)
 			dev_warn(&sw->dev, "failed to add component\n");
 	}
+
+	sw->registered = true;
 
 	/* TODO: Symlinks for the host port and the device controller. */
 
