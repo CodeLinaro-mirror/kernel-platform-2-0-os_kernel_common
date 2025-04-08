@@ -68,7 +68,7 @@
 #include <trace/hooks/compaction.h>
 #include <trace/hooks/madvise.h>
 #include <trace/events/android_vendor_lmk.h>
-
+#include <trace/hooks/blk.h>
 
 /*
  * Export tracepoints that act as a bare tracehook (ie: have no trace event
@@ -101,6 +101,8 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_cpu_idle_enter);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_cpu_idle_exit);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_mpam_set);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_wq_lockup_pool);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_alloc_and_link_pwqs);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_create_worker);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ipi_stop);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_sysrq_crash);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_printk_hotplug);
@@ -448,3 +450,4 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_mm_kcompactd_cpu_online);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_direct_reclaim_begin);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_direct_reclaim_end);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_do_read_fault);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_bd_link_disk_holder);
