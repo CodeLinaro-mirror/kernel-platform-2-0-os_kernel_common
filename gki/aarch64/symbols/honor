@@ -256,6 +256,7 @@
   out_of_line_wait_on_bit_lock
   override_creds
   pagecache_get_page
+  pm_wakeup_irq
   posix_lock_file
   posix_test_lock
   prepare_kernel_cred
@@ -328,4 +329,9 @@
   usb_gadget_disconnect
   wakeup_sources_walk_next
   wakeup_sources_walk_start
+  __traceiter_android_vh_receive_sock
+  __tracepoint_android_vh_receive_sock
+  __traceiter_android_vh_task_get_classid
+  __tracepoint_android_vh_task_get_classid
+  _trace_android_vh_task_get_classid
 
