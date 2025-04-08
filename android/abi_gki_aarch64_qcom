@@ -685,7 +685,6 @@
   dev_pm_domain_attach
   dev_pm_domain_attach_by_name
   dev_pm_domain_detach
-  dev_pm_domain_detach_list
   dev_pm_genpd_add_notifier
   dev_pm_genpd_remove_notifier
   dev_pm_genpd_set_next_wakeup
@@ -1200,17 +1199,13 @@
   geni_icc_set_bw
   geni_se_clk_freq_match
   geni_se_config_packing
-  geni_se_domain_attach
-  geni_se_get_level
   geni_se_get_qup_hw_version
   geni_se_init
-  geni_se_is_fw_managed
   geni_se_resources_off
   geni_se_resources_on
   geni_se_rx_dma_prep
   geni_se_rx_dma_unprep
   geni_se_select_mode
-  geni_se_set_perf_level
   geni_se_tx_dma_prep
   geni_se_tx_dma_unprep
   genlmsg_multicast_allns
