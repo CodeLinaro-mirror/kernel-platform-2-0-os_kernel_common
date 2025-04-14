@@ -4592,8 +4592,8 @@ int sdhci_setup_host(struct sdhci_host *host)
 		/* SD3.0: SDR104 is supported so (for eMMC) the caps2
 		 * field can be promoted to support HS200.
 		 */
-//		if (!(host->quirks2 & SDHCI_QUIRK2_BROKEN_HS200))
-//			mmc->caps2 |= MMC_CAP2_HS200;
+		if (!(host->quirks2 & SDHCI_QUIRK2_BROKEN_HS200))
+			mmc->caps2 |= MMC_CAP2_HS200;
 	} else if (host->caps1 & SDHCI_SUPPORT_SDR50) {
 		mmc->caps |= MMC_CAP_UHS_SDR50;
 	}

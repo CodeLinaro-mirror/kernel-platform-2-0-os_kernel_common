@@ -1314,9 +1314,6 @@ static void qcom_geni_serial_set_termios(struct uart_port *uport,
 	writel(stop_bit_len, uport->membase + SE_UART_TX_STOP_BIT_LEN);
 	writel(ser_clk_cfg, uport->membase + GENI_SER_M_CLK_CFG);
 	writel(ser_clk_cfg, uport->membase + GENI_SER_S_CLK_CFG);
-	writel(0x41, uport->membase + GENI_SER_M_CLK_CFG);
-	writel(0x41, uport->membase + GENI_SER_S_CLK_CFG);
-	pr_err("%s line:%d, mcfg: 0x%x scfg: 0x%x \n",__func__, __LINE__, readl(uport->membase + GENI_SER_M_CLK_CFG), readl(uport->membase + GENI_SER_S_CLK_CFG) );
 out_restart_rx:
 	qcom_geni_serial_start_rx(uport);
 }
@@ -1444,9 +1441,6 @@ static int __init qcom_geni_serial_earlycon_setup(struct earlycon_device *dev,
 	writel(bits_per_char, uport->membase + SE_UART_TX_WORD_LEN);
 	writel(bits_per_char, uport->membase + SE_UART_RX_WORD_LEN);
 	writel(stop_bit_len, uport->membase + SE_UART_TX_STOP_BIT_LEN);
-	writel(0x41, uport->membase + GENI_SER_M_CLK_CFG);
-	writel(0x41, uport->membase + GENI_SER_S_CLK_CFG);
-	pr_err("%s line:%d, mcfg: 0x%x scfg: 0x%x \n",__func__, __LINE__, readl(uport->membase + GENI_SER_M_CLK_CFG), readl(uport->membase + GENI_SER_S_CLK_CFG) );
 
 	dev->con->write = qcom_geni_serial_earlycon_write;
 	dev->con->setup = NULL;
