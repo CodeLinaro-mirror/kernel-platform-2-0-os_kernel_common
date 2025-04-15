@@ -44,7 +44,10 @@ struct pkvm_hyp_vcpu {
 /* Holds the hyp address of the mapped RX/TX buffers inside the hypervisor */
 struct kvm_ffa_buffers {
 	void *tx;
+	u64 tx_ipa;
 	void *rx;
+	u64 rx_ipa;
+	struct list_head xfer_list;
 };
 
 /*
@@ -77,10 +80,13 @@ struct pkvm_hyp_vm {
 	bool is_dying;
 
 	struct kvm_ffa_buffers ffa_buf;
+	struct list_head vm_list;
 
 	/* Array of the hyp vCPU structures for this VM. */
 	struct pkvm_hyp_vcpu *vcpus[];
 };
+
+struct ffa_mem_transfer *__pkvm_get_vm_ffa_transfer(u16 handle);
 
 static inline struct pkvm_hyp_vm *
 pkvm_hyp_vcpu_to_hyp_vm(struct pkvm_hyp_vcpu *hyp_vcpu)
@@ -111,6 +117,7 @@ int __pkvm_init_vcpu(pkvm_handle_t handle, struct kvm_vcpu *host_vcpu);
 int __pkvm_start_teardown_vm(pkvm_handle_t handle);
 int __pkvm_finalize_teardown_vm(pkvm_handle_t handle);
 int __pkvm_reclaim_dying_guest_page(pkvm_handle_t handle, u64 pfn, u64 gfn, u8 order);
+int __pkvm_reclaim_dying_guest_ffa_resources(pkvm_handle_t handle);
 
 struct pkvm_hyp_vcpu *pkvm_load_hyp_vcpu(pkvm_handle_t handle,
 					 unsigned int vcpu_idx);
@@ -130,6 +137,7 @@ int kvm_check_pvm_sysreg_table(void);
 void pkvm_reset_vcpu(struct pkvm_hyp_vcpu *hyp_vcpu);
 
 bool kvm_handle_pvm_hvc64(struct kvm_vcpu *vcpu, u64 *exit_code);
+bool kvm_hyp_handle_hvc64(struct kvm_vcpu *vcpu, u64 *exit_code);
 
 struct pkvm_hyp_vcpu *pkvm_mpidr_to_hyp_vcpu(struct pkvm_hyp_vm *vm, u64 mpidr);
 
@@ -201,5 +209,7 @@ int pkvm_device_reclaim_mmio(u64 pfn, u64 nr_pages);
 int pkvm_host_map_guest_mmio(struct pkvm_hyp_vcpu *hyp_vcpu, u64 pfn, u64 gfn);
 int pkvm_device_register_reset(u64 phys, void *cookie,
 			       int (*cb)(void *cookie, bool host_to_guest));
+int pkvm_handle_empty_memcache(struct pkvm_hyp_vcpu *hyp_vcpu, u64 *exit_code);
+u32 hyp_vcpu_to_ffa_handle(struct pkvm_hyp_vcpu *hyp_vcpu);
 
 #endif /* __ARM64_KVM_NVHE_PKVM_H__ */
