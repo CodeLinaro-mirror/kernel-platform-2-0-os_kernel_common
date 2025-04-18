@@ -20,6 +20,8 @@
 #include <nvhe/memory.h>
 #include <nvhe/mm.h>
 #include <nvhe/pkvm.h>
+#include <nvhe/pviommu.h>
+#include <nvhe/pviommu-host.h>
 #include <nvhe/rwlock.h>
 #include <nvhe/trap_handler.h>
 
@@ -372,7 +374,7 @@ int __pkvm_reclaim_dying_guest_page(pkvm_handle_t handle, u64 pfn, u64 gfn, u8 o
 	if (ret)
 		goto unlock;
 
-	drain_hyp_pool(hyp_vm, &hyp_vm->host_kvm->arch.pkvm.stage2_teardown_mc);
+	drain_hyp_pool(&hyp_vm->pool, &hyp_vm->host_kvm->arch.pkvm.stage2_teardown_mc);
 unlock:
 	hyp_read_unlock(&vm_table_lock);
 
@@ -463,7 +465,6 @@ static void pkvm_init_features_from_host(struct pkvm_hyp_vm *hyp_vm, const struc
 {
 	struct kvm *kvm = &hyp_vm->kvm;
 	unsigned long host_arch_flags = READ_ONCE(host_kvm->arch.flags);
-	DECLARE_BITMAP(allowed_features, KVM_VCPU_MAX_FEATURES);
 
 	/* No restrictions for non-protected VMs. */
 	if (!kvm_vm_is_protected(kvm)) {
@@ -475,31 +476,14 @@ static void pkvm_init_features_from_host(struct pkvm_hyp_vm *hyp_vm, const struc
 		return;
 	}
 
-	bitmap_zero(allowed_features, KVM_VCPU_MAX_FEATURES);
+	kvm->arch.vcpu_features[0] = pvm_supported_vcpu_features() &
+				     host_kvm->arch.vcpu_features[0];
 
-	set_bit(KVM_ARM_VCPU_PSCI_0_2, allowed_features);
+	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_SVE) && kvm_has_sve(host_kvm))
+		set_bit(KVM_ARCH_FLAG_GUEST_HAS_SVE, &kvm->arch.flags);
 
-	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_PMU_V3))
-		set_bit(KVM_ARM_VCPU_PMU_V3, allowed_features);
-
-	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_PTRAUTH_ADDRESS))
-		set_bit(KVM_ARM_VCPU_PTRAUTH_ADDRESS, allowed_features);
-
-	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_PTRAUTH_GENERIC))
-		set_bit(KVM_ARM_VCPU_PTRAUTH_GENERIC, allowed_features);
-
-	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_SVE)) {
-		set_bit(KVM_ARM_VCPU_SVE, allowed_features);
-		kvm->arch.flags |= host_arch_flags & BIT(KVM_ARCH_FLAG_GUEST_HAS_SVE);
-	}
-
-	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_MTE)) {
-		set_bit(KVM_CAP_ARM_MTE, allowed_features);
-		kvm->arch.flags |= host_arch_flags & BIT(KVM_ARCH_FLAG_MTE_ENABLED);
-	}
-
-	bitmap_and(kvm->arch.vcpu_features, host_kvm->arch.vcpu_features,
-		   allowed_features, KVM_VCPU_MAX_FEATURES);
+	if (kvm_pvm_ext_allowed(KVM_CAP_ARM_MTE) && kvm_has_mte(host_kvm))
+		set_bit(KVM_ARCH_FLAG_MTE_ENABLED, &kvm->arch.flags);
 }
 
 static int pkvm_vcpu_init_psci(struct pkvm_hyp_vcpu *hyp_vcpu, u32 mp_state)
@@ -608,6 +592,7 @@ static void init_pkvm_hyp_vm(struct kvm *host_kvm, struct pkvm_hyp_vm *hyp_vm,
 		pvmfw_load_addr = READ_ONCE(host_kvm->arch.pkvm.pvmfw_load_addr);
 	hyp_vm->kvm.arch.pkvm.pvmfw_load_addr = pvmfw_load_addr;
 
+	hyp_vm->kvm.arch.pkvm.ffa_support = READ_ONCE(host_kvm->arch.pkvm.ffa_support);
 	hyp_vm->kvm.arch.mmu.last_vcpu_ran = (int __percpu *)last_ran;
 	memset(last_ran, -1, pkvm_get_last_ran_size());
 	pkvm_init_features_from_host(hyp_vm, host_kvm);
@@ -846,6 +831,11 @@ int __pkvm_init_vm(struct kvm *host_kvm, unsigned long pgd_hva)
 	ret = kvm_guest_prepare_stage2(hyp_vm, pgd);
 	if (ret)
 		goto err_remove_vm_table_entry;
+
+	ret = pkvm_pviommu_finalise(hyp_vm);
+	if (ret)
+		goto err_remove_vm_table_entry;
+
 	hyp_write_unlock(&vm_table_lock);
 
 	return hyp_vm->kvm.arch.pkvm.handle;
@@ -1003,6 +993,15 @@ int __pkvm_finalize_teardown_vm(pkvm_handle_t handle)
 
 	pkvm_devices_teardown(hyp_vm);
 
+	pkvm_pviommu_teardown(hyp_vm);
+
+	/*
+	 * At this point all page tables are destroyed and should be pushed to the pool
+	 * the only place that might still have memory is the mc, which would be drained
+	 * from host as it hasn't been donated yet.
+	 */
+	drain_hyp_pool(&hyp_vm->iommu_pool, &host_kvm->arch.pkvm.teardown_iommu_mc);
+
 	/*
 	 * At this point, the VM has been detached from the VM table and
 	 * has a refcount of 0 so we're free to tear it down without
@@ -1011,7 +1010,7 @@ int __pkvm_finalize_teardown_vm(pkvm_handle_t handle)
 
 	mc = &host_kvm->arch.pkvm.stage2_teardown_mc;
 	destroy_hyp_vm_pgt(hyp_vm);
-	drain_hyp_pool(hyp_vm, mc);
+	drain_hyp_pool(&hyp_vm->pool, mc);
 	unpin_host_vcpus(hyp_vm->vcpus, hyp_vm->kvm.created_vcpus);
 
 	/* Push the metadata pages to the teardown memcache */
@@ -1739,8 +1738,12 @@ bool kvm_handle_pvm_hvc64(struct kvm_vcpu *vcpu, u64 *exit_code)
 		if (smccc_trng_available)
 			return pkvm_forward_trng(vcpu);
 		break;
+	case ARM_SMCCC_VENDOR_HYP_KVM_PVIOMMU_OP_FUNC_ID:
+		return kvm_handle_pviommu_hvc(vcpu, exit_code);
 	case ARM_SMCCC_VENDOR_HYP_KVM_DEV_REQ_MMIO_FUNC_ID:
 		return pkvm_device_request_mmio(hyp_vcpu, exit_code);
+	case ARM_SMCCC_VENDOR_HYP_KVM_DEV_REQ_DMA_FUNC_ID:
+		return pkvm_device_request_dma(hyp_vcpu, exit_code);
 	default:
 		if (is_ffa_call(fn))
 			return kvm_guest_ffa_handler(hyp_vcpu, exit_code);
