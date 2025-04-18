@@ -215,7 +215,7 @@ int kvm_iommu_init(struct kvm_iommu_ops *ops,
 	    !ops->init ||
 	    !ops->alloc_domain ||
 	    !ops->free_domain)
-		return 0;
+		return -ENODEV;
 
 	ret = hyp_pool_init_empty(&iommu_host_pool, 64);
 	if (ret)
@@ -628,6 +628,16 @@ void kvm_iommu_host_stage2_idmap(phys_addr_t start, phys_addr_t end,
 	domain = __handle_to_domain(KVM_IOMMU_DOMAIN_IDMAP_ID, false);
 
 	kvm_iommu_ops->host_stage2_idmap(domain, start, end, pkvm_to_iommu_prot(prot));
+}
+
+void kvm_iommu_host_stage2_idmap_complete(bool map)
+{
+	if (!kvm_iommu_is_ready() ||
+	    !kvm_iommu_ops->host_stage2_idmap_complete)
+		return;
+
+	trace_iommu_idmap_complete(map);
+	kvm_iommu_ops->host_stage2_idmap_complete(map);
 }
 
 static int __snapshot_host_stage2(const struct kvm_pgtable_visit_ctx *ctx,

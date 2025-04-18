@@ -475,7 +475,6 @@
   mbox_free_channel
   mbox_request_channel
   mbox_send_message
-  mem_alloc_profiling_key
   memcpy
   memcpy_and_pad
   __memcpy_fromio
@@ -1764,12 +1763,12 @@
   mipi_dsi_driver_register_full
   mipi_dsi_driver_unregister
 
-# required by pci-pwrctl-core.ko
+# required by pci-pwrctrl-core.ko
   pci_lock_rescan_remove
   pci_rescan_bus
   pci_unlock_rescan_remove
 
-# required by pci-pwrctl-pwrseq.ko
+# required by pci-pwrctrl-pwrseq.ko
   devm_pwrseq_get
   pwrseq_power_off
   pwrseq_power_on

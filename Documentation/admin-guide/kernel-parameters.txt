@@ -2774,6 +2774,10 @@
 			This option only applies when booting with
 			kvm-arm.mode=protected.
 
+	kvm-arm.protected_prefault=
+			[KVM,ARM] Minimum order for each protected VM fault.
+			This range from 0 (default) to 9.
+
 	kvm-arm.vgic_v3_group0_trap=
 			[KVM,ARM,EARLY] Trap guest accesses to GICv3 group-0
 			system registers
@@ -4860,6 +4864,14 @@
 			in order to provide more debug information.
 			Format: <bool>
 			default: 0 (auto_verbose is enabled)
+
+	printk.debug_non_panic_cpus=
+			Allows storing messages from non-panic CPUs into
+			the printk log buffer during panic(). They are
+			flushed to consoles by the panic-CPU on
+			a best-effort basis.
+			Format: <bool> (1/Y/y=enable, 0/N/n=disable)
+			Default: disabled
 
 	printk.devkmsg={on,off,ratelimit}
 			Control writing to /dev/kmsg.
