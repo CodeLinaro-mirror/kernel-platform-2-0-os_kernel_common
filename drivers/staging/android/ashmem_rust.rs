@@ -284,17 +284,16 @@ impl MiscDevice for Ashmem {
 }
 
 impl Ashmem {
-    fn set_name(&self, mut reader: UserSliceReader) -> Result<isize> {
+    fn set_name(&self, reader: UserSliceReader) -> Result<isize> {
         let mut local_name = [0u8; ASHMEM_NAME_LEN];
-        reader.read_slice(&mut local_name)?;
+        let mut len = reader.strncpy_from_user(&mut local_name)?;
 
-        // Find the zero terminator. If the zero terminator is missing, the string is truncated to
-        // `ASHMEM_NAME_LEN-1` so that `get_name` can return it and has enough space to add a zero
-        // terminator.
-        let len = local_name
-            .iter()
-            .position(|&c| c == 0)
-            .unwrap_or(local_name.len() - 1);
+        // If the zero terminator is missing, the string is truncated to `ASHMEM_NAME_LEN-1` so
+        // that `get_name` can return it and has enough space to add a zero terminator.
+        if len == ASHMEM_NAME_LEN {
+            len -= 1;
+            local_name[len] = 0;
+        }
 
         let mut v = KVec::with_capacity(len, GFP_KERNEL)?;
         v.extend_from_slice(&local_name[..len], GFP_KERNEL)?;
@@ -313,13 +312,13 @@ impl Ashmem {
         let name = asma.name.as_deref().unwrap_or(b"dev/ashmem");
         let len = name.len();
         let len_with_nul = len + 1;
-        if local_name.len() <= len_with_nul {
+        if local_name.len() < len_with_nul {
             // This shouldn't happen in practice since `set_name` will refuse to store a string
             // that is too long.
             return Err(EINVAL);
         }
         local_name[..len].copy_from_slice(name);
-        local_name[len_with_nul] = 0;
+        local_name[len] = 0;
         drop(asma);
 
         writer.write_slice(&local_name[..len_with_nul])?;
