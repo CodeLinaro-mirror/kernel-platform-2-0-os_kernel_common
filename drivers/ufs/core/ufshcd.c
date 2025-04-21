@@ -1242,6 +1242,9 @@ static bool ufshcd_is_devfreq_scaling_required(struct ufs_hba *hba,
 	if (list_empty(head))
 		return false;
 
+	if (hba->host->async_scan)
+		return false;
+
 	if (hba->use_pm_opp)
 		return freq != hba->clk_scaling.target_freq;
 
@@ -1598,6 +1601,7 @@ static int ufshcd_devfreq_target(struct device *dev,
 	if (!ufshcd_is_devfreq_scaling_required(hba, *freq, scale_up)) {
 		spin_unlock_irqrestore(hba->host->host_lock, irq_flags);
 		ret = 0;
+
 		goto out; /* no state change required */
 	}
 	spin_unlock_irqrestore(hba->host->host_lock, irq_flags);
@@ -8820,13 +8824,6 @@ static int ufshcd_add_lus(struct ufs_hba *hba)
 			&hba->pwr_info,
 			sizeof(struct ufs_pa_layer_attr));
 		hba->clk_scaling.is_allowed = true;
-
-		ret = ufshcd_devfreq_init(hba);
-		if (ret)
-			goto out;
-
-		hba->clk_scaling.is_enabled = true;
-		ufshcd_init_clk_scaling_sysfs(hba);
 	}
 
 	/*
@@ -9105,6 +9102,12 @@ static void ufshcd_async_scan(void *data, async_cookie_t cookie)
 
 	/* Probe and add UFS logical units  */
 	ret = ufshcd_add_lus(hba);
+
+	/* Initialize devfreq and start devfreq monitor */
+	if(!ufshcd_devfreq_init(hba)) {
+		hba->clk_scaling.is_enabled = true;
+		ufshcd_init_clk_scaling_sysfs(hba);
+	}
 
 out:
 	pm_runtime_put_sync(hba->dev);
