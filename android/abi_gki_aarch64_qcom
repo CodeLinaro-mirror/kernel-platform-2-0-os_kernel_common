@@ -3507,6 +3507,7 @@
   __traceiter_android_vh_ftrace_oops_enter
   __traceiter_android_vh_ftrace_oops_exit
   __traceiter_android_vh_ftrace_size_check
+  __traceiter_android_vh_gic_resume
   __traceiter_android_vh_gic_v3_suspend
   __traceiter_android_vh_hibernate_save_cmp_len
   __traceiter_android_vh_hibernate_state
@@ -3660,6 +3661,7 @@
   __tracepoint_android_vh_ftrace_oops_enter
   __tracepoint_android_vh_ftrace_oops_exit
   __tracepoint_android_vh_ftrace_size_check
+  __tracepoint_android_vh_gic_resume
   __tracepoint_android_vh_gic_v3_suspend
   __tracepoint_android_vh_hibernate_save_cmp_len
   __tracepoint_android_vh_hibernate_state
