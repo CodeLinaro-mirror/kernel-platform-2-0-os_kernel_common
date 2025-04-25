@@ -356851,6 +356851,13 @@ function {
   parameter_id: 0x92233392
 }
 function {
+  id: 0x9bff7f15
+  return_type_id: 0x6720d32f
+  parameter_id: 0x18bd6530
+  parameter_id: 0x16f99983
+  parameter_id: 0x2c8c423d
+}
+function {
   id: 0x9c00c8ec
   return_type_id: 0x6720d32f
   parameter_id: 0x0258f96e
@@ -374973,6 +374980,15 @@ elf_symbol {
   full_name: "__traceiter_android_vh_do_futex"
 }
 elf_symbol {
+  id: 0x707cf8c6
+  name: "__traceiter_android_vh_do_new_mount_fc"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xd1418a00
+  type_id: 0x9bff7f15
+  full_name: "__traceiter_android_vh_do_new_mount_fc"
+}
+elf_symbol {
   id: 0xea6452e1
   name: "__traceiter_android_vh_do_read_fault"
   is_defined: true
@@ -380272,6 +380288,15 @@ elf_symbol {
   crc: 0x7c5aa8a7
   type_id: 0x18ccbd2c
   full_name: "__tracepoint_android_vh_do_futex"
+}
+elf_symbol {
+  id: 0xb75a1654
+  name: "__tracepoint_android_vh_do_new_mount_fc"
+  is_defined: true
+  symbol_type: OBJECT
+  crc: 0x7c5aa8a7
+  type_id: 0x18ccbd2c
+  full_name: "__tracepoint_android_vh_do_new_mount_fc"
 }
 elf_symbol {
   id: 0xff7bbbff
@@ -446156,6 +446181,7 @@ interface {
   symbol_id: 0x94b48bb0
   symbol_id: 0xbcd1a27c
   symbol_id: 0xd593b3ef
+  symbol_id: 0x707cf8c6
   symbol_id: 0xea6452e1
   symbol_id: 0x1cc3aec5
   symbol_id: 0xb12728da
@@ -446745,6 +446771,7 @@ interface {
   symbol_id: 0x30442e2e
   symbol_id: 0x9d32ef5e
   symbol_id: 0x9fe99d05
+  symbol_id: 0xb75a1654
   symbol_id: 0xff7bbbff
   symbol_id: 0x82ce823f
   symbol_id: 0x474d211c
