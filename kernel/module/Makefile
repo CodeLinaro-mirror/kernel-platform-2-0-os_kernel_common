@@ -46,6 +46,9 @@ include/generated/gki_module_unprotected.h: $(ALL_KMI_SYMBOLS) \
 	"$(srctree)" \
 	$(ALL_KMI_SYMBOLS)
 
+# AARCH is the same as ARCH, except that arm64 becomes aarch64
+AARCH := $(if $(filter arm64,$(ARCH)),aarch64,$(ARCH))
+
 # ABI protected exports list file specific to ARCH if exists else empty
 ABI_PROTECTED_EXPORTS_FILE := $(wildcard $(srctree)/gki/$(AARCH)/protected_exports)
 
