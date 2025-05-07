@@ -324697,6 +324697,14 @@ function {
   parameter_id: 0x18bd6530
 }
 function {
+  id: 0x1443bd42
+  return_type_id: 0x48b5725f
+  parameter_id: 0x1344d43c
+  parameter_id: 0x06835e9c
+  parameter_id: 0x4585663f
+  parameter_id: 0x6d7f5ff6
+}
+function {
   id: 0x144455e1
   return_type_id: 0x48b5725f
   parameter_id: 0x172847a8
@@ -422402,6 +422410,15 @@ elf_symbol {
   full_name: "page_pool_put_unrefed_netmem"
 }
 elf_symbol {
+  id: 0xfea44232
+  name: "page_pool_put_unrefed_page"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xaeec7c12
+  type_id: 0x1443bd42
+  full_name: "page_pool_put_unrefed_page"
+}
+elf_symbol {
   id: 0x1b814fa6
   name: "page_reporting_register"
   is_defined: true
@@ -455709,6 +455726,7 @@ interface {
   symbol_id: 0xdc14ff55
   symbol_id: 0x2616989d
   symbol_id: 0x6b23b266
+  symbol_id: 0xfea44232
   symbol_id: 0x1b814fa6
   symbol_id: 0x9ca2e070
   symbol_id: 0x0fe80546
