@@ -1484,6 +1484,7 @@
   default_wake_function
   dev_fwnode
   device_find_child
+  device_find_any_child
   device_move
   drain_workqueue
   fwnode_property_read_u8_array
