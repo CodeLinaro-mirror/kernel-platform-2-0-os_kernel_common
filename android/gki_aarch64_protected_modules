@@ -38,7 +38,6 @@ net/6lowpan/nhc_mobility.ko
 net/6lowpan/nhc_routing.ko
 net/6lowpan/nhc_udp.ko
 net/8021q/8021q.ko
-net/bluetooth/bluetooth.ko
 net/bluetooth/hidp/hidp.ko
 net/bluetooth/rfcomm/rfcomm.ko
 net/can/can.ko
