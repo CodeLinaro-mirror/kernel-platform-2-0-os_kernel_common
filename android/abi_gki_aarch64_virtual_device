@@ -1491,3 +1491,11 @@
   up_read
   up_write
   vzalloc
+
+# required by rfkill.ko
+  add_uevent_var
+  compat_ptr_ioctl
+  led_trigger_event
+  led_trigger_register
+  led_trigger_unregister
+  stream_open
