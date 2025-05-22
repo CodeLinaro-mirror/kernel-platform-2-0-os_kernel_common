@@ -255,7 +255,7 @@ int gh_rm_get_vm_id_info(gh_vmid_t vmid)
 
 		memcpy(info, entry->id_info, entry->id_size);
 
-		pr_debug("%s: idx:%d id_info %s\n", __func__, i, info);
+		pr_debug("%s: idx:%d id_info %s\n", __func__, i, (char *)info);
 		switch (entry->id_type) {
 		case GH_RM_ID_TYPE_GUID:
 			vm_prop.guid = info;
@@ -755,12 +755,12 @@ static int gh_vm_status_nb_handler(struct notifier_block *this,
 		}
 		ret = gh_rm_get_vminfo(vm_name, &vm_info);
 		if (ret < 0)
-			pr_err("Failed to get vminfo of vmname = %s\n", vm_name);
+			pr_err("Failed to get vminfo of vmname = %u\n", vm_name);
 		ret = gh_rm_populate_hyp_res(vm_status_payload->vmid,
 					     vm_info.name);
 		if (ret < 0) {
 			pr_err("Failed to get hyp resources for vmid = %d vmname = %s ret = %d\n",
-			       vm_status_payload->vmid, vm_name, ret);
+			       vm_status_payload->vmid, (char *)vm_name, ret);
 			return NOTIFY_DONE;
 		}
 		break;

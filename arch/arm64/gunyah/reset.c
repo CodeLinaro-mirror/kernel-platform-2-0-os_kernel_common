@@ -26,7 +26,7 @@ int gh_arch_validate_vm_exited_notif(size_t payload_size,
 	case GH_RM_VM_EXIT_TYPE_PSCI_SYSTEM_RESET2:
 		if (payload_size !=
 		    sizeof(*vm_exited_payload) + sizeof(struct gh_vm_exit_reason_psci_sys_reset2)) {
-			pr_err("%s: Invalid size for type PSCI_SYSTEM_RESET2: %u\n",
+			pr_err("%s: Invalid size for type PSCI_SYSTEM_RESET2: %lu\n",
 			__func__, payload_size);
 			return -EINVAL;
 		}
