@@ -893,15 +893,13 @@ static int sve_set_common(struct task_struct *target,
 	unsigned long start, end;
 	bool fpsimd;
 
-	fpsimd_flush_task_state(target);
-
 	/* Header */
 	if (count < sizeof(header))
 		return -EINVAL;
 	ret = user_regset_copyin(&pos, &count, &kbuf, &ubuf, &header,
 				 0, sizeof(header));
 	if (ret)
-		return ret;
+		goto out;
 
 	/*
 	 * Streaming SVE data is always stored and presented in SVE format.
@@ -919,21 +917,7 @@ static int sve_set_common(struct task_struct *target,
 	ret = vec_set_vector_length(target, type, header.vl,
 		((unsigned long)header.flags & ~SVE_PT_REGS_MASK) << 16);
 	if (ret)
-		return ret;
-
-	/* Allocate SME storage if necessary, preserving any existing ZA/ZT state */
-	if (type == ARM64_VEC_SME) {
-		sme_alloc(target, false);
-		if (!target->thread.sme_state)
-			return -ENOMEM;
-	}
-
-	/* Allocate SVE storage if necessary, zeroing any existing SVE state */
-	if (!fpsimd) {
-		sve_alloc(target, true);
-		if (!target->thread.sve_state)
-			return -ENOMEM;
-	}
+		goto out;
 
 	/* Actual VL set may be less than the user asked for: */
 	vq = sve_vq_from_vl(task_get_vl(target, type));
@@ -943,15 +927,21 @@ static int sve_set_common(struct task_struct *target,
 		switch (type) {
 		case ARM64_VEC_SVE:
 			target->thread.svcr &= ~SVCR_SM_MASK;
-			set_tsk_thread_flag(target, TIF_SVE);
 			break;
 		case ARM64_VEC_SME:
 			target->thread.svcr |= SVCR_SM_MASK;
+
+			/*
+			 * Disable traps and ensure there is SME storage but
+			 * preserve any currently set values in ZA/ZT.
+			 */
+			sme_alloc(target, false);
 			set_tsk_thread_flag(target, TIF_SME);
 			break;
 		default:
 			WARN_ON_ONCE(1);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 	}
 
@@ -967,20 +957,37 @@ static int sve_set_common(struct task_struct *target,
 		target->thread.fp_type = FP_STATE_FPSIMD;
 		ret = __fpr_set(target, regset, pos, count, kbuf, ubuf,
 				SVE_PT_FPSIMD_OFFSET);
-		return ret;
+		goto out;
 	}
 
 	/* Otherwise: no registers or full SVE case. */
-
-	target->thread.fp_type = FP_STATE_SVE;
 
 	/*
 	 * If setting a different VL from the requested VL and there is
 	 * register data, the data layout will be wrong: don't even
 	 * try to set the registers in this case.
 	 */
-	if (count && vq != sve_vq_from_vl(header.vl))
-		return -EIO;
+	if (count && vq != sve_vq_from_vl(header.vl)) {
+		ret = -EIO;
+		goto out;
+	}
+
+	/* Always zero SVE state */
+	sve_alloc(target, true);
+	if (!target->thread.sve_state) {
+		ret = -ENOMEM;
+		clear_tsk_thread_flag(target, TIF_SVE);
+		target->thread.fp_type = FP_STATE_FPSIMD;
+		goto out;
+	}
+
+	/*
+	 * Only enable SVE if we are configuring normal SVE, a system with
+	 * streaming SVE may not have normal SVE.
+	 */
+	if (type == ARM64_VEC_SVE)
+		set_tsk_thread_flag(target, TIF_SVE);
+	target->thread.fp_type = FP_STATE_SVE;
 
 	BUILD_BUG_ON(SVE_PT_SVE_OFFSET != sizeof(header));
 	start = SVE_PT_SVE_OFFSET;
@@ -989,7 +996,7 @@ static int sve_set_common(struct task_struct *target,
 				 target->thread.sve_state,
 				 start, end);
 	if (ret)
-		return ret;
+		goto out;
 
 	start = end;
 	end = SVE_PT_SVE_FPSR_OFFSET(vq);
@@ -1005,6 +1012,8 @@ static int sve_set_common(struct task_struct *target,
 				 &target->thread.uw.fpsimd_state.fpsr,
 				 start, end);
 
+out:
+	fpsimd_flush_task_state(target);
 	return ret;
 }
 
