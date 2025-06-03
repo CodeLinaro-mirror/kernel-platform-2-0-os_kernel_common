@@ -376,27 +376,7 @@ static inline void __hyp_sve_save_host(void)
 			 true);
 }
 
-static void kvm_hyp_save_fpsimd_host(struct kvm_vcpu *vcpu)
-{
-	/*
-	 * Non-protected kvm relies on the host restoring its sve state.
-	 * Protected kvm restores the host's sve state as not to reveal that
-	 * fpsimd was used by a guest nor leak upper sve bits.
-	 */
-	if (system_supports_sve()) {
-		__hyp_sve_save_host();
-
-		/* Re-enable SVE traps if not supported for the guest vcpu. */
-		if (!vcpu_has_sve(vcpu))
-			cpacr_clear_set(CPACR_ELx_ZEN, 0);
-
-	} else {
-		__fpsimd_save_state(host_data_ptr(host_ctxt.fp_regs));
-	}
-
-	if (kvm_has_fpmr(kern_hyp_va(vcpu->kvm)))
-		*host_data_ptr(fpmr) = read_sysreg_s(SYS_FPMR);
-}
+static void kvm_hyp_save_fpsimd_host(struct kvm_vcpu *vcpu);
 
 /*
  * We trap the first access to the FP/SIMD to save the host context and
@@ -446,7 +426,7 @@ static bool kvm_hyp_handle_fpsimd(struct kvm_vcpu *vcpu, u64 *exit_code)
 	isb();
 
 	/* Write out the host state if it's in the registers */
-	if (is_protected_kvm_enabled() && host_owns_fp_regs())
+	if (host_owns_fp_regs())
 		kvm_hyp_save_fpsimd_host(vcpu);
 
 	/* Restore the guest state */
@@ -666,16 +646,23 @@ static bool kvm_hyp_handle_dabt_low(struct kvm_vcpu *vcpu, u64 *exit_code)
 
 typedef bool (*exit_handler_fn)(struct kvm_vcpu *, u64 *);
 
+static const exit_handler_fn *kvm_get_exit_handler_array(struct kvm_vcpu *vcpu);
+
+static void early_exit_filter(struct kvm_vcpu *vcpu, u64 *exit_code);
+
 /*
  * Allow the hypervisor to handle the exit with an exit handler if it has one.
  *
  * Returns true if the hypervisor handled the exit, and control should go back
  * to the guest, or false if it hasn't.
  */
-static inline bool kvm_hyp_handle_exit(struct kvm_vcpu *vcpu, u64 *exit_code,
-				       const exit_handler_fn *handlers)
+static inline bool kvm_hyp_handle_exit(struct kvm_vcpu *vcpu, u64 *exit_code)
 {
-	exit_handler_fn fn = handlers[kvm_vcpu_trap_get_class(vcpu)];
+	const exit_handler_fn *handlers = kvm_get_exit_handler_array(vcpu);
+	exit_handler_fn fn;
+
+	fn = handlers[kvm_vcpu_trap_get_class(vcpu)];
+
 	if (fn)
 		return fn(vcpu, exit_code);
 
@@ -705,9 +692,20 @@ static inline void synchronize_vcpu_pstate(struct kvm_vcpu *vcpu, u64 *exit_code
  * the guest, false when we should restore the host state and return to the
  * main run loop.
  */
-static inline bool __fixup_guest_exit(struct kvm_vcpu *vcpu, u64 *exit_code,
-				      const exit_handler_fn *handlers)
+static inline bool fixup_guest_exit(struct kvm_vcpu *vcpu, u64 *exit_code)
 {
+	/*
+	 * Save PSTATE early so that we can evaluate the vcpu mode
+	 * early on.
+	 */
+	synchronize_vcpu_pstate(vcpu, exit_code);
+
+	/*
+	 * Check whether we want to repaint the state one way or
+	 * another.
+	 */
+	early_exit_filter(vcpu, exit_code);
+
 	if (ARM_EXCEPTION_CODE(*exit_code) != ARM_EXCEPTION_IRQ)
 		vcpu->arch.fault.esr_el2 = read_sysreg_el2(SYS_ESR);
 
@@ -737,7 +735,7 @@ static inline bool __fixup_guest_exit(struct kvm_vcpu *vcpu, u64 *exit_code,
 		goto exit;
 
 	/* Check if there's an exit handler and allow it to handle the exit. */
-	if (kvm_hyp_handle_exit(vcpu, exit_code, handlers))
+	if (kvm_hyp_handle_exit(vcpu, exit_code))
 		goto guest;
 exit:
 	/* Return to the host kernel and handle the exit */
