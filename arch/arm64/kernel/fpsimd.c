@@ -359,6 +359,9 @@ static void task_fpsimd_load(void)
 	WARN_ON(preemptible());
 	WARN_ON(test_thread_flag(TIF_KERNEL_FPSTATE));
 
+	if (system_supports_fpmr())
+		write_sysreg_s(current->thread.uw.fpmr, SYS_FPMR);
+
 	if (system_supports_sve() || system_supports_sme()) {
 		switch (current->thread.fp_type) {
 		case FP_STATE_FPSIMD:
@@ -407,9 +410,6 @@ static void task_fpsimd_load(void)
 		if (thread_sm_enabled(&current->thread))
 			restore_ffr = system_supports_fa64();
 	}
-
-	if (system_supports_fpmr())
-		write_sysreg_s(current->thread.uw.fpmr, SYS_FPMR);
 
 	if (restore_sve_regs) {
 		WARN_ON_ONCE(current->thread.fp_type != FP_STATE_SVE);
@@ -868,10 +868,19 @@ int vec_set_vector_length(struct task_struct *task, enum vec_type type,
 		task->thread.fp_type = FP_STATE_FPSIMD;
 	}
 
-	if (system_supports_sme() && type == ARM64_VEC_SME) {
-		task->thread.svcr &= ~(SVCR_SM_MASK | SVCR_ZA_MASK);
-		clear_tsk_thread_flag(task, TIF_SME);
-		free_sme = true;
+	if (system_supports_sme()) {
+		if (type == ARM64_VEC_SME ||
+		    !(task->thread.svcr & (SVCR_SM_MASK | SVCR_ZA_MASK))) {
+			/*
+			 * We are changing the SME VL or weren't using
+			 * SME anyway, discard the state and force a
+			 * reallocation.
+			 */
+			task->thread.svcr &= ~(SVCR_SM_MASK |
+					       SVCR_ZA_MASK);
+			clear_tsk_thread_flag(task, TIF_SME);
+			free_sme = true;
+		}
 	}
 
 	if (task == current)
@@ -1435,8 +1444,6 @@ void do_sme_acc(unsigned long esr, struct pt_regs *regs)
 		sme_set_vq(vq_minus_one);
 
 		fpsimd_bind_task_to_cpu();
-	} else {
-		fpsimd_flush_task_state(current);
 	}
 
 	put_cpu_fpsimd_context();
@@ -1550,8 +1557,8 @@ void fpsimd_thread_switch(struct task_struct *next)
 		fpsimd_save_user_state();
 
 	if (test_tsk_thread_flag(next, TIF_KERNEL_FPSTATE)) {
-		fpsimd_flush_cpu_state();
 		fpsimd_load_kernel_state(next);
+		fpsimd_flush_cpu_state();
 	} else {
 		/*
 		 * Fix up TIF_FOREIGN_FPSTATE to correctly describe next's
@@ -1637,9 +1644,6 @@ void fpsimd_flush_thread(void)
 		fpsimd_flush_thread_vl(ARM64_VEC_SME);
 		current->thread.svcr = 0;
 	}
-
-	if (system_supports_fpmr())
-		current->thread.uw.fpmr = 0;
 
 	current->thread.fp_type = FP_STATE_FPSIMD;
 
@@ -1781,7 +1785,7 @@ void fpsimd_update_current_state(struct user_fpsimd_state const *state)
 	get_cpu_fpsimd_context();
 
 	current->thread.uw.fpsimd_state = *state;
-	if (current->thread.fp_type == FP_STATE_SVE)
+	if (test_thread_flag(TIF_SVE))
 		fpsimd_to_sve(current);
 
 	task_fpsimd_load();
@@ -1817,17 +1821,6 @@ void fpsimd_flush_task_state(struct task_struct *t)
 	set_tsk_thread_flag(t, TIF_FOREIGN_FPSTATE);
 
 	barrier();
-}
-
-void fpsimd_save_and_flush_current_state(void)
-{
-	if (!system_supports_fpsimd())
-		return;
-
-	get_cpu_fpsimd_context();
-	fpsimd_save_user_state();
-	fpsimd_flush_task_state(current);
-	put_cpu_fpsimd_context();
 }
 
 /*
