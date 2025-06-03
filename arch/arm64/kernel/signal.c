@@ -264,40 +264,30 @@ static int preserve_fpsimd_context(struct fpsimd_context __user *ctx)
 	return err ? -EFAULT : 0;
 }
 
-static int read_fpsimd_context(struct user_fpsimd_state *fpsimd,
-			       struct user_ctxs *user)
+static int restore_fpsimd_context(struct user_ctxs *user)
 {
-	int err;
+	struct user_fpsimd_state fpsimd;
+	int err = 0;
 
 	/* check the size information */
 	if (user->fpsimd_size != sizeof(struct fpsimd_context))
 		return -EINVAL;
 
 	/* copy the FP and status/control registers */
-	err = __copy_from_user(fpsimd->vregs, &(user->fpsimd->vregs),
-			       sizeof(fpsimd->vregs));
-	__get_user_error(fpsimd->fpsr, &(user->fpsimd->fpsr), err);
-	__get_user_error(fpsimd->fpcr, &(user->fpsimd->fpcr), err);
-
-	return err ? -EFAULT : 0;
-}
-
-static int restore_fpsimd_context(struct user_ctxs *user)
-{
-	struct user_fpsimd_state fpsimd;
-	int err;
-
-	err = read_fpsimd_context(&fpsimd, user);
-	if (err)
-		return err;
+	err = __copy_from_user(fpsimd.vregs, &(user->fpsimd->vregs),
+			       sizeof(fpsimd.vregs));
+	__get_user_error(fpsimd.fpsr, &(user->fpsimd->fpsr), err);
+	__get_user_error(fpsimd.fpcr, &(user->fpsimd->fpcr), err);
 
 	clear_thread_flag(TIF_SVE);
 	current->thread.svcr &= ~SVCR_SM_MASK;
 	current->thread.fp_type = FP_STATE_FPSIMD;
 
 	/* load the hardware registers from the fpsimd_state structure */
-	fpsimd_update_current_state(&fpsimd);
-	return 0;
+	if (!err)
+		fpsimd_update_current_state(&fpsimd);
+
+	return err ? -EFAULT : 0;
 }
 
 static int preserve_fpmr_context(struct fpmr_context __user *ctx)
@@ -437,8 +427,12 @@ static int restore_sve_fpsimd_context(struct user_ctxs *user)
 	 * consistency and robustness, reject restoring streaming SVE state
 	 * without an SVE payload.
 	 */
-	if (!sm && user->sve_size == sizeof(*user->sve))
-		return restore_fpsimd_context(user);
+	if (!sm && user->sve_size == sizeof(*user->sve)) {
+		clear_thread_flag(TIF_SVE);
+		current->thread.svcr &= ~SVCR_SM_MASK;
+		current->thread.fp_type = FP_STATE_FPSIMD;
+		goto fpsimd_only;
+	}
 
 	vq = sve_vq_from_vl(vl);
 
@@ -464,14 +458,19 @@ static int restore_sve_fpsimd_context(struct user_ctxs *user)
 		set_thread_flag(TIF_SVE);
 	current->thread.fp_type = FP_STATE_SVE;
 
-	err = read_fpsimd_context(&fpsimd, user);
-	if (err)
-		return err;
+fpsimd_only:
+	/* copy the FP and status/control registers */
+	/* restore_sigframe() already checked that user->fpsimd != NULL. */
+	err = __copy_from_user(fpsimd.vregs, user->fpsimd->vregs,
+			       sizeof(fpsimd.vregs));
+	__get_user_error(fpsimd.fpsr, &user->fpsimd->fpsr, err);
+	__get_user_error(fpsimd.fpcr, &user->fpsimd->fpcr, err);
 
-	/* Merge the FPSIMD registers into the SVE state */
-	fpsimd_update_current_state(&fpsimd);
+	/* load the hardware registers from the fpsimd_state structure */
+	if (!err)
+		fpsimd_update_current_state(&fpsimd);
 
-	return 0;
+	return err ? -EFAULT : 0;
 }
 
 #else /* ! CONFIG_ARM64_SVE */
