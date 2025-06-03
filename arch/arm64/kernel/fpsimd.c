@@ -366,11 +366,13 @@ static void task_fpsimd_load(void)
 		switch (current->thread.fp_type) {
 		case FP_STATE_FPSIMD:
 			/* Stop tracking SVE for this task until next use. */
-			clear_thread_flag(TIF_SVE);
+			if (test_and_clear_thread_flag(TIF_SVE))
+				sve_user_disable();
 			break;
 		case FP_STATE_SVE:
-			if (!thread_sm_enabled(&current->thread))
-				WARN_ON_ONCE(!test_and_set_thread_flag(TIF_SVE));
+			if (!thread_sm_enabled(&current->thread) &&
+			    !WARN_ON_ONCE(!test_and_set_thread_flag(TIF_SVE)))
+				sve_user_enable();
 
 			if (test_thread_flag(TIF_SVE))
 				sve_set_vq(sve_vq_from_vl(task_get_sve_vl(current)) - 1);
@@ -754,6 +756,20 @@ void sve_alloc(struct task_struct *task, bool flush)
 	/* This is a small allocation (maximum ~8KB) and Should Not Fail. */
 	task->thread.sve_state =
 		kzalloc(sve_state_size(task), GFP_KERNEL);
+}
+
+
+/*
+ * Force the FPSIMD state shared with SVE to be updated in the SVE state
+ * even if the SVE state is the current active state.
+ *
+ * This should only be called by ptrace.  task must be non-runnable.
+ * task->thread.sve_state must point to at least sve_state_size(task)
+ * bytes of allocated kernel memory.
+ */
+void fpsimd_force_sync_to_sve(struct task_struct *task)
+{
+	fpsimd_to_sve(task);
 }
 
 /*
@@ -1420,7 +1436,7 @@ void do_sme_acc(unsigned long esr, struct pt_regs *regs)
 	 * If this not a trap due to SME being disabled then something
 	 * is being used in the wrong mode, report as SIGILL.
 	 */
-	if (ESR_ELx_SME_ISS_SMTC(esr) != ESR_ELx_SME_ISS_SMTC_SME_DISABLED) {
+	if (ESR_ELx_ISS(esr) != ESR_ELx_SME_ISS_SME_DISABLED) {
 		force_signal_inject(SIGILL, ILL_ILLOPC, regs->pc, 0);
 		return;
 	}
