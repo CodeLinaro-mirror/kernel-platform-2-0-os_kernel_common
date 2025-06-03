@@ -595,7 +595,7 @@ static int __fpr_get(struct task_struct *target,
 {
 	struct user_fpsimd_state *uregs;
 
-	fpsimd_sync_from_effective_state(target);
+	sve_sync_to_fpsimd(target);
 
 	uregs = &target->thread.uw.fpsimd_state;
 
@@ -627,7 +627,7 @@ static int __fpr_set(struct task_struct *target,
 	 * Ensure target->thread.uw.fpsimd_state is up to date, so that a
 	 * short copyin can't resurrect stale data.
 	 */
-	fpsimd_sync_from_effective_state(target);
+	sve_sync_to_fpsimd(target);
 
 	newstate = target->thread.uw.fpsimd_state;
 
@@ -654,7 +654,7 @@ static int fpr_set(struct task_struct *target, const struct user_regset *regset,
 	if (ret)
 		return ret;
 
-	fpsimd_sync_to_effective_state_zeropad(target);
+	sve_sync_from_fpsimd_zeropad(target);
 	fpsimd_flush_task_state(target);
 
 	return ret;
@@ -907,6 +907,8 @@ static int sve_set_common(struct task_struct *target,
 
 	/* Enter/exit streaming mode */
 	if (system_supports_sme()) {
+		u64 old_svcr = target->thread.svcr;
+
 		switch (type) {
 		case ARM64_VEC_SVE:
 			target->thread.svcr &= ~SVCR_SM_MASK;
@@ -926,20 +928,23 @@ static int sve_set_common(struct task_struct *target,
 			ret = -EINVAL;
 			goto out;
 		}
-	}
 
-	/* Always zero V regs, FPSR, and FPCR */
-	memset(&current->thread.uw.fpsimd_state, 0,
-	       sizeof(current->thread.uw.fpsimd_state));
+		/*
+		 * If we switched then invalidate any existing SVE
+		 * state and ensure there's storage.
+		 */
+		if (target->thread.svcr != old_svcr)
+			sve_alloc(target, true);
+	}
 
 	/* Registers: FPSIMD-only case */
 
 	BUILD_BUG_ON(SVE_PT_FPSIMD_OFFSET != sizeof(header));
 	if ((header.flags & SVE_PT_REGS_MASK) == SVE_PT_REGS_FPSIMD) {
-		clear_tsk_thread_flag(target, TIF_SVE);
-		target->thread.fp_type = FP_STATE_FPSIMD;
 		ret = __fpr_set(target, regset, pos, count, kbuf, ubuf,
 				SVE_PT_FPSIMD_OFFSET);
+		clear_tsk_thread_flag(target, TIF_SVE);
+		target->thread.fp_type = FP_STATE_FPSIMD;
 		goto out;
 	}
 
@@ -958,7 +963,6 @@ static int sve_set_common(struct task_struct *target,
 		goto out;
 	}
 
-	/* Always zero SVE state */
 	sve_alloc(target, true);
 	if (!target->thread.sve_state) {
 		ret = -ENOMEM;
@@ -968,9 +972,13 @@ static int sve_set_common(struct task_struct *target,
 	}
 
 	/*
-	 * Only enable SVE if we are configuring normal SVE, a system with
-	 * streaming SVE may not have normal SVE.
+	 * Ensure target->thread.sve_state is up to date with target's
+	 * FPSIMD regs, so that a short copyin leaves trailing
+	 * registers unmodified.  Only enable SVE if we are
+	 * configuring normal SVE, a system with streaming SVE may not
+	 * have normal SVE.
 	 */
+	fpsimd_sync_to_sve(target);
 	if (type == ARM64_VEC_SVE)
 		set_tsk_thread_flag(target, TIF_SVE);
 	target->thread.fp_type = FP_STATE_SVE;

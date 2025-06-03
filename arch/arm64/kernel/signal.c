@@ -250,7 +250,7 @@ static int preserve_fpsimd_context(struct fpsimd_context __user *ctx)
 		&current->thread.uw.fpsimd_state;
 	int err;
 
-	fpsimd_sync_from_effective_state(current);
+	sve_sync_to_fpsimd(current);
 
 	/* copy the FP and status/control registers */
 	err = __copy_to_user(ctx->vregs, fpsimd->vregs, sizeof(fpsimd->vregs));
@@ -264,40 +264,29 @@ static int preserve_fpsimd_context(struct fpsimd_context __user *ctx)
 	return err ? -EFAULT : 0;
 }
 
-static int read_fpsimd_context(struct user_fpsimd_state *fpsimd,
-			       struct user_ctxs *user)
+static int restore_fpsimd_context(struct user_ctxs *user)
 {
-	int err;
+	struct user_fpsimd_state fpsimd;
+	int err = 0;
 
 	/* check the size information */
 	if (user->fpsimd_size != sizeof(struct fpsimd_context))
 		return -EINVAL;
 
 	/* copy the FP and status/control registers */
-	err = __copy_from_user(fpsimd->vregs, &(user->fpsimd->vregs),
-			       sizeof(fpsimd->vregs));
-	__get_user_error(fpsimd->fpsr, &(user->fpsimd->fpsr), err);
-	__get_user_error(fpsimd->fpcr, &(user->fpsimd->fpcr), err);
-
-	return err ? -EFAULT : 0;
-}
-
-static int restore_fpsimd_context(struct user_ctxs *user)
-{
-	struct user_fpsimd_state fpsimd;
-	int err;
-
-	err = read_fpsimd_context(&fpsimd, user);
-	if (err)
-		return err;
+	err = __copy_from_user(fpsimd.vregs, &(user->fpsimd->vregs),
+			       sizeof(fpsimd.vregs));
+	__get_user_error(fpsimd.fpsr, &(user->fpsimd->fpsr), err);
+	__get_user_error(fpsimd.fpcr, &(user->fpsimd->fpcr), err);
 
 	clear_thread_flag(TIF_SVE);
-	current->thread.svcr &= ~SVCR_SM_MASK;
 	current->thread.fp_type = FP_STATE_FPSIMD;
 
 	/* load the hardware registers from the fpsimd_state structure */
-	fpsimd_update_current_state(&fpsimd);
-	return 0;
+	if (!err)
+		fpsimd_update_current_state(&fpsimd);
+
+	return err ? -EFAULT : 0;
 }
 
 static int preserve_fpmr_context(struct fpmr_context __user *ctx)
@@ -397,7 +386,6 @@ static int restore_sve_fpsimd_context(struct user_ctxs *user)
 	unsigned int vl, vq;
 	struct user_fpsimd_state fpsimd;
 	u16 user_vl, flags;
-	bool sm;
 
 	if (user->sve_size < sizeof(*user->sve))
 		return -EINVAL;
@@ -407,8 +395,7 @@ static int restore_sve_fpsimd_context(struct user_ctxs *user)
 	if (err)
 		return err;
 
-	sm = flags & SVE_SIG_FLAG_SM;
-	if (sm) {
+	if (flags & SVE_SIG_FLAG_SM) {
 		if (!system_supports_sme())
 			return -EINVAL;
 
@@ -428,17 +415,12 @@ static int restore_sve_fpsimd_context(struct user_ctxs *user)
 	if (user_vl != vl)
 		return -EINVAL;
 
-	/*
-	 * Non-streaming SVE state may be preserved without an SVE payload, in
-	 * which case the SVE context only has a header with VL==0, and all
-	 * state can be restored from the FPSIMD context.
-	 *
-	 * Streaming SVE state is always preserved with an SVE payload. For
-	 * consistency and robustness, reject restoring streaming SVE state
-	 * without an SVE payload.
-	 */
-	if (!sm && user->sve_size == sizeof(*user->sve))
-		return restore_fpsimd_context(user);
+	if (user->sve_size == sizeof(*user->sve)) {
+		clear_thread_flag(TIF_SVE);
+		current->thread.svcr &= ~SVCR_SM_MASK;
+		current->thread.fp_type = FP_STATE_FPSIMD;
+		goto fpsimd_only;
+	}
 
 	vq = sve_vq_from_vl(vl);
 
@@ -464,14 +446,19 @@ static int restore_sve_fpsimd_context(struct user_ctxs *user)
 		set_thread_flag(TIF_SVE);
 	current->thread.fp_type = FP_STATE_SVE;
 
-	err = read_fpsimd_context(&fpsimd, user);
-	if (err)
-		return err;
+fpsimd_only:
+	/* copy the FP and status/control registers */
+	/* restore_sigframe() already checked that user->fpsimd != NULL. */
+	err = __copy_from_user(fpsimd.vregs, user->fpsimd->vregs,
+			       sizeof(fpsimd.vregs));
+	__get_user_error(fpsimd.fpsr, &user->fpsimd->fpsr, err);
+	__get_user_error(fpsimd.fpcr, &user->fpsimd->fpcr, err);
 
-	/* Merge the FPSIMD registers into the SVE state */
-	fpsimd_update_current_state(&fpsimd);
+	/* load the hardware registers from the fpsimd_state structure */
+	if (!err)
+		fpsimd_update_current_state(&fpsimd);
 
-	return 0;
+	return err ? -EFAULT : 0;
 }
 
 #else /* ! CONFIG_ARM64_SVE */
@@ -1249,8 +1236,22 @@ static void setup_return(struct pt_regs *regs, struct k_sigaction *ka,
 
 	/* Signal handlers are invoked with ZA and streaming mode disabled */
 	if (system_supports_sme()) {
-		task_smstop_sm(current);
-		current->thread.svcr &= ~SVCR_ZA_MASK;
+		/*
+		 * If we were in streaming mode the saved register
+		 * state was SVE but we will exit SM and use the
+		 * FPSIMD register state.
+		 *
+		 * TODO: decide if this should behave as SMSTOP (e.g. reset
+		 * FPSR + FPMR), or whether this should only clear the scalable
+		 * registers + ZA state.
+		 */
+		if (current->thread.svcr & SVCR_SM_MASK) {
+			memset(&current->thread.uw.fpsimd_state, 0,
+			       sizeof(current->thread.uw.fpsimd_state));
+			current->thread.fp_type = FP_STATE_FPSIMD;
+		}
+
+		current->thread.svcr &= ~(SVCR_ZA_MASK | SVCR_SM_MASK);
 		write_sysreg_s(0, SYS_TPIDR2_EL0);
 	}
 

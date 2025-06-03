@@ -6,7 +6,6 @@
 #define __ASM_FP_H
 
 #include <asm/errno.h>
-#include <asm/percpu.h>
 #include <asm/ptrace.h>
 #include <asm/processor.h>
 #include <asm/sigcontext.h>
@@ -94,8 +93,6 @@ struct cpu_fp_state {
 	enum fp_type to_save;
 };
 
-DECLARE_PER_CPU(struct cpu_fp_state, fpsimd_last_state);
-
 extern void fpsimd_bind_state_to_cpu(struct cpu_fp_state *fp_state);
 
 extern void fpsimd_flush_task_state(struct task_struct *target);
@@ -111,8 +108,6 @@ static inline bool thread_za_enabled(struct thread_struct *thread)
 {
 	return system_supports_sme() && (thread->svcr & SVCR_ZA_MASK);
 }
-
-extern void task_smstop_sm(struct task_struct *task);
 
 /* Maximum VL that SVE/SME VL-agnostic software can transparently support */
 #define VL_ARCH_MAX 0x100
@@ -201,8 +196,9 @@ struct vl_info {
 
 extern void sve_alloc(struct task_struct *task, bool flush);
 extern void fpsimd_release_task(struct task_struct *task);
-extern void fpsimd_sync_from_effective_state(struct task_struct *task);
-extern void fpsimd_sync_to_effective_state_zeropad(struct task_struct *task);
+extern void fpsimd_sync_to_sve(struct task_struct *task);
+extern void sve_sync_to_fpsimd(struct task_struct *task);
+extern void sve_sync_from_fpsimd_zeropad(struct task_struct *task);
 
 extern int vec_set_vector_length(struct task_struct *task, enum vec_type type,
 				 unsigned long vl, unsigned long flags);
@@ -296,29 +292,14 @@ static inline bool sve_vq_available(unsigned int vq)
 	return vq_available(ARM64_VEC_SVE, vq);
 }
 
-static inline size_t __sve_state_size(unsigned int sve_vl, unsigned int sme_vl)
-{
-	unsigned int vl = max(sve_vl, sme_vl);
-	return SVE_SIG_REGS_SIZE(sve_vq_from_vl(vl));
-}
-
-/*
- * Return how many bytes of memory are required to store the full SVE
- * state for task, given task's currently configured vector length.
- */
-static inline size_t sve_state_size(struct task_struct const *task)
-{
-	unsigned int sve_vl = task_get_sve_vl(task);
-	unsigned int sme_vl = task_get_sme_vl(task);
-	return __sve_state_size(sve_vl, sme_vl);
-}
+size_t sve_state_size(struct task_struct const *task);
 
 #else /* ! CONFIG_ARM64_SVE */
 
 static inline void sve_alloc(struct task_struct *task, bool flush) { }
 static inline void fpsimd_release_task(struct task_struct *task) { }
-static inline void fpsimd_sync_from_effective_state(struct task_struct *task) { }
-static inline void fpsimd_sync_to_effective_state_zeropad(struct task_struct *task) { }
+static inline void sve_sync_to_fpsimd(struct task_struct *task) { }
+static inline void sve_sync_from_fpsimd_zeropad(struct task_struct *task) { }
 
 static inline int sve_max_virtualisable_vl(void)
 {
@@ -351,11 +332,6 @@ static inline void vec_init_vq_map(enum vec_type t) { }
 static inline void vec_update_vq_map(enum vec_type t) { }
 static inline int vec_verify_vq_map(enum vec_type t) { return 0; }
 static inline void sve_setup(void) { }
-
-static inline size_t __sve_state_size(unsigned int sve_vl, unsigned int sme_vl)
-{
-	return 0;
-}
 
 static inline size_t sve_state_size(struct task_struct const *task)
 {
@@ -409,16 +385,6 @@ extern int sme_set_current_vl(unsigned long arg);
 extern int sme_get_current_vl(void);
 extern void sme_suspend_exit(void);
 
-static inline size_t __sme_state_size(unsigned int sme_vl)
-{
-	size_t size = ZA_SIG_REGS_SIZE(sve_vq_from_vl(sme_vl));
-
-	if (system_supports_sme2())
-		size += ZT_SIG_REG_SIZE;
-
-	return size;
-}
-
 /*
  * Return how many bytes of memory are required to store the full SME
  * specific state for task, given task's currently configured vector
@@ -426,7 +392,15 @@ static inline size_t __sme_state_size(unsigned int sme_vl)
  */
 static inline size_t sme_state_size(struct task_struct const *task)
 {
-	return __sme_state_size(task_get_sme_vl(task));
+	unsigned int vl = task_get_sme_vl(task);
+	size_t size;
+
+	size = ZA_SIG_REGS_SIZE(sve_vq_from_vl(vl));
+
+	if (system_supports_sme2())
+		size += ZT_SIG_REG_SIZE;
+
+	return size;
 }
 
 #else
@@ -446,11 +420,6 @@ static inline int sme_max_virtualisable_vl(void) { return 0; }
 static inline int sme_set_current_vl(unsigned long arg) { return -EINVAL; }
 static inline int sme_get_current_vl(void) { return -EINVAL; }
 static inline void sme_suspend_exit(void) { }
-
-static inline size_t __sme_state_size(unsigned int sme_vl)
-{
-	return 0;
-}
 
 static inline size_t sme_state_size(struct task_struct const *task)
 {
