@@ -274,7 +274,7 @@ int kvm_iommu_init(struct kvm_iommu_ops *ops,
 	    !ops->alloc_domain ||
 	    !ops->free_domain ||
 	    !ops->get_iommu_by_id)
-		return 0;
+		return -ENODEV;
 
 	ret = hyp_pool_init_empty(&iommu_host_pool, 64);
 	if (ret)
@@ -609,7 +609,7 @@ bool kvm_iommu_host_dabt_handler(struct kvm_cpu_context *host_ctxt, u64 esr, u64
 	bool ret = false;
 
 	if (kvm_iommu_ops && kvm_iommu_ops->dabt_handler)
-		ret = kvm_iommu_ops->dabt_handler(host_ctxt, esr, addr);
+		ret = kvm_iommu_ops->dabt_handler(&host_ctxt->regs, esr, addr);
 
 	if (ret)
 		kvm_skip_host_instr();
