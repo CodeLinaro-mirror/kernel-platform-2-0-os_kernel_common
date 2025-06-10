@@ -534,7 +534,8 @@ int pkvm_pgtable_stage2_relax_perms(struct kvm_pgtable *pgt, u64 addr, enum kvm_
 				    enum kvm_pgtable_walk_flags flags);
 kvm_pte_t pkvm_pgtable_stage2_mkyoung(struct kvm_pgtable *pgt, u64 addr,
 				      enum kvm_pgtable_walk_flags flags);
-int pkvm_pgtable_stage2_split(struct kvm_pgtable *pgt, u64 addr, u64 size, void *mc);
+int pkvm_pgtable_stage2_split(struct kvm_pgtable *pgt, u64 addr, u64 size,
+			      struct kvm_mmu_memory_cache *mc);
 void pkvm_pgtable_stage2_free_unlinked(struct kvm_pgtable_mm_ops *mm_ops,
 				       struct kvm_pgtable_pte_ops *pte_ops,
 				       void *pgtable, s8 level);

@@ -82,8 +82,6 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/tlb.h>
 #include <trace/events/migrate.h>
-#undef CREATE_TRACE_POINTS
-#include <trace/hooks/mm.h>
 
 #undef CREATE_TRACE_POINTS
 #include <trace/hooks/mm.h>
@@ -1959,7 +1957,6 @@ walk_done:
 	}
 
 	mmu_notifier_invalidate_range_end(&range);
-	trace_android_vh_try_to_unmap_one(folio, vma, address, arg, ret);
 
 	return ret;
 }
