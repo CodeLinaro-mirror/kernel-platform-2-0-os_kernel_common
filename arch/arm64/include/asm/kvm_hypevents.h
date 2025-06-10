@@ -11,7 +11,7 @@
  * Hypervisor events definitions.
  */
 
-#ifdef CONFIG_PKVM_FTRACE
+#ifdef CONFIG_PROTECTED_NVHE_FTRACE
 HYP_EVENT(func,
 	HE_PROTO(unsigned long ip, unsigned long parent),
 	HE_STRUCT(
@@ -142,7 +142,7 @@ HYP_EVENT(vcpu_illegal_trap,
 	HE_PRINTK("esr_el2=%llx", __entry->esr)
 );
 
-#ifdef CONFIG_PKVM_SELFTESTS
+#ifdef CONFIG_PROTECTED_NVHE_TESTING
 HYP_EVENT(selftest,
 	  HE_PROTO(void),
 	  HE_STRUCT(),

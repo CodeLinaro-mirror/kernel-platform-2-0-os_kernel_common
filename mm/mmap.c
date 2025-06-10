@@ -57,8 +57,6 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/mmap.h>
-#undef CREATE_TRACE_POINTS
-#include <trace/hooks/mm.h>
 
 #include "internal.h"
 
@@ -1581,8 +1579,6 @@ expanded:
 	vm_flags_set(vma, VM_SOFTDIRTY);
 
 	vma_set_page_prot(vma);
-
-	trace_android_vh_mmap_region(vma, addr);
 
 	return addr;
 
