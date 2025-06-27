@@ -72,6 +72,8 @@
   bdev_end_io_acct
   bdev_start_io_acct
   bin2hex
+  bio_associate_blkg
+  bio_chain
   bio_endio
   bio_end_io_acct_remapped
   bio_split
@@ -82,6 +84,7 @@
   __bitmap_clear
   __bitmap_complement
   __bitmap_equal
+  bitmap_find_free_region
   bitmap_find_next_zero_area_off
   bitmap_free
   __bitmap_intersects
@@ -613,6 +616,7 @@
   devm_gpiochip_add_data_with_key
   devm_gpiod_get
   devm_gpiod_get_optional
+  devm_gpiod_put
   devm_gpio_request_one
   devm_hwspin_lock_register
   devm_i2c_new_dummy_device
@@ -633,6 +637,7 @@
   devm_led_classdev_flash_register_ext
   devm_led_classdev_register_ext
   devm_mbox_controller_register
+  devm_memremap
   devm_mipi_dsi_attach
   devm_mipi_dsi_device_register_full
   devm_nvmem_cell_get
@@ -1179,6 +1184,7 @@
   freq_qos_add_request
   freq_qos_remove_request
   freq_qos_update_request
+  fs_bio_set
   fsync_bdev
   ftrace_dump
   fwnode_find_reference
@@ -1223,13 +1229,16 @@
   genphy_check_and_restart_aneg
   __genphy_config_aneg
   genphy_read_abilities
+  genphy_read_lpa
   genphy_read_mmd_unsupported
   genphy_read_status
   genphy_read_status_fixed
   genphy_restart_aneg
   genphy_resume
+  genphy_setup_forced
   genphy_soft_reset
   genphy_suspend
+  genphy_update_link
   genphy_write_mmd_unsupported
   gen_pool_add_owner
   gen_pool_alloc_algo_owner
@@ -1581,6 +1590,7 @@
   iommu_device_register
   iommu_device_sysfs_add
   iommu_device_sysfs_remove
+  iommu_device_unlink
   iommu_device_unregister
   iommu_dma_get_resv_regions
   iommu_domain_alloc
@@ -2151,6 +2161,7 @@
   of_clk_add_hw_provider
   of_clk_add_provider
   of_clk_del_provider
+  of_clk_get
   of_clk_get_from_provider
   of_clk_get_parent_name
   of_clk_hw_simple_get
@@ -2187,6 +2198,7 @@
   of_genpd_del_provider
   __of_get_address
   of_get_child_by_name
+  of_get_compatible_child
   of_get_cpu_node
   of_get_mac_address
   of_get_named_gpio_flags
@@ -2194,6 +2206,7 @@
   of_get_next_child
   of_get_next_parent
   of_get_parent
+  of_get_phy_mode
   of_get_property
   of_get_regulator_init_data
   of_get_required_opp_performance_state
@@ -2247,11 +2260,13 @@
   of_reserved_mem_device_init_by_idx
   of_reserved_mem_device_release
   of_reserved_mem_lookup
+  __of_reset_control_get
   of_root
   of_thermal_get_ntrips
   of_thermal_get_trip_points
   of_thermal_is_trip_valid
   of_translate_address
+  of_update_property
   on_each_cpu_cond_mask
   oops_in_progress
   open_candev
@@ -2361,6 +2376,7 @@
   perf_trace_run_bpf_submit
   pfifo_fast_ops
   pfifo_qdisc_ops
+  pfn_is_map_memory
   phy_attached_info
   phy_calibrate
   phy_config_aneg
@@ -2370,6 +2386,7 @@
   phy_drivers_register
   phy_drivers_unregister
   phy_error
+  phy_ethtool_get_eee
   phy_ethtool_get_wol
   phy_ethtool_set_wol
   phy_exit
@@ -2409,19 +2426,32 @@
   phylink_stop
   phylink_suspend
   phy_mac_interrupt
+  __phy_modify
   phy_modify
+  phy_modify_changed
   phy_modify_mmd
   phy_modify_mmd_changed
+  phy_modify_paged
+  phy_modify_paged_changed
   phy_power_off
   phy_power_on
   phy_read_mmd
+  phy_read_paged
   phy_resolve_aneg_linkmode
+  phy_resolve_aneg_pause
   phy_restart_aneg
+  phy_restore_page
+  phy_save_page
+  phy_select_page
   phy_set_max_speed
   phy_set_mode_ext
+  phy_sfp_attach
+  phy_sfp_detach
+  phy_sfp_probe
   phy_suspend
   phy_trigger_machine
   phy_write_mmd
+  phy_write_paged
   pick_highest_pushable_task
   pick_migrate_task
   pid_nr_ns
@@ -2505,6 +2535,7 @@
   power_supply_get_property
   power_supply_put
   power_supply_register
+  power_supply_register_no_ws
   power_supply_reg_notifier
   power_supply_set_property
   power_supply_unregister
@@ -2787,6 +2818,7 @@
   reset_control_acquire
   reset_control_assert
   reset_control_deassert
+  reset_control_put
   reset_control_release
   reset_control_reset
   return_address
@@ -3144,6 +3176,7 @@
   snd_usb_endpoint_prepare
   snd_usb_power_domain_set
   snprintf
+  soc_device_match
   soc_device_register
   soc_device_unregister
   sock_alloc_send_pskb
@@ -3264,6 +3297,7 @@
   strscpy_pad
   strsep
   strstr
+  submit_bio
   __sw_hweight16
   __sw_hweight32
   __sw_hweight64
