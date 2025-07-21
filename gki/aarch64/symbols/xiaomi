@@ -25,6 +25,10 @@
   __traceiter_android_vh_do_shrink_slab
   __traceiter_android_vh_shrink_slab_bypass
 
+# required by health_report module
+  __tracepoint_android_vh_health_report
+  __traceiter_android_vh_health_report
+
 # required by mi_mem_engine.ko
   __traceiter_android_vh_tune_swappiness
   __tracepoint_android_vh_tune_swappiness
@@ -103,6 +107,7 @@
   __traceiter_android_vh_rwsem_write_wait_start
   __traceiter_android_vh_mutex_wait_start
   __traceiter_android_vh_alter_mutex_list_add
+  __traceiter_android_rvh_cpuset_fork
   __traceiter_android_vh_sched_setaffinity_early
   __traceiter_android_rvh_set_cpus_allowed_comm
   __traceiter_android_rvh_dequeue_task
@@ -110,10 +115,18 @@
   __tracepoint_android_vh_rwsem_write_wait_start
   __tracepoint_android_vh_mutex_wait_start
   __tracepoint_android_vh_alter_mutex_list_add
+  __tracepoint_android_rvh_cpuset_fork
   __tracepoint_android_vh_sched_setaffinity_early
   __tracepoint_android_rvh_set_cpus_allowed_comm
   __tracepoint_android_rvh_dequeue_task
+  cpuset_cpus_allowed
   cpufreq_update_policy
+  cgroup_threadgroup_rwsem
+
+#required by millet.ko
+  __traceiter_android_rvh_refrigerator
+  __tracepoint_android_rvh_refrigerator
+  freezer_cgrp_subsys
 
 # required by trace_hook.ko
   android_rvh_probe_register
@@ -123,8 +136,13 @@
 
 #required by mi_sched.ko
   __traceiter_android_vh_scheduler_tick
+  __traceiter_android_vh_free_user
+  __traceiter_android_vh_alloc_uid
   __tracepoint_android_vh_scheduler_tick
+  __tracepoint_android_vh_free_user
+  __tracepoint_android_vh_alloc_uid
   free_uid
+  find_user
 
 #required by mi_freqwdg.ko
   __traceiter_android_vh_freq_qos_remove_request
@@ -387,6 +405,15 @@
   filp_open_block
   blk_crypto_start_using_key
   cgroup_rm_cftypes
+  mem_cgroup_move_account
+  __traceiter_android_vh_mem_cgroup_charge
+  __traceiter_android_vh_filemap_add_folio
+  __traceiter_android_vh_shrink_node
+  __traceiter_android_vh_shrink_node_memcgs
+  __tracepoint_android_vh_mem_cgroup_charge
+  __tracepoint_android_vh_filemap_add_folio
+  __tracepoint_android_vh_shrink_node
+  __tracepoint_android_vh_shrink_node_memcgs
 
 #required by mem_reclaim_ctl.ko
 __traceiter_android_vh_page_should_be_protected
