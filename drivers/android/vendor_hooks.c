@@ -74,6 +74,7 @@
 #include <trace/hooks/fuse.h>
 #include <trace/hooks/ogki_honor.h>
 #include <trace/hooks/user.h>
+#include <trace/hooks/usb.h>
 
 /*
  * Export tracepoints that act as a bare tracehook (ie: have no trace event
@@ -390,6 +391,7 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_fuse_request_end);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_lruvec_add_folio);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_lruvec_del_folio);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_do_async_mmap_readahead);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_mm_free_page);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_tcp_sock_error);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_tcp_fastsyn);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_tcp_state_change);
@@ -455,6 +457,7 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_filemap_map_pages);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_try_alloc_pages_gfp);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_page_cache_readahead_start);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_page_cache_readahead_end);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_page_cache_ra_order_bypass);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_filemap_fault_start);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_filemap_fault_end);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_dma_heap_buffer_alloc_start);
@@ -558,3 +561,14 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_cpuset_fork);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_set_tsk_need_resched_lazy);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_alloc_uid);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_free_user);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_shmem_swapin_folio);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_do_wp_page);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_do_swap_page);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_do_anonymous_page);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_uprobes_replace_page);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_pr_set_vma_name_bypass);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_swap_writepage);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_try_to_unmap_one);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_mmap_region);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_usb_dev_suspend);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_usb_dev_resume);
