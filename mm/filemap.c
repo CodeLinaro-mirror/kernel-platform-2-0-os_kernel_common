@@ -990,7 +990,6 @@ int filemap_add_folio(struct address_space *mapping, struct folio *folio,
 	void *shadow = NULL;
 	int ret;
 
-	trace_android_vh_filemap_add_folio(mapping, folio, index);
 	ret = mem_cgroup_charge(folio, NULL, gfp);
 	if (ret)
 		return ret;

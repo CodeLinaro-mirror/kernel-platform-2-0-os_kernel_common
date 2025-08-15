@@ -176,7 +176,7 @@ accumulate_sum(u64 delta, struct sched_avg *sa,
  *   load_avg = u_0` + y*(u_0 + u_1*y + u_2*y^2 + ... )
  *            = u_0 + u_1*y + u_2*y^2 + ... [re-labeling u_i --> u_{i+1}]
  */
-__always_inline int
+static __always_inline int
 ___update_load_sum(u64 now, struct sched_avg *sa,
 		  unsigned long load, unsigned long runnable, int running)
 {
@@ -228,7 +228,6 @@ ___update_load_sum(u64 now, struct sched_avg *sa,
 
 	return 1;
 }
-EXPORT_SYMBOL_GPL(___update_load_sum);
 
 /*
  * When syncing *_avg with *_sum, we must take into account the current

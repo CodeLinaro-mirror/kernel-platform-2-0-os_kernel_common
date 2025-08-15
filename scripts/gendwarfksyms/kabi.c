@@ -54,27 +54,11 @@
  */
 #define KABI_RULE_TAG_ENUMERATOR_VALUE "enumerator_value"
 
-/*
- * Rule: byte_size
- * - For the fqn_field in the target field, set the byte_size
- *   attribute to the value in the value field.
- */
-#define KABI_RULE_TAG_BYTE_SIZE "byte_size"
-
-/*
- * Rule: type_string
- * - For the type reference in the fqn field, use the type string
- *   in the value field.
- */
-#define KABI_RULE_TAG_TYPE_STRING "type_string"
-
 enum kabi_rule_type {
 	KABI_RULE_TYPE_UNKNOWN,
 	KABI_RULE_TYPE_DECLONLY,
 	KABI_RULE_TYPE_ENUMERATOR_IGNORE,
 	KABI_RULE_TYPE_ENUMERATOR_VALUE,
-	KABI_RULE_TYPE_BYTE_SIZE,
-	KABI_RULE_TYPE_TYPE_STRING,
 };
 
 #define RULE_HASH_BITS 7
@@ -142,14 +126,6 @@ void kabi_read_rules(int fd)
 		{
 			.type = KABI_RULE_TYPE_ENUMERATOR_VALUE,
 			.tag = KABI_RULE_TAG_ENUMERATOR_VALUE,
-		},
-		{
-			.type = KABI_RULE_TYPE_BYTE_SIZE,
-			.tag = KABI_RULE_TAG_BYTE_SIZE,
-		},
-		{
-			.type = KABI_RULE_TYPE_TYPE_STRING,
-			.tag = KABI_RULE_TAG_TYPE_STRING,
 		},
 	};
 
@@ -246,6 +222,25 @@ void kabi_read_rules(int fd)
 	check(elf_end(elf));
 }
 
+bool kabi_is_declonly(const char *fqn)
+{
+	struct rule *rule;
+
+	if (!stable)
+		return false;
+	if (!fqn || !*fqn)
+		return false;
+
+	hash_for_each_possible(rules, rule, hash,
+			       rule_values_hash(KABI_RULE_TYPE_DECLONLY, fqn)) {
+		if (rule->type == KABI_RULE_TYPE_DECLONLY &&
+		    !strcmp(fqn, rule->target))
+			return true;
+	}
+
+	return false;
+}
+
 static char *get_enumerator_target(const char *fqn, const char *field)
 {
 	char *target = NULL;
@@ -254,47 +249,6 @@ static char *get_enumerator_target(const char *fqn, const char *field)
 		error("asprintf failed for '%s %s'", fqn, field);
 
 	return target;
-}
-
-static struct rule *find_rule(enum kabi_rule_type type, const char *target)
-{
-	struct rule *rule;
-
-	if (!stable)
-		return NULL;
-	if (!target || !*target)
-		return NULL;
-
-	hash_for_each_possible(rules, rule, hash,
-			       rule_values_hash(type, target)) {
-		if (rule->type == type && !strcmp(target, rule->target))
-			return rule;
-	}
-
-	return NULL;
-}
-
-static struct rule *find_enumerator_rule(enum kabi_rule_type type,
-					 const char *fqn, const char *field)
-{
-	struct rule *rule;
-	char *target;
-
-	if (!stable)
-		return NULL;
-	if (!fqn || !*fqn || !field || !*field)
-		return NULL;
-
-	target = get_enumerator_target(fqn, field);
-	rule = find_rule(type, target);
-
-	free(target);
-	return rule;
-}
-
-bool kabi_is_declonly(const char *fqn)
-{
-	return !!find_rule(KABI_RULE_TYPE_DECLONLY, fqn);
 }
 
 static unsigned long get_ulong_value(const char *value)
@@ -313,49 +267,58 @@ static unsigned long get_ulong_value(const char *value)
 
 bool kabi_is_enumerator_ignored(const char *fqn, const char *field)
 {
-	return !!find_enumerator_rule(KABI_RULE_TYPE_ENUMERATOR_IGNORE, fqn,
-				      field);
+	bool match = false;
+	struct rule *rule;
+	char *target;
+
+	if (!stable)
+		return false;
+	if (!fqn || !*fqn || !field || !*field)
+		return false;
+
+	target = get_enumerator_target(fqn, field);
+
+	hash_for_each_possible(
+		rules, rule, hash,
+		rule_values_hash(KABI_RULE_TYPE_ENUMERATOR_IGNORE, target)) {
+		if (rule->type == KABI_RULE_TYPE_ENUMERATOR_IGNORE &&
+		    !strcmp(target, rule->target)) {
+			match = true;
+			break;
+		}
+	}
+
+	free(target);
+	return match;
 }
 
 bool kabi_get_enumerator_value(const char *fqn, const char *field,
 			       unsigned long *value)
 {
+	bool match = false;
 	struct rule *rule;
+	char *target;
 
-	rule = find_enumerator_rule(KABI_RULE_TYPE_ENUMERATOR_VALUE, fqn,
-				    field);
-	if (rule) {
-		*value = get_ulong_value(rule->value);
-		return true;
+	if (!stable)
+		return false;
+	if (!fqn || !*fqn || !field || !*field)
+		return false;
+
+	target = get_enumerator_target(fqn, field);
+
+	hash_for_each_possible(rules, rule, hash,
+			       rule_values_hash(KABI_RULE_TYPE_ENUMERATOR_VALUE,
+						target)) {
+		if (rule->type == KABI_RULE_TYPE_ENUMERATOR_VALUE &&
+		    !strcmp(target, rule->target)) {
+			*value = get_ulong_value(rule->value);
+			match = true;
+			break;
+		}
 	}
 
-	return false;
-}
-
-bool kabi_get_byte_size(const char *fqn, unsigned long *value)
-{
-	struct rule *rule;
-
-	rule = find_rule(KABI_RULE_TYPE_BYTE_SIZE, fqn);
-	if (rule) {
-		*value = get_ulong_value(rule->value);
-		return true;
-	}
-
-	return false;
-}
-
-bool kabi_get_type_string(const char *type, const char **str)
-{
-	struct rule *rule;
-
-	rule = find_rule(KABI_RULE_TYPE_TYPE_STRING, type);
-	if (rule) {
-		*str = rule->value;
-		return true;
-	}
-
-	return false;
+	free(target);
+	return match;
 }
 
 void kabi_free(void)

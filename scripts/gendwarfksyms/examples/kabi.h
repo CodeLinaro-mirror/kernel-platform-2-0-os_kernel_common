@@ -37,14 +37,11 @@
 #define __stringify(x...) __stringify_1(x)
 #endif
 
-#define ___KABI_RULE(hint, target, value)                            \
+#define __KABI_RULE(hint, target, value)                             \
 	static const char __PASTE(__gendwarfksyms_rule_,             \
 				  __COUNTER__)[] __used __aligned(1) \
 		__section(".discard.gendwarfksyms.kabi_rules") =     \
-			"1\0" #hint "\0" target "\0" value
-
-#define __KABI_RULE(hint, target, value) \
-	___KABI_RULE(hint, #target, #value)
+			"1\0" #hint "\0" #target "\0" #value
 
 #define __KABI_NORMAL_SIZE_ALIGN(_orig, _new)                                             \
 	union {                                                                           \
@@ -91,20 +88,6 @@
  */
 #define KABI_ENUMERATOR_VALUE(fqn, field, value) \
 	__KABI_RULE(enumerator_value, fqn field, value)
-
-/*
- * KABI_BYTE_SIZE(fqn, value)
- *   Set the byte_size attribute for the struct/union/enum fqn to
- *   value bytes.
- */
-#define KABI_BYTE_SIZE(fqn, value) __KABI_RULE(byte_size, fqn, value)
-
-/*
- * KABI_TYPE_STRING(type, str)
- *   For the given type, override the type string used in symtypes
- *   output and version calculation with str.
- */
-#define KABI_TYPE_STRING(type, str) ___KABI_RULE(type_string, type, str)
 
 /*
  * KABI_RESERVE

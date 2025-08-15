@@ -484,4 +484,3 @@ struct cgroup_subsys freezer_cgrp_subsys = {
 	.fork		= freezer_fork,
 	.legacy_cftypes	= files,
 };
-EXPORT_SYMBOL_GPL(freezer_cgrp_subsys);

@@ -100,7 +100,7 @@ static void type_expansion_append(struct type_expansion *type, const char *s,
 #define TYPE_HASH_BITS 12
 static HASHTABLE_DEFINE(type_map, 1 << TYPE_HASH_BITS);
 
-static int __type_map_get(const char *name, struct type_expansion **res)
+static int type_map_get(const char *name, struct type_expansion **res)
 {
 	struct type_expansion *e;
 
@@ -114,12 +114,11 @@ static int __type_map_get(const char *name, struct type_expansion **res)
 	return -1;
 }
 
-static struct type_expansion *type_map_add(const char *name,
-					   struct type_expansion *type)
+static void type_map_add(const char *name, struct type_expansion *type)
 {
 	struct type_expansion *e;
 
-	if (__type_map_get(name, &e)) {
+	if (type_map_get(name, &e)) {
 		e = xmalloc(sizeof(struct type_expansion));
 		type_expansion_init(e);
 		e->name = xstrdup(name);
@@ -131,7 +130,7 @@ static struct type_expansion *type_map_add(const char *name,
 	} else {
 		/* Use the longest available expansion */
 		if (type->len <= e->len)
-			return e;
+			return;
 
 		type_list_free(&e->expanded);
 
@@ -149,34 +148,6 @@ static struct type_expansion *type_map_add(const char *name,
 		type_list_write(&e->expanded, stderr);
 		checkp(fputs("\n", stderr));
 	}
-
-	return e;
-}
-
-static void type_parse(const char *name, const char *str,
-		       struct type_expansion *type);
-
-static int type_map_get(const char *name, struct type_expansion **res)
-{
-	struct type_expansion type;
-	const char *override;
-
-	if (!__type_map_get(name, res))
-		return 0;
-
-	/*
-	 * If die_map didn't contain a type, we might still have
-	 * a type_string kABI rule that defines it.
-	 */
-	if (stable && kabi_get_type_string(name, &override)) {
-		type_expansion_init(&type);
-		type_parse(name, override, &type);
-		*res = type_map_add(name, &type);
-		type_expansion_free(&type);
-		return 0;
-	}
-
-	return -1;
 }
 
 static void type_map_write(FILE *file)
@@ -296,18 +267,15 @@ static char *get_type_name(struct die *cache)
 	return name;
 }
 
-static void __calculate_version(struct version *version,
-				struct type_expansion *type)
+static void __calculate_version(struct version *version, struct list_head *list)
 {
 	struct type_list_entry *entry;
 	struct type_expansion *e;
 
 	/* Calculate a CRC over an expanded type string */
-	list_for_each_entry(entry, &type->expanded, list) {
+	list_for_each_entry(entry, list, list) {
 		if (is_type_prefix(entry->str)) {
-			if (type_map_get(entry->str, &e))
-				error("unknown type reference to '%s' when expanding '%s'",
-				      entry->str, type->name);
+			check(type_map_get(entry->str, &e));
 
 			/*
 			 * It's sufficient to expand each type reference just
@@ -317,7 +285,7 @@ static void __calculate_version(struct version *version,
 				version_add(version, entry->str);
 			} else {
 				cache_mark_expanded(&expansion_cache, e);
-				__calculate_version(version, e);
+				__calculate_version(version, &e->expanded);
 			}
 		} else {
 			version_add(version, entry->str);
@@ -325,19 +293,44 @@ static void __calculate_version(struct version *version,
 	}
 }
 
-static void calculate_version(struct version *version,
-			      struct type_expansion *type)
+static void calculate_version(struct version *version, struct list_head *list)
 {
 	version_init(version);
-	__calculate_version(version, type);
+	__calculate_version(version, list);
 	cache_free(&expansion_cache);
 }
 
-static void __type_expand(struct die *cache, struct type_expansion *type)
+static void __type_expand(struct die *cache, struct type_expansion *type,
+			  bool recursive);
+
+static void type_expand_child(struct die *cache, struct type_expansion *type,
+			      bool recursive)
+{
+	struct type_expansion child;
+	char *name;
+
+	name = get_type_name(cache);
+	if (!name) {
+		__type_expand(cache, type, recursive);
+		return;
+	}
+
+	if (recursive && !__cache_was_expanded(&expansion_cache, cache->addr)) {
+		__cache_mark_expanded(&expansion_cache, cache->addr);
+		type_expansion_init(&child);
+		__type_expand(cache, &child, true);
+		type_map_add(name, &child);
+		type_expansion_free(&child);
+	}
+
+	type_expansion_append(type, name, name);
+}
+
+static void __type_expand(struct die *cache, struct type_expansion *type,
+			  bool recursive)
 {
 	struct die_fragment *df;
 	struct die *child;
-	char *name;
 
 	list_for_each_entry(df, &cache->fragments, list) {
 		switch (df->type) {
@@ -353,12 +346,7 @@ static void __type_expand(struct die *cache, struct type_expansion *type)
 				error("unknown child: %" PRIxPTR,
 				      df->data.addr);
 
-			name = get_type_name(child);
-			if (name)
-				type_expansion_append(type, name, name);
-			else
-				__type_expand(child, type);
-
+			type_expand_child(child, type, recursive);
 			break;
 		case FRAGMENT_LINEBREAK:
 			/*
@@ -376,85 +364,12 @@ static void __type_expand(struct die *cache, struct type_expansion *type)
 	}
 }
 
-static void type_expand(const char *name, struct die *cache,
-			struct type_expansion *type)
+static void type_expand(struct die *cache, struct type_expansion *type,
+			bool recursive)
 {
-	const char *override;
-
 	type_expansion_init(type);
-
-	if (stable && kabi_get_type_string(name, &override))
-		type_parse(name, override, type);
-	else
-		__type_expand(cache, type);
-}
-
-static void type_parse(const char *name, const char *str,
-		       struct type_expansion *type)
-{
-	char *fragment;
-	size_t start = 0;
-	size_t end;
-	size_t pos;
-
-	if (!*str)
-		error("empty type string override for '%s'", name);
-
-	for (pos = 0; str[pos]; ++pos) {
-		bool empty;
-		char marker = ' ';
-
-		if (!is_type_prefix(&str[pos]))
-			continue;
-
-		end = pos + 2;
-
-		/*
-		 * Find the end of the type reference. If the type name contains
-		 * spaces, it must be in single quotes.
-		 */
-		if (str[end] == '\'') {
-			marker = '\'';
-			++end;
-		}
-		while (str[end] && str[end] != marker)
-			++end;
-
-		/* Check that we have a non-empty type name */
-		if (marker == '\'') {
-			if (str[end] != marker)
-				error("incomplete %c# type reference for '%s' (string : '%s')",
-				      str[pos], name, str);
-			empty = end == pos + 3;
-			++end;
-		} else {
-			empty = end == pos + 2;
-		}
-		if (empty)
-			error("empty %c# type name for '%s' (string: '%s')",
-			      str[pos], name, str);
-
-		/* Append the part of the string before the type reference */
-		if (pos > start) {
-			fragment = xstrndup(&str[start], pos - start);
-			type_expansion_append(type, fragment, fragment);
-		}
-
-		/*
-		 * Append the type reference -- note that if the reference
-		 * is invalid, i.e. points to a non-existent type, we will
-		 * print out an error when calculating versions.
-		 */
-		fragment = xstrndup(&str[pos], end - pos);
-		type_expansion_append(type, fragment, fragment);
-
-		start = end;
-		pos = end - 1;
-	}
-
-	/* Append the rest of the type string, if there's any left */
-	if (str[start])
-		type_expansion_append(type, &str[start], NULL);
+	__type_expand(cache, type, recursive);
+	cache_free(&expansion_cache);
 }
 
 static void expand_type(struct die *cache, void *arg)
@@ -484,9 +399,9 @@ static void expand_type(struct die *cache, void *arg)
 		return;
 
 	debug("%s", name);
-
-	type_expand(name, cache, &type);
+	type_expand(cache, &type, true);
 	type_map_add(name, &type);
+
 	type_expansion_free(&type);
 	free(name);
 }
@@ -508,11 +423,11 @@ static void expand_symbol(struct symbol *sym, void *arg)
 	if (__die_map_get(sym->die_addr, DIE_SYMBOL, &cache))
 		return; /* We'll warn about missing CRCs later. */
 
-	type_expand(sym->name, cache, &type);
+	type_expand(cache, &type, false);
 
 	/* If the symbol already has a version, don't calculate it again. */
 	if (sym->state != SYMBOL_PROCESSED) {
-		calculate_version(&version, &type);
+		calculate_version(&version, &type.expanded);
 		symbol_set_crc(sym, version.crc);
 		debug("%s = %lx", sym->name, version.crc);
 

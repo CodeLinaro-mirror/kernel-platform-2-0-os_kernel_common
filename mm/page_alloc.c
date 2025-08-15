@@ -599,27 +599,6 @@ out:
 	add_taint(TAINT_BAD_PAGE, LOCKDEP_NOW_UNRELIABLE);
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-static unsigned int pcp_thp_order __read_mostly = HPAGE_PMD_ORDER;
-
-static int __init parse_pcp_thp_order(char *s)
-{
-	int err;
-	unsigned int order;
-
-	err = kstrtouint(s, 0, &order);
-	if (err)
-		return err;
-
-	if (order <= PAGE_ALLOC_COSTLY_ORDER || order > HPAGE_PMD_ORDER)
-		return -EINVAL;
-
-	pcp_thp_order = order;
-	return 0;
-}
-early_param("pcp_thp_order", parse_pcp_thp_order);
-#endif
-
 static inline unsigned int order_to_pindex(int migratetype, int order)
 {
 	bool __maybe_unused movable;
@@ -635,7 +614,7 @@ static inline unsigned int order_to_pindex(int migratetype, int order)
 
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	if (order > PAGE_ALLOC_COSTLY_ORDER) {
-		VM_BUG_ON(order != pcp_thp_order);
+		VM_BUG_ON(order != HPAGE_PMD_ORDER);
 
 		movable = migratetype == MIGRATE_MOVABLE;
 #ifdef CONFIG_CMA
@@ -657,7 +636,7 @@ static inline int pindex_to_order(unsigned int pindex)
 
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	if (pindex >= NR_LOWORDER_PCP_LISTS)
-		order = pcp_thp_order;
+		order = HPAGE_PMD_ORDER;
 #else
 	VM_BUG_ON(order > PAGE_ALLOC_COSTLY_ORDER);
 #endif
@@ -670,7 +649,7 @@ static inline bool pcp_allowed_order(unsigned int order)
 	if (order <= PAGE_ALLOC_COSTLY_ORDER)
 		return true;
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	if (order == pcp_thp_order)
+	if (order == HPAGE_PMD_ORDER)
 		return true;
 #endif
 	return false;
@@ -871,14 +850,6 @@ buddy_merge_likely(unsigned long pfn, unsigned long buddy_pfn,
 			NULL) != NULL;
 }
 
-static int zone_max_order(struct zone *zone)
-{
-	int max_order = MAX_PAGE_ORDER;
-
-	trace_android_vh_mm_customize_zone_max_order(zone, &max_order);
-	return max_order;
-}
-
 /*
  * Freeing function for a buddy system allocator.
  *
@@ -914,7 +885,6 @@ static inline void __free_one_page(struct page *page,
 	struct page *buddy;
 	bool to_tail;
 	bool bypass = false;
-	int max_order = zone_max_order(zone);
 
 	trace_android_vh_free_one_page_bypass(page, zone, order,
 		migratetype, (int)fpi_flags, &bypass);
@@ -931,7 +901,7 @@ static inline void __free_one_page(struct page *page,
 
 	account_freepages(zone, 1 << order, migratetype);
 
-	while (order < max_order) {
+	while (order < MAX_PAGE_ORDER) {
 		int buddy_mt = migratetype;
 
 		if (compaction_capture(capc, page, order, migratetype)) {
@@ -989,8 +959,6 @@ done_merging:
 		to_tail = true;
 	else if (is_shuffle_order(order))
 		to_tail = shuffle_pick_tail();
-	else if (max_order != MAX_PAGE_ORDER)
-		to_tail = false;
 	else
 		to_tail = buddy_merge_likely(pfn, buddy_pfn, page, order);
 
@@ -1332,7 +1300,6 @@ __always_inline bool free_pages_prepare(struct page *page,
 				}
 			}
 			(page + i)->flags &= ~PAGE_FLAGS_CHECK_AT_PREP;
-			trace_android_vh_mm_free_page(page + i);
 		}
 	}
 	if (PageMappingFlags(page)) {
@@ -1349,7 +1316,6 @@ __always_inline bool free_pages_prepare(struct page *page,
 
 	page_cpupid_reset_last(page);
 	page->flags &= ~PAGE_FLAGS_CHECK_AT_PREP;
-	trace_android_vh_mm_free_page(page);
 	reset_page_owner(page, order);
 	free_page_pinner(page, order);
 	page_table_check_free(page, order);
@@ -3310,8 +3276,6 @@ struct page *rmqueue(struct zone *preferred_zone,
 {
 	struct page *page;
 
-	trace_android_vh_mm_customize_rmqueue(zone, order, &alloc_flags, &migratetype);
-
 	if (likely(pcp_allowed_order(order))) {
 		page = rmqueue_pcplist(preferred_zone, zone, order,
 				       migratetype, alloc_flags);
@@ -3514,13 +3478,6 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 {
 	long min = mark;
 	int o;
-	bool customized = false;
-	bool wmark_ok = false;
-
-	trace_android_vh_mm_customize_wmark_ok(z, order, highest_zoneidx,
-					       &wmark_ok, &customized);
-	if (customized)
-		return wmark_ok;
 
 	/* free_pages may go negative - that's OK */
 	free_pages -= __zone_watermark_unusable_free(z, order, alloc_flags);
@@ -3770,18 +3727,8 @@ retry:
 	z = ac->preferred_zoneref;
 	for_next_zone_zonelist_nodemask(zone, z, ac->highest_zoneidx,
 					ac->nodemask) {
-		bool use_this_zone = false;
-		bool suitable = true;
 		struct page *page;
 		unsigned long mark;
-
-		trace_android_vh_mm_customize_suitable_zone(zone, gfp_mask, order, ac->highest_zoneidx,
-							    &use_this_zone, &suitable);
-		if (!suitable)
-			continue;
-
-		if (use_this_zone)
-			goto try_this_zone;
 
 		if (cpusets_enabled() &&
 			(alloc_flags & ALLOC_CPUSET) &&
@@ -5224,9 +5171,6 @@ struct page *__alloc_pages_noprof(gfp_t gfp, unsigned int order,
 			&alloc_gfp, &alloc_flags))
 		return NULL;
 
-	trace_android_vh_mm_customize_ac(gfp, order, &ac.zonelist, &ac.preferred_zoneref,
-					 &ac.highest_zoneidx, &alloc_flags);
-
 	trace_android_rvh_try_alloc_pages_gfp(&page, order, gfp, gfp_zone(gfp));
 	if (page)
 		goto out;
@@ -6195,9 +6139,6 @@ static void zone_set_pageset_high_and_batch(struct zone *zone, int cpu_online)
 	    zone->pageset_batch == new_batch)
 		return;
 
-	trace_android_vh_mm_customize_zone_pageset(zone, &new_high_min,
-						   &new_high_max, &new_batch);
-
 	zone->pageset_high_min = new_high_min;
 	zone->pageset_high_max = new_high_max;
 	zone->pageset_batch = new_batch;
@@ -6237,22 +6178,6 @@ static void zone_pcp_update(struct zone *zone, int cpu_online)
 	zone_set_pageset_high_and_batch(zone, cpu_online);
 	mutex_unlock(&pcp_batch_high_lock);
 }
-
-void zone_pageset_high_and_batch_update(struct zone *zone, int new_high_min,
-					int new_high_max, int new_batch)
-{
-	mutex_lock(&pcp_batch_high_lock);
-
-	zone->pageset_high_min = new_high_min;
-	zone->pageset_high_max = new_high_max;
-	zone->pageset_batch = new_batch;
-
-	__zone_set_pageset_high_and_batch(zone, new_high_min, new_high_max,
-					  new_batch);
-
-	mutex_unlock(&pcp_batch_high_lock);
-}
-EXPORT_SYMBOL_GPL(zone_pageset_high_and_batch_update);
 
 static void zone_pcp_update_cacheinfo(struct zone *zone, unsigned int cpu)
 {
