@@ -2041,7 +2041,9 @@ static unsigned long __init __free_memory_core(phys_addr_t start,
 
 static void __init memmap_init_reserved_pages(void)
 {
+#ifndef CONFIG_DEFER_NO_MAP_MEM_PAGE_INIT
 	struct memblock_region *region;
+#endif
 	phys_addr_t start, end;
 	u64 i;
 
@@ -2050,6 +2052,7 @@ static void __init memmap_init_reserved_pages(void)
 		reserve_bootmem_region(start, end);
 
 	/* and also treat struct pages for the NOMAP regions as PageReserved */
+#ifndef CONFIG_DEFER_NO_MAP_MEM_PAGE_INIT
 	for_each_mem_region(region) {
 		if (memblock_is_nomap(region)) {
 			start = region->base;
@@ -2057,6 +2060,7 @@ static void __init memmap_init_reserved_pages(void)
 			reserve_bootmem_region(start, end);
 		}
 	}
+#endif
 }
 
 static unsigned long __init free_low_memory_core_early(void)

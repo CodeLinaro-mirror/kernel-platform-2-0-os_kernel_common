@@ -2334,6 +2334,27 @@ _deferred_grow_zone(struct zone *zone, unsigned int order)
 
 #endif /* CONFIG_DEFERRED_STRUCT_PAGE_INIT */
 
+#ifdef CONFIG_DEFER_NO_MAP_MEM_PAGE_INIT
+static int memmap_init_reserved_pages_thread(void *args)
+{
+	struct memblock_region *region;
+	phys_addr_t start, end;
+
+	/* and also treat struct pages for the NOMAP regions as PageReserved */
+	for_each_mem_region(region) {
+		if (memblock_is_nomap(region)) {
+			start = region->base;
+			end = start + region->size;
+			reserve_bootmem_region(start, end);
+		}
+	}
+
+	pr_err("memmap_init_reserved_pages kthread finish.\n");
+
+	return 0;
+}
+#endif
+
 void __init page_alloc_init_late(void)
 {
 	struct zone *zone;
@@ -2358,6 +2379,15 @@ void __init page_alloc_init_late(void)
 
 	/* Reinit limits that are based on free pages after the kernel is up */
 	files_maxfiles_init();
+#endif
+
+#ifdef CONFIG_DEFER_NO_MAP_MEM_PAGE_INIT
+	struct task_struct *t;
+	t = kthread_run(memmap_init_reserved_pages_thread, NULL, "reserved-memory");
+	if (IS_ERR(t)) {
+		pr_err("Failed to create memmap_init_reserved_pages thread.\n");
+	}
+
 #endif
 
 	buffer_init();

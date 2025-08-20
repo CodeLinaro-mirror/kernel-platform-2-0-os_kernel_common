@@ -739,6 +739,9 @@ config DEFERRED_STRUCT_PAGE_INIT
 	  lifetime of the system until these kthreads finish the
 	  initialisation.
 
+config DEFER_NO_MAP_MEM_PAGE_INIT
+	bool
+
 config PAGE_IDLE_FLAG
 	bool
 	select PAGE_EXTENSION if !64BIT
