@@ -1537,3 +1537,30 @@
   wait_woken
   wake_up_bit
   woken_wake_function
+
+# required by gh_dbl.ko
+  kasprintf
+
+# required by gh_rm_drv.ko
+  __auxiliary_driver_register
+  arch_timer_read_counter
+  auxiliary_driver_unregister
+  bpf_trace_run9
+  gh_get_irq
+  gh_put_irq
+  gh_rm_call
+  gh_rm_notifier_register
+  gh_rm_notifier_unregister
+  irq_domain_get_irq_data
+  irq_find_matching_fwspec
+  ktime_get_real_ts64
+  of_irq_find_parent
+  of_property_read_string_helper
+  srcu_notifier_call_chain
+  srcu_notifier_chain_register
+  srcu_notifier_chain_unregister
+  strnstr
+  trace_print_symbols_seq
+  trace_seq_printf
+  trace_seq_putc
+  uuid_parse
