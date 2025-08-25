@@ -1564,3 +1564,16 @@
   trace_seq_printf
   trace_seq_putc
   uuid_parse
+
+# required by gh_arm_drv.ko
+  irq_create_fwspec_mapping
+  irq_dispose_mapping
+  irq_get_irq_data
+
+# required by hvc_gunyah.ko
+  __kfifo_in
+  __kfifo_out
+
+# required by rename_devices.ko
+  blkdev_get_by_dev
+  name_to_dev_t

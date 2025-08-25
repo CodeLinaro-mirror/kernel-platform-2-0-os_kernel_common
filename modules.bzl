@@ -8,6 +8,7 @@ This module contains a full list of kernel modules
 
 _COMMON_GKI_MODULES_LIST = [
     # keep sorted
+    "arch/arm64/gunyah/gh_arm_drv.ko",
     "drivers/block/zram/zram.ko",
     "drivers/bluetooth/btbcm.ko",
     "drivers/bluetooth/btqca.ko",
@@ -35,6 +36,7 @@ _COMMON_GKI_MODULES_LIST = [
     "drivers/net/usb/rtl8150.ko",
     "drivers/net/usb/usbnet.ko",
     "drivers/net/wwan/wwan.ko",
+    "drivers/tty/hvc/hvc_gunyah.ko",
     "drivers/usb/class/cdc-acm.ko",
     "drivers/usb/serial/ftdi_sio.ko",
     "drivers/usb/serial/usbserial.ko",

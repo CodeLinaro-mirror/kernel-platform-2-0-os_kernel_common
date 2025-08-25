@@ -67,7 +67,7 @@ int gh_update_vm_prop_table(enum gh_vm_names vm_name,
 	if (!vm_prop)
 		return -EINVAL;
 
-	if (vm_prop->vmid < 0 || vm_name < GH_SELF_VM || vm_name >= GH_VM_MAX)
+	if (vm_prop->vmid < 0 || vm_name < GH_SELF_VM || vm_name > GH_VM_MAX)
 		return -EINVAL;
 
 	spin_lock(&gh_vm_table_lock);
@@ -129,8 +129,9 @@ int ghd_rm_get_vmid(enum gh_vm_names vm_name, gh_vmid_t *vmid)
 	gh_vmid_t _vmid;
 	int ret = 0;
 
-	if (vm_name < GH_SELF_VM || vm_name >= GH_VM_MAX)
+	if (vm_name < GH_SELF_VM || vm_name > GH_VM_MAX)
 		return -EINVAL;
+
 
 	spin_lock(&gh_vm_table_lock);
 
@@ -195,10 +196,11 @@ int gh_rm_get_vminfo(enum gh_vm_names vm_name, struct gh_vminfo *vm)
 	if (!vm)
 		return -EINVAL;
 
-	if (vm_name < GH_SELF_VM || vm_name >= GH_VM_MAX)
-		return -EINVAL;
-
 	spin_lock(&gh_vm_table_lock);
+	if (vm_name < GH_SELF_VM || vm_name > GH_VM_MAX) {
+		spin_unlock(&gh_vm_table_lock);
+		return -EINVAL;
+	}
 
 	vm->guid = gh_vm_table[vm_name].guid;
 	vm->uri = gh_vm_table[vm_name].uri;
@@ -262,7 +264,7 @@ gh_rm_vm_get_id(gh_vmid_t vmid, u32 *n_entries)
 			     round_up(temp_entry->id_size, 4);
 	}
 	if (resp_entries_size != resp_payload_size - sizeof(*n_entries)) {
-		pr_err("%s: Invalid size received for GET_ID: %u expect %u\n",
+		pr_err("%s: Invalid size received for GET_ID: %lu expect %lu\n",
 		       __func__, resp_payload_size, resp_entries_size);
 		resp_entries = ERR_PTR(-EINVAL);
 		goto out;
@@ -401,7 +403,7 @@ int gh_rm_vm_lookup(enum gh_vm_lookup_type type, const void *data, size_t size,
 		break;
 	case GH_VM_LOOKUP_GUID:
 		if (size != 16) {
-			pr_err("Invalid GUID size=%d\n", size);
+			pr_err("Invalid GUID size=%zu\n", size);
 			ret = -EINVAL;
 		} else
 			ret = gh_rm_vm_lookup_guid((const u8 *)data, vmid);
@@ -485,7 +487,7 @@ struct gh_vm_status *gh_rm_vm_get_status(gh_vmid_t vmid)
 	}
 
 	if (resp_payload_size != sizeof(*resp_payload)) {
-		pr_err("%s: Invalid size received for VM_GET_STATE: %u\n",
+		pr_err("%s: Invalid size received for VM_GET_STATE: %lu\n",
 			__func__, resp_payload_size);
 		gh_vm_status = ERR_PTR(-EINVAL);
 		goto out;
@@ -531,7 +533,7 @@ int gh_rm_vm_set_status(struct gh_vm_status gh_vm_status)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for VM_SET_STATUS: %u\n",
+		pr_err("%s: Invalid size received for VM_SET_STATUS: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -662,7 +664,7 @@ gh_rm_vm_get_hyp_res(gh_vmid_t vmid, u32 *n_entries)
 		(resp_payload->n_resource_entries * sizeof(*resp_entries)))) ||
 		resp_payload_size != sizeof(*n_entries) +
 		(resp_payload->n_resource_entries * sizeof(*resp_entries))) {
-		pr_err("%s: Invalid size received for GET_HYP_RESOURCES: %u\n",
+		pr_err("%s: Invalid size received for GET_HYP_RESOURCES: %lu\n",
 			__func__, resp_payload_size);
 		resp_entries = ERR_PTR(-EINVAL);
 		goto out;
@@ -738,7 +740,7 @@ static int gh_rm_vm_irq_notify(const gh_vmid_t *vmids, unsigned int num_vmids,
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for IRQ_NOTIFY: %u\n",
+		pr_err("%s: Invalid size received for IRQ_NOTIFY: %lu\n",
 			__func__, resp_payload_size);
 		ret = -EINVAL;
 		kfree(resp);
@@ -777,7 +779,7 @@ int gh_rm_vm_irq_lend(gh_vmid_t vmid, int virq, int label,
 	}
 
 	if (resp_payload_size != sizeof(*resp_payload)) {
-		pr_err("%s: Invalid size received for VM_IRQ_LEND: %u\n",
+		pr_err("%s: Invalid size received for VM_IRQ_LEND: %lu\n",
 			__func__, resp_payload_size);
 		if (resp_payload_size)
 			kfree(resp_payload);
@@ -835,7 +837,7 @@ int gh_rm_vm_irq_release(gh_virq_handle_t virq_handle)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for IRQ_RELEASE: %u\n",
+		pr_err("%s: Invalid size received for IRQ_RELEASE: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		ret = -EINVAL;
@@ -896,7 +898,7 @@ int gh_rm_vm_irq_accept(gh_virq_handle_t virq_handle, int virq)
 	}
 
 	if (virq == -1 && resp_payload_size != sizeof(*resp_payload)) {
-		pr_err("%s: Invalid size received for VM_IRQ_ACCEPT: %u\n",
+		pr_err("%s: Invalid size received for VM_IRQ_ACCEPT: %lu\n",
 			__func__, resp_payload_size);
 		if (resp_payload_size)
 			kfree(resp_payload);
@@ -947,7 +949,7 @@ int gh_rm_vm_irq_reclaim(gh_virq_handle_t virq_handle)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for IRQ_RELEASE: %u\n",
+		pr_err("%s: Invalid size received for IRQ_RELEASE: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		ret = -EINVAL;
@@ -978,7 +980,7 @@ int gh_rm_vm_alloc_vmid(enum gh_vm_names vm_name, int *vmid)
 	/* Look up for the vm_name<->vmid pair if already present.
 	 * If so, return.
 	 */
-	if (vm_name < GH_SELF_VM || vm_name >= GH_VM_MAX)
+	if (vm_name < GH_SELF_VM || vm_name > GH_VM_MAX)
 		return -EINVAL;
 
 	spin_lock(&gh_vm_table_lock);
@@ -1004,7 +1006,7 @@ int gh_rm_vm_alloc_vmid(enum gh_vm_names vm_name, int *vmid)
 
 	if (resp_payload &&
 			(resp_payload_size != sizeof(*resp_payload))) {
-		pr_err("%s: Invalid size received for VM_ALLOCATE: %u\n",
+		pr_err("%s: Invalid size received for VM_ALLOCATE: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp_payload);
 		return -EINVAL;
@@ -1053,7 +1055,7 @@ int gh_rm_vm_dealloc_vmid(gh_vmid_t vmid)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for VM_DEALLOCATE: %u\n",
+		pr_err("%s: Invalid size received for VM_DEALLOCATE: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -1109,7 +1111,7 @@ int gh_rm_vm_config_image(gh_vmid_t vmid, u16 auth_mech, u32 mem_handle,
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for VM_CONFIG_IMAGE: %u\n",
+		pr_err("%s: Invalid size received for VM_CONFIG_IMAGE: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -1167,7 +1169,7 @@ int gh_rm_vm_auth_image(gh_vmid_t vmid, ssize_t n_entries,
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for VM_AUTH_IMAGE: %u\n",
+		pr_err("%s: Invalid size received for VM_AUTH_IMAGE: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		kfree(req_buf);
@@ -1206,7 +1208,7 @@ int ghd_rm_vm_init(gh_vmid_t vmid)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for VM_INIT: %u\n",
+		pr_err("%s: Invalid size received for VM_INIT: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -1242,7 +1244,7 @@ int ghd_rm_vm_start(int vmid)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for VM_START: %u\n",
+		pr_err("%s: Invalid size received for VM_START: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp_payload);
 		return -EINVAL;
@@ -1285,7 +1287,7 @@ int ghd_rm_vm_stop(gh_vmid_t vmid, u32 stop_reason, u8 flags)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for VM_STOP: %u\n",
+		pr_err("%s: Invalid size received for VM_STOP: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -1322,7 +1324,7 @@ int ghd_rm_vm_reset(gh_vmid_t vmid)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for VM_RESET: %u\n",
+		pr_err("%s: Invalid size received for VM_RESET: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -1355,7 +1357,7 @@ int gh_rm_console_open(gh_vmid_t vmid)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for CONSOLE_OPEN: %u\n",
+		pr_err("%s: Invalid size received for CONSOLE_OPEN: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -1388,7 +1390,7 @@ int gh_rm_console_close(gh_vmid_t vmid)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for CONSOLE_CLOSE: %u\n",
+		pr_err("%s: Invalid size received for CONSOLE_CLOSE: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -1436,7 +1438,7 @@ int gh_rm_console_write(gh_vmid_t vmid, const char *buf, size_t size)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for CONSOLE_WRITE: %u\n",
+		pr_err("%s: Invalid size received for CONSOLE_WRITE: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -1470,7 +1472,7 @@ int gh_rm_console_flush(gh_vmid_t vmid)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for CONSOLE_FLUSH: %u\n",
+		pr_err("%s: Invalid size received for CONSOLE_FLUSH: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp);
 		return -EINVAL;
@@ -1676,7 +1678,7 @@ int gh_rm_mem_qcom_lookup_sgl(u8 mem_type, gh_label_t label,
 
 	if (resp_size != sizeof(*resp_payload)) {
 		ret = -EINVAL;
-		pr_err("%s invalid size received %u\n", __func__, resp_size);
+		pr_err("%s invalid size received %zu\n", __func__, resp_size);
 		if (resp_size)
 			kfree(resp_payload);
 		goto err_rm_call;
@@ -2121,7 +2123,7 @@ int gh_rm_mem_append(gh_memparcel_handle_t handle, u8 flags,
 
 	if (resp_payload_size) {
 		ret = -EINVAL;
-		pr_err("%s: Invalid size received: %u\n",
+		pr_err("%s: Invalid size received: %lu\n",
 			__func__, resp_payload_size);
 		kfree(resp_payload);
 	}
@@ -2482,7 +2484,7 @@ int gh_rm_vm_set_time_base(gh_vmid_t vmid)
 	}
 
 	if (resp_payload_size) {
-		pr_err("%s: Invalid size received for VM_SET_TIME_BASE: %u\n",
+		pr_err("%s: Invalid size received for VM_SET_TIME_BASE: %lu\n",
 			__func__, resp_payload_size);
 		return -EINVAL;
 	}
@@ -2511,13 +2513,13 @@ int gh_rm_minidump_get_info(void)
 				  &req_payload, sizeof(req_payload),
 				  (void **)&resp_payload, &resp_size);
 	if (ret) {
-		pr_err("%s failed with err: 0x%llx %d\n", __func__, resp_payload, ret);
+		pr_err("%s failed with err: 0x%llx %d\n", __func__, (unsigned long long)resp_payload, ret);
 		goto err_rm_call;
 	}
 
 	if (resp_size != sizeof(*resp_payload)) {
 		ret = -EINVAL;
-		pr_err("%s: Invalid size received: %u\n", __func__, resp_size);
+		pr_err("%s: Invalid size received: %zu\n", __func__, resp_size);
 		if (resp_size)
 			kfree(resp_payload);
 		goto err_rm_call;
@@ -2571,13 +2573,13 @@ int gh_rm_minidump_register_range(phys_addr_t base_ipa, size_t region_size,
 	ret = gh_rm_call(rm, GH_RM_RPC_MSG_ID_CALL_VM_MINIDUMP_REGISTER_RANGE,
 			   req_buf, req_size, (void **)&resp_payload,  &resp_size);
 	if (ret) {
-		pr_err("%s failed with err: 0x%llx %d\n", __func__, resp_payload, ret);
+		pr_err("%s failed with err: 0x%llx %d\n", __func__, (unsigned long long)resp_payload, ret);
 		goto err_rm_call;
 	}
 
 	if (resp_size != sizeof(*resp_payload)) {
 		ret = -EINVAL;
-		pr_err("%s: Invalid size received: %u\n", __func__, resp_size);
+		pr_err("%s: Invalid size received: %zu\n", __func__, resp_size);
 		if (resp_size)
 			kfree(resp_payload);
 		goto err_rm_call;
@@ -2612,12 +2614,12 @@ int gh_rm_minidump_deregister_slot(uint16_t slot_num)
 	ret = gh_rm_call(rm, GH_RM_RPC_MSG_ID_CALL_VM_MINIDUMP_DEREGISTER_SLOT,
 			  &req_payload, sizeof(req_payload), &resp, &resp_size);
 	if (ret) {
-		pr_err("%s failed with err: 0x%llx %d\n", __func__, resp, ret);
+		pr_err("%s failed with err: 0x%llx %d\n", __func__, (unsigned long long)resp, ret);
 		return ret;
 	}
 	if (resp_size) {
 		kfree(resp);
-		pr_err("%s: Invalid size received: %u\n", __func__, resp_size);
+		pr_err("%s: Invalid size received: %zu\n", __func__, resp_size);
 		return -EINVAL;
 	}
 
@@ -2661,7 +2663,7 @@ int gh_rm_minidump_get_slot_from_name(uint16_t starting_slot, const char *name, 
 			   req_buf, req_size, (void **)&resp_payload,  &resp_size);
 
 	if (ret) {
-		pr_err("%s failed with err: 0x%llx %d\n", __func__, resp_payload, ret);
+		pr_err("%s failed with err: 0x%llx %d\n", __func__, (unsigned long long)resp_payload, ret);
 		goto err_rm_call;
 	}
 
@@ -2669,7 +2671,7 @@ int gh_rm_minidump_get_slot_from_name(uint16_t starting_slot, const char *name, 
 		ret = -EINVAL;
 		if (resp_size)
 			kfree(resp_payload);
-		pr_err("%s: Invalid size received: %u\n", __func__, resp_size);
+		pr_err("%s: Invalid size received: %zu\n", __func__, resp_size);
 		goto err_rm_call;
 	}
 	ret = resp_payload->slot_number;
