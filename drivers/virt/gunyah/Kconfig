@@ -58,3 +58,21 @@ config GUNYAH_IOEVENTFD
 	  when a Gunyah virtual machine accesses a memory address.
 
 	  Say Y/M here if unsure and you want to support Gunyah VMMs.
+
+menuconfig GUNYAH_DRIVERS
+	bool "Gunyah Vendor Virtualization drivers"
+	depends on ARM64
+	depends on GUNYAH
+	help
+	  The Gunyah drivers are the helper interfaces that runs on the
+	  virtual machines that provides support such as memory/device
+	  sharing, IRQ sharing, IPC/signalling mechanisms, and so on.
+
+	  Say Y here to enable the drivers needed to work on Gunyah
+	  virtualization environment.
+
+	  If you say N, all options in this submenu will be skipped and disabled.
+
+if GUNYAH_DRIVERS
+
+endif
