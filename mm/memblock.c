@@ -2211,6 +2211,27 @@ static int __init early_dyn_memhotplug(char *p)
 }
 early_param("dyn_memhotplug", early_dyn_memhotplug);
 
+#ifdef CONFIG_MEMORY_HOTPLUG
+int add_hotplug_memory_thread(void *args)
+{
+	int idx = 0;
+	int nid,ret=0;
+	u64 phys_addr;
+
+	while (aligned_blocks[idx] && idx < NUM_ALIGN_BLK) {
+		phys_addr = aligned_blocks[idx];
+		if (phys_addr & (MIN_MEMORY_BLOCK_SIZE - 1))
+			return -EINVAL;
+		nid = memory_add_physaddr_to_nid(phys_addr);
+		ret = __add_memory(nid, phys_addr,
+				   MIN_MEMORY_BLOCK_SIZE,
+				   MHP_NONE);
+		idx++;
+	}
+	return ret;
+}
+#endif
+
 int memblock_dump_aligned_blocks_addr(char *buf)
 {
 	int idx = 0;

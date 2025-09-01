@@ -2355,6 +2355,10 @@ static int memmap_init_reserved_pages_thread(void *args)
 }
 #endif
 
+#ifdef CONFIG_MEMORY_HOTPLUG
+int add_hotplug_memory_thread(void *args);
+#endif
+
 void __init page_alloc_init_late(void)
 {
 	struct zone *zone;
@@ -2388,6 +2392,13 @@ void __init page_alloc_init_late(void)
 		pr_err("Failed to create memmap_init_reserved_pages thread.\n");
 	}
 
+#endif
+
+#ifdef CONFIG_MEMORY_HOTPLUG
+	t = kthread_run(add_hotplug_memory_thread, NULL, "add-hotplug-memory");
+	if (IS_ERR(t)) {
+		pr_err("Failed to create add_hotplug_memory thread.\n");
+	}
 #endif
 
 	buffer_init();
