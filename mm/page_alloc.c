@@ -985,9 +985,7 @@ static inline bool page_expected_state(struct page *page,
 #ifdef CONFIG_MEMCG
 			page->memcg_data |
 #endif
-#ifdef CONFIG_PAGE_POOL
-			((page->pp_magic & ~0x3UL) == PP_SIGNATURE) |
-#endif
+			page_pool_page_is_pp(page) |
 			(page->flags & check_flags)))
 		return false;
 
@@ -1014,10 +1012,8 @@ static const char *page_bad_reason(struct page *page, unsigned long flags)
 	if (unlikely(page->memcg_data))
 		bad_reason = "page still charged to cgroup";
 #endif
-#ifdef CONFIG_PAGE_POOL
-	if (unlikely((page->pp_magic & ~0x3UL) == PP_SIGNATURE))
+	if (unlikely(page_pool_page_is_pp(page)))
 		bad_reason = "page_pool leak";
-#endif
 	return bad_reason;
 }
 
@@ -2801,6 +2797,7 @@ void free_unref_page(struct page *page, unsigned int order)
 	unsigned long pfn = page_to_pfn(page);
 	int migratetype;
 	bool skip_free_unref_page = false;
+	bool skip_free_page = false;
 
 	if (!pcp_allowed_order(order)) {
 		__free_pages_ok(page, order, FPI_NONE);
@@ -2810,6 +2807,9 @@ void free_unref_page(struct page *page, unsigned int order)
 	if (!free_pages_prepare(page, order))
 		return;
 
+	trace_android_vh_free_page_bypass(page, order, &skip_free_page);
+	if (skip_free_page)
+		return;
 	/*
 	 * We only track unmovable, reclaimable, movable and if restrict cma
 	 * fallback flag is set, CMA on pcp lists.
@@ -2861,8 +2861,14 @@ void free_unref_folios(struct folio_batch *folios)
 		struct folio *folio = folios->folios[i];
 		unsigned long pfn = folio_pfn(folio);
 		unsigned int order = folio_order(folio);
+		bool skip_free_folio = false;
 
 		if (!free_pages_prepare(&folio->page, order))
+			continue;
+
+		trace_android_vh_free_folio_bypass(folio, order,
+				&skip_free_folio);
+		if (skip_free_folio)
 			continue;
 		/*
 		 * Free orders not handled on the PCP directly to the
@@ -4749,6 +4755,15 @@ restart:
 
 retry:
 	retry_loop_count++;
+
+	/*
+	 * Deal with possible cpuset update races or zonelist updates to avoid
+	 * infinite retries.
+	 */
+	if (check_retry_cpuset(cpuset_mems_cookie, ac) ||
+	    check_retry_zonelist(zonelist_iter_cookie))
+		goto restart;
+
 	/* Ensure kswapd doesn't accidentally go to sleep as long as we loop */
 	if (alloc_flags & ALLOC_KSWAPD)
 		wake_all_kswapds(order, gfp_mask, ac);

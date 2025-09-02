@@ -38,12 +38,15 @@
   folio_referenced
   reclaim_pages
   percpu_ref_is_zero
+  vm_normal_folio_pmd
   __mod_lruvec_state
   __mod_zone_page_state
   __pte_offset_map_lock
   __pmd_trans_huge_lock
   __pte_offset_map_lock
   __show_mem
+  __traceiter_android_vh_page_cache_ra_order_bypass
+  __tracepoint_android_vh_page_cache_ra_order_bypass
   __traceiter_android_vh_slab_alloc_node
   __tracepoint_android_vh_slab_alloc_node
   __traceiter_android_vh_slab_free

@@ -195,10 +195,12 @@
   consume_skb
   contig_page_data
   __contpte_try_unfold
+  _copy_from_iter
   copy_from_kernel_nofault
   __copy_overflow
   copy_page
   copy_page_from_iter_atomic
+  _copy_to_iter
   cpu_all_bits
   cpu_bit_bitmap
   cpufreq_boost_enabled
@@ -234,10 +236,13 @@
   crypto_aead_setauthsize
   crypto_aead_setkey
   crypto_ahash_digest
+  crypto_ahash_final
+  crypto_ahash_finup
   crypto_ahash_setkey
   crypto_alloc_aead
   crypto_alloc_ahash
   crypto_alloc_base
+  crypto_alloc_rng
   crypto_alloc_shash
   crypto_alloc_skcipher
   crypto_cipher_encrypt_one
@@ -247,13 +252,17 @@
   crypto_dequeue_request
   crypto_destroy_tfm
   crypto_enqueue_request
+  crypto_get_default_null_skcipher
   crypto_has_alg
   crypto_init_queue
   __crypto_memneq
+  crypto_put_default_null_skcipher
   crypto_register_ahash
   crypto_register_alg
   crypto_register_shash
   crypto_register_skcipher
+  crypto_req_done
+  crypto_rng_reset
   crypto_sha1_finup
   crypto_sha1_update
   crypto_shash_digest
@@ -564,6 +573,7 @@
   down
   downgrade_write
   down_interruptible
+  down_killable
   down_read
   down_read_trylock
   down_timeout
@@ -636,6 +646,7 @@
   drm_atomic_set_mode_prop_for_crtc
   drm_atomic_state_alloc
   drm_atomic_state_clear
+  drm_atomic_state_default_release
   __drm_atomic_state_free
   drm_compat_ioctl
   drm_connector_attach_content_type_property
@@ -776,6 +787,7 @@
   drop_reasons_register_subsys
   drop_reasons_unregister_subsys
   d_splice_alias
+  dump_backtrace
   dump_stack
   dw_pcie_find_capability
   dw_pcie_host_deinit
@@ -995,6 +1007,7 @@
   handle_fasteoi_irq
   handle_simple_irq
   handle_sysrq
+  hci_cmd_sync
   hdmi_audio_infoframe_init
   hdmi_audio_infoframe_pack
   hdmi_avi_infoframe_init
@@ -1299,6 +1312,7 @@
   __local_bh_enable_ip
   __lock_buffer
   lockref_get
+  lock_sock_nested
   logfc
   log_post_read_mmio
   log_post_write_mmio
@@ -1306,8 +1320,10 @@
   log_write_mmio
   lookup_bdev
   loops_per_jiffy
+  LZ4_compress_default
   LZ4_compress_fast
   LZ4_compress_fast_continue
+  LZ4_compress_HC
   LZ4_decompress_safe
   LZ4_decompress_safe_continue
   LZ4_decompress_safe_partial
@@ -1799,6 +1815,8 @@
   proc_mkdir
   proc_mkdir_data
   proc_remove
+  proto_register
+  proto_unregister
   __pskb_copy_fclone
   pskb_expand_head
   __pskb_pull_tail
@@ -1920,6 +1938,7 @@
   release_firmware
   __release_region
   release_resource
+  release_sock
   remap_pfn_range
   remap_vmalloc_range
   remove_cpu
@@ -2015,6 +2034,8 @@
   sdio_writel
   sdio_writesb
   sdio_writew
+  security_sk_clone
+  security_sock_graft
   send_sig
   seq_list_next
   seq_list_start
@@ -2077,6 +2098,7 @@
   single_release
   si_swapinfo
   sized_strscpy
+  sk_alloc
   skb_add_rx_frag_netmem
   skb_checksum_help
   skb_clone
@@ -2101,9 +2123,11 @@
   skb_queue_tail
   skb_realloc_headroom
   skb_scrub_packet
+  skb_split
   skb_trim
   skb_tstamp_tx
   skb_unlink
+  sk_free
   skip_spaces
   sk_skb_reason_drop
   smpboot_register_percpu_thread
@@ -2193,10 +2217,25 @@
   snd_timer_stop
   snprintf
   __sock_create
+  sock_init_data
   sock_kfree_s
   sock_kmalloc
   sock_kzfree_s
+  sock_no_accept
+  sock_no_bind
+  sock_no_connect
+  sock_no_getname
+  sock_no_ioctl
+  sock_no_listen
+  sock_no_mmap
+  sock_no_recvmsg
+  sock_no_sendmsg
+  sock_no_shutdown
+  sock_no_socketpair
+  sock_register
   sock_release
+  sock_unregister
+  sock_wake_async
   sock_wfree
   sort
   spi_add_device
@@ -2732,10 +2771,12 @@
   wakeup_source_register
   wakeup_source_unregister
   __wake_up_sync
+  __wake_up_sync_key
   __warn_flushing_systemwide_wq
   __warn_printk
   wireless_nlevent_flush
   wireless_send_event
+  woken_wake_function
   work_busy
   write_inode_now
   __write_overflow_field
@@ -2787,4 +2828,6 @@
   zs_malloc
   zs_map_object
   zs_pool_stats
+  zstd_max_clevel
+  zstd_min_clevel
   zs_unmap_object
