@@ -2839,11 +2839,11 @@ static int apply_to_pte_range(struct mm_struct *mm, pmd_t *pmd,
 	if (fn) {
 		do {
 			if (create || !pte_none(ptep_get(pte))) {
-				err = fn(pte++, addr, data);
+				err = fn(pte, addr, data);
 				if (err)
 					break;
 			}
-		} while (addr += PAGE_SIZE, addr != end);
+		} while (pte++, addr += PAGE_SIZE, addr != end);
 	}
 	*mask |= PGTBL_PTE_MODIFIED;
 
@@ -4690,7 +4690,7 @@ static struct folio *alloc_anon_folio(struct vm_fault *vmf)
 	struct vm_area_struct *vma = vmf->vma;
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	unsigned long orders;
-	struct folio *folio = NULL;
+	struct folio *folio;
 	unsigned long addr;
 	pte_t *pte;
 	gfp_t gfp;
@@ -4739,16 +4739,10 @@ static struct folio *alloc_anon_folio(struct vm_fault *vmf)
 
 	/* Try allocating the highest of the remaining orders. */
 	gfp = vma_thp_gfp_mask(vma);
-
-	trace_android_vh_mm_customize_alloc_anon_thp(&gfp, &orders, &order, &folio);
-	if (folio)
-		goto allocated;
-
 	while (orders) {
 		addr = ALIGN_DOWN(vmf->address, PAGE_SIZE << order);
 		folio = vma_alloc_folio(gfp, order, vma, addr, true);
 		if (folio) {
-allocated:
 			if (mem_cgroup_charge(folio, vma->vm_mm, gfp)) {
 				count_mthp_stat(order, MTHP_STAT_ANON_FAULT_FALLBACK_CHARGE);
 				folio_put(folio);

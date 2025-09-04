@@ -12,8 +12,7 @@
 
 use core::{
     pin::Pin,
-    ptr::null_mut,
-    sync::atomic::{AtomicBool, AtomicPtr, AtomicUsize, Ordering},
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 use kernel::{
     bindings::{self, ASHMEM_GET_PIN_STATUS, ASHMEM_PIN, ASHMEM_UNPIN},
@@ -30,7 +29,6 @@ use kernel::{
     seq_file::{seq_print, SeqFile},
     sync::{new_mutex, Mutex, UniqueArc},
     task::Task,
-    types::ForeignOwnable,
     uaccess::{UserSlice, UserSliceReader, UserSliceWriter},
 };
 
@@ -38,6 +36,8 @@ const ASHMEM_NAME_LEN: usize = bindings::ASHMEM_NAME_LEN as usize;
 const ASHMEM_FULL_NAME_LEN: usize = bindings::ASHMEM_FULL_NAME_LEN as usize;
 const ASHMEM_NAME_PREFIX_LEN: usize = bindings::ASHMEM_NAME_PREFIX_LEN as usize;
 const ASHMEM_NAME_PREFIX: [u8; ASHMEM_NAME_PREFIX_LEN] = *b"dev/ashmem/";
+
+const ASHMEM_MAX_SIZE: usize = usize::MAX >> 1;
 
 const PROT_READ: usize = bindings::PROT_READ as usize;
 const PROT_EXEC: usize = bindings::PROT_EXEC as usize;
@@ -71,7 +71,6 @@ fn has_cap_sys_admin() -> bool {
 static NUM_PIN_IOCTLS_WAITING: AtomicUsize = AtomicUsize::new(0);
 static IGNORE_UNSET_PROT_READ: AtomicBool = AtomicBool::new(false);
 static IGNORE_UNSET_PROT_EXEC: AtomicBool = AtomicBool::new(false);
-static ASHMEM_FOPS_PTR: AtomicPtr<bindings::file_operations> = AtomicPtr::new(null_mut());
 
 fn shrinker_should_stop() -> bool {
     NUM_PIN_IOCTLS_WAITING.load(Ordering::Relaxed) > 0
@@ -105,20 +104,13 @@ impl kernel::Module for AshmemModule {
 
         ashmem_range::set_shrinker_enabled(true)?;
 
-        let ashmem_miscdevice_registration = KBox::pin_init(
-            MiscDeviceRegistration::register(MiscDeviceOptions {
-                name: c_str!("ashmem"),
-            }),
-            GFP_KERNEL,
-        )?;
-        let ashmem_miscdevice_ptr = ashmem_miscdevice_registration.as_raw();
-        // SAFETY: ashmem_miscdevice_registration is pinned and is never destroyed, so reading
-        // and storing the fops pointer this way should be fine.
-        let fops_ptr = unsafe { (*ashmem_miscdevice_ptr).fops };
-        ASHMEM_FOPS_PTR.store(fops_ptr.cast_mut(), Ordering::Relaxed);
-
         Ok(Self {
-            _misc: ashmem_miscdevice_registration,
+            _misc: KBox::pin_init(
+                MiscDeviceRegistration::register(MiscDeviceOptions {
+                    name: c_str!("ashmem"),
+                }),
+                GFP_KERNEL,
+            )?,
             _toggle_unpin: AshmemToggleMisc::<AshmemToggleShrinker>::new()?,
             _toggle_read: AshmemToggleMisc::<AshmemToggleRead>::new()?,
             _toggle_exec: AshmemToggleMisc::<AshmemToggleExec>::new()?,
@@ -167,7 +159,7 @@ impl MiscDevice for Ashmem {
         let asma = &mut *me.inner.lock();
 
         // User needs to SET_SIZE before mapping.
-        if asma.size == 0 {
+        if asma.size == 0 || asma.size >= ASHMEM_MAX_SIZE {
             return Err(EINVAL);
         }
 
@@ -266,7 +258,7 @@ impl MiscDevice for Ashmem {
                 me.pin_unpin(cmd, UserSlice::new(arg, size).reader())
             }
             bindings::ASHMEM_PURGE_ALL_CACHES => me.purge_all_caches(),
-            _ => Err(ENOTTY),
+            _ => Err(EINVAL),
         }
     }
 
@@ -423,18 +415,17 @@ impl Ashmem {
             None => return Err(EINVAL),
         };
 
+        let max_size = page_align(asma.size);
+        let remaining = max_size.checked_sub(offset).ok_or(EINVAL)?;
+
         // Per custom, you can pass zero for len to mean "everything onward".
-        let len = if cmd_len == 0 {
-            page_align(asma.size) - offset
-        } else {
-            cmd_len
-        };
+        let len = if cmd_len == 0 { remaining } else { cmd_len };
 
         if (offset | len) & !PAGE_MASK != 0 {
             return Err(EINVAL);
         }
         let len_plus_offset = offset.checked_add(len).ok_or(EINVAL)?;
-        if page_align(asma.size) < len_plus_offset {
+        if max_size < len_plus_offset {
             return Err(EINVAL);
         }
 
@@ -645,109 +636,5 @@ fn ashmem_memfd_ioctl_inner(file: &File, cmd: u32, arg: usize) -> Result<isize> 
         bindings::ASHMEM_SET_NAME => Err(EINVAL),
         bindings::ASHMEM_SET_SIZE => Err(EINVAL),
         _ => Err(EINVAL),
-    }
-}
-
-/// # Safety
-///
-/// The caller must ensure that `file` is valid for the duration of this function.
-#[no_mangle]
-unsafe extern "C" fn is_ashmem_file(file: *mut bindings::file) -> bool {
-    let ashmem_fops_ptr = ASHMEM_FOPS_PTR.load(Ordering::Relaxed);
-    if file.is_null() || ashmem_fops_ptr.is_null() {
-        return false;
-    }
-
-    // SAFETY: Accessing the f_op field of a non-NULL file structure is always okay.
-    let fops_ptr = unsafe { (*file).f_op };
-    fops_ptr == ashmem_fops_ptr
-}
-
-/// # Safety
-///
-/// The caller must ensure that `file` references a valid file for the duration of 'a.
-unsafe fn get_ashmem_area<'a>(file: *mut bindings::file) -> Result<&'a Ashmem, Error> {
-    // SAFETY: Caller ensures that file is valid, so this should be safe.
-    if unsafe { is_ashmem_file(file) } {
-        return Err(EINVAL);
-    }
-
-    // SAFETY: Given that this is an ashmem file, it should be safe to access the private_data
-    // field containing the Ashmem struct.
-    let private = unsafe { (*file).private_data };
-    // SAFETY: Since this is an ashmem file, we know the type of the struct and can reference it
-    // safely.
-    let ashmem = unsafe { <<Ashmem as MiscDevice>::Ptr as ForeignOwnable>::borrow(private) };
-    Ok(ashmem.get_ref())
-}
-
-/// # Safety
-///
-/// The caller must ensure the following prior to invoking this function:
-/// 1. `name` is valid for writing and at least of size ASHMEM_FULL_NAME_LEN.
-/// 2. `file` is valid for the duration of this function.
-#[no_mangle]
-unsafe extern "C" fn ashmem_area_name(
-    file: *mut bindings::file,
-    name: *mut kernel::ffi::c_char,
-) -> c_int {
-    if name.is_null() {
-        return EINVAL.to_errno() as c_int;
-    }
-
-    // SAFETY: file is valid for the duration of this function.
-    match unsafe { get_ashmem_area(file) } {
-        Ok(ashmem) => {
-            let name_buffer = name.cast::<[u8; ASHMEM_FULL_NAME_LEN]>();
-            // SAFETY: Caller guarantees that the pointer is valid for writing.
-            ashmem.inner.lock().full_name(unsafe { &mut *name_buffer });
-            0
-        }
-        Err(err) => err.to_errno() as c_int,
-    }
-}
-
-/// # Safety
-///
-/// The caller must ensure that `file` is valid for the duration of this function.
-#[no_mangle]
-unsafe extern "C" fn ashmem_area_size(file: *mut bindings::file) -> isize {
-    // SAFETY: file is valid for the duration of this function.
-    let ashmem = match unsafe { get_ashmem_area(file) } {
-        Ok(area) => area,
-        Err(_err) => return 0,
-    };
-
-    match ashmem.get_size() {
-        Ok(size) => size,
-        Err(_err) => 0,
-    }
-}
-
-/// # Safety
-///
-/// The caller must ensure that `file` is valid for the duration of this function.
-///
-/// If this function returns a non-NULL pointer to a file structure, the refcount for that
-/// file will be incremented by 1. It is the caller's responsibility to decrement the refcount
-/// when the file is no longer needed.
-#[no_mangle]
-unsafe extern "C" fn ashmem_area_vmfile(file: *mut bindings::file) -> *mut bindings::file {
-    // SAFETY: file is valid for the duration of this function.
-    let ashmem = match unsafe { get_ashmem_area(file) } {
-        Ok(area) => area,
-        Err(_err) => return null_mut(),
-    };
-
-    let asma = &mut *ashmem.inner.lock();
-    match asma.file.as_ref() {
-        Some(shmem_file) => {
-            let shmem_file_ptr = shmem_file.file().as_ptr();
-            // SAFETY: file is valid for the duration of the function, which means shmem file is
-            // also valid at this point.
-            unsafe { bindings::get_file(shmem_file_ptr) };
-            shmem_file_ptr
-        }
-        None => null_mut(),
     }
 }

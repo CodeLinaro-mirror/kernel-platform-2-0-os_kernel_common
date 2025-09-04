@@ -105,26 +105,12 @@ DECLARE_HOOK(android_vh_direct_reclaim_end,
 DECLARE_HOOK(android_vh_throttle_direct_reclaim_bypass,
 	TP_PROTO(bool *bypass),
 	TP_ARGS(bypass));
-DECLARE_HOOK(android_vh_shrink_node_memcgs,
-	TP_PROTO(struct mem_cgroup *memcg, bool *skip),
-	TP_ARGS(memcg, skip));
 DECLARE_HOOK(android_vh_shrink_node,
 	TP_PROTO(pg_data_t *pgdat, struct mem_cgroup *memcg),
 	TP_ARGS(pgdat, memcg));
-DECLARE_HOOK(android_vh_mm_isolate_priv_lru,
-	TP_PROTO(unsigned long nr_to_scan, struct lruvec *lruvec, enum lru_list lru,
-		struct list_head *dst, int reclaim_idx, bool may_unmap,
-		unsigned long *nr_scanned, unsigned long *nr_taken),
-	TP_ARGS(nr_to_scan, lruvec, lru, dst, reclaim_idx, may_unmap, nr_scanned, nr_taken));
-DECLARE_HOOK(android_vh_mm_customize_file_is_tiny,
-	TP_PROTO(unsigned int may_swap, int order, int highest_zoneidx, bool *file_is_tiny),
-	TP_ARGS(may_swap, order, highest_zoneidx, file_is_tiny));
-DECLARE_HOOK(android_vh_mm_customize_pgdat_balanced,
-	TP_PROTO(int order, int highest_zoneidx, bool *balanced, bool *customized),
-	TP_ARGS(order, highest_zoneidx, balanced, customized));
-DECLARE_HOOK(android_vh_mm_customize_reclaim_idx,
-	TP_PROTO(int order, gfp_t gfp, s8 *reclaim_idx, enum zone_type *highest_zoneidx),
-	TP_ARGS(order, gfp, reclaim_idx, highest_zoneidx));
+DECLARE_HOOK(android_vh_shrink_node_memcgs,
+	TP_PROTO(struct mem_cgroup *memcg, bool *skip),
+	TP_ARGS(memcg, skip));
 #endif /* _TRACE_HOOK_VMSCAN_H */
 /* This part must be outside protection */
 #include <trace/define_trace.h>

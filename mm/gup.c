@@ -472,17 +472,6 @@ void unpin_folios(struct folio **folios, unsigned long nfolios)
 EXPORT_SYMBOL_GPL(unpin_folios);
 
 /*
- * trace_android_vh_mm_customize_longterm_pinnable is called in include/linux/mm.h
- * by including include/trace/hooks/mm.h, which will result to build-err.
- * So we create func: _trace_android_vh_mm_customize_longterm_pinnable.
- */
-void _trace_android_vh_mm_customize_longterm_pinnable(struct folio *folio,
-		bool *is_longterm_pinnable)
-{
-	trace_android_vh_mm_customize_longterm_pinnable(folio, is_longterm_pinnable);
-}
-
-/*
  * Set the MMF_HAS_PINNED if not set yet; after set it'll be there for the mm's
  * lifecycle.  Avoid setting the bit unless necessary, or it might cause write
  * cache bouncing on large SMP machines for concurrent pinned gups.
@@ -2224,8 +2213,8 @@ size_t fault_in_safe_writeable(const char __user *uaddr, size_t size)
 	} while (start != end);
 	mmap_read_unlock(mm);
 
-	if (size > (unsigned long)uaddr - start)
-		return size - ((unsigned long)uaddr - start);
+	if (size > start - (unsigned long)uaddr)
+		return size - (start - (unsigned long)uaddr);
 	return 0;
 }
 EXPORT_SYMBOL(fault_in_safe_writeable);

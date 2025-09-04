@@ -533,7 +533,6 @@ int __mmu_notifier_invalidate_range_start(struct mmu_notifier_range *range)
 		return mn_hlist_invalidate_range_start(subscriptions, range);
 	return 0;
 }
-EXPORT_SYMBOL_GPL(__mmu_notifier_invalidate_range_start);
 
 static void
 mn_hlist_invalidate_end(struct mmu_notifier_subscriptions *subscriptions,
@@ -570,7 +569,6 @@ void __mmu_notifier_invalidate_range_end(struct mmu_notifier_range *range)
 		mn_hlist_invalidate_end(subscriptions, range);
 	lock_map_release(&__mmu_notifier_invalidate_range_start_map);
 }
-EXPORT_SYMBOL_GPL(__mmu_notifier_invalidate_range_end);
 
 void __mmu_notifier_arch_invalidate_secondary_tlbs(struct mm_struct *mm,
 					unsigned long start, unsigned long end)
@@ -589,7 +587,6 @@ void __mmu_notifier_arch_invalidate_secondary_tlbs(struct mm_struct *mm,
 	}
 	srcu_read_unlock(&srcu, id);
 }
-EXPORT_SYMBOL_GPL(__mmu_notifier_arch_invalidate_secondary_tlbs);
 
 /*
  * Same as mmu_notifier_register but here the caller must hold the mmap_lock in

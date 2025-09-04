@@ -990,13 +990,13 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 		}
 
 		if (PageHuge(page)) {
+			const unsigned int order = compound_order(page);
 			/*
 			 * skip hugetlbfs if we are not compacting for pages
 			 * bigger than its order. THPs and other compound pages
 			 * are handled below.
 			 */
 			if (!cc->alloc_contig) {
-				const unsigned int order = compound_order(page);
 
 				if (order <= MAX_PAGE_ORDER) {
 					low_pfn += (1UL << order) - 1;
@@ -1020,8 +1020,8 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 				 /* Do not report -EBUSY down the chain */
 				if (ret == -EBUSY)
 					ret = 0;
-				low_pfn += compound_nr(page) - 1;
-				nr_scanned += compound_nr(page) - 1;
+				low_pfn += (1UL << order) - 1;
+				nr_scanned += (1UL << order) - 1;
 				goto isolate_fail;
 			}
 
@@ -2854,11 +2854,6 @@ enum compact_result try_to_compact_pages(gfp_t gfp_mask, unsigned int order,
 	for_each_zone_zonelist_nodemask(zone, z, ac->zonelist,
 					ac->highest_zoneidx, ac->nodemask) {
 		enum compact_result status;
-		bool can_compact = true;
-
-		trace_android_vh_mm_customize_zone_can_compact(zone, &can_compact);
-		if (!can_compact)
-			continue;
 
 		if (cpusets_enabled() &&
 			(alloc_flags & ALLOC_CPUSET) &&
@@ -2926,14 +2921,8 @@ void compact_node_async(int nid)
 	};
 
 	for (zoneid = 0; zoneid < MAX_NR_ZONES; zoneid++) {
-		bool can_compact = true;
-
 		zone = &pgdat->node_zones[zoneid];
 		if (!populated_zone(zone))
-			continue;
-
-		trace_android_vh_mm_customize_zone_can_compact(zone, &can_compact);
-		if (!can_compact)
 			continue;
 
 		if (fatal_signal_pending(current))
@@ -2971,14 +2960,8 @@ static int compact_node(pg_data_t *pgdat, bool proactive)
 	};
 
 	for (zoneid = 0; zoneid < MAX_NR_ZONES; zoneid++) {
-		bool can_compact = true;
-
 		zone = &pgdat->node_zones[zoneid];
 		if (!populated_zone(zone))
-			continue;
-
-		trace_android_vh_mm_customize_zone_can_compact(zone, &can_compact);
-		if (!can_compact)
 			continue;
 
 		if (fatal_signal_pending(current))
@@ -3107,14 +3090,9 @@ static bool kcompactd_node_suitable(pg_data_t *pgdat)
 	enum compact_result ret;
 
 	for (zoneid = 0; zoneid <= highest_zoneidx; zoneid++) {
-		bool can_compact = true;
 		zone = &pgdat->node_zones[zoneid];
 
 		if (!populated_zone(zone))
-			continue;
-
-		trace_android_vh_mm_customize_zone_can_compact(zone, &can_compact);
-		if (!can_compact)
 			continue;
 
 		ret = compaction_suit_allocation_order(zone,
@@ -3151,14 +3129,9 @@ static void kcompactd_do_work(pg_data_t *pgdat)
 
 	for (zoneid = 0; zoneid <= cc.highest_zoneidx; zoneid++) {
 		int status;
-		bool can_compact = true;
 
 		zone = &pgdat->node_zones[zoneid];
 		if (!populated_zone(zone))
-			continue;
-
-		trace_android_vh_mm_customize_zone_can_compact(zone, &can_compact);
-		if (!can_compact)
 			continue;
 
 		if (compaction_deferred(zone, cc.order))
