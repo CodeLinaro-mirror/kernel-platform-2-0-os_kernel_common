@@ -431,15 +431,19 @@ int __pkvm_guest_relinquish_to_host(struct pkvm_hyp_vcpu *vcpu,
 		goto end;
 	}
 
-	hyp_poison_page(phys, PAGE_SIZE);
-	psci_mem_protect_dec(1);
-
 	/* Zap the guest stage2 pte and return ownership to the host */
 	ret = kvm_pgtable_stage2_unmap(&vm->pgt, ipa, PAGE_SIZE);
 	if (ret)
 		goto end;
 
+	hyp_poison_page(phys, PAGE_SIZE);
+	psci_mem_protect_dec(1);
+
 	WARN_ON(host_stage2_set_owner_locked(phys, PAGE_SIZE, PKVM_ID_HOST));
+
+	if (pkvm_ipa_range_has_pvmfw(vm, ipa, ipa + PAGE_SIZE))
+		vm->kvm.arch.pkvm.pvmfw_load_addr = PVMFW_INVALID_LOAD_ADDR;
+
 end:
 	guest_unlock_component(vm);
 	host_unlock_component();
@@ -490,18 +494,9 @@ int __pkvm_prot_finalize(void)
 
 int host_stage2_unmap_reg_locked(phys_addr_t start, u64 size)
 {
-	int ret;
-
 	hyp_assert_lock_held(&host_mmu.lock);
 
-	ret = kvm_pgtable_stage2_reclaim_leaves(&host_mmu.pgt, start, size);
-	if (ret)
-		return ret;
-
-	kvm_iommu_host_stage2_idmap(start, start + size, 0);
-	kvm_iommu_host_stage2_idmap_complete(false);
-
-	return 0;
+	return kvm_pgtable_stage2_reclaim_leaves(&host_mmu.pgt, start, size);
 }
 
 static int host_stage2_unmap_unmoveable_regs(void)
