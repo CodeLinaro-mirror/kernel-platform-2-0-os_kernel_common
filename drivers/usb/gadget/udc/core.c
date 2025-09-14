@@ -1119,12 +1119,12 @@ EXPORT_SYMBOL_GPL(usb_gadget_set_state);
 /* ------------------------------------------------------------------------- */
 
 /* Acquire connect_lock before calling this function. */
-static void usb_udc_connect_control_locked(struct usb_udc *udc) __must_hold(&connect_lock)
+static int usb_udc_connect_control_locked(struct usb_udc *udc) __must_hold(&connect_lock)
 {
-	if (udc->vbus && udc->started)
-		usb_gadget_connect_locked(udc->gadget);
+	if (udc->vbus)
+		return usb_gadget_connect_locked(udc->gadget);
 	else
-		usb_gadget_disconnect_locked(udc->gadget);
+		return usb_gadget_disconnect_locked(udc->gadget);
 }
 
 /**
@@ -1600,17 +1600,28 @@ static int udc_bind_to_driver(struct usb_udc *udc, struct usb_gadget_driver *dri
 		goto err1;
 	mutex_lock(&connect_lock);
 	ret = usb_gadget_udc_start_locked(udc);
-	if (ret) {
-		mutex_unlock(&connect_lock);
-		driver->unbind(udc->gadget);
-		goto err1;
-	}
+	if (ret)
+		goto err_start;
+
 	usb_gadget_enable_async_callbacks(udc);
-	usb_udc_connect_control_locked(udc);
+	ret = usb_udc_connect_control_locked(udc);
+	if (ret)
+		goto err_connect_control;
+
 	mutex_unlock(&connect_lock);
 
 	kobject_uevent(&udc->dev.kobj, KOBJ_CHANGE);
 	return 0;
+
+err_connect_control:
+	usb_gadget_disable_async_callbacks(udc);
+	if (udc->gadget->irq)
+		synchronize_irq(udc->gadget->irq);
+	usb_gadget_udc_stop_locked(udc);
+
+err_start:
+	mutex_unlock(&connect_lock);
+	driver->unbind(udc->gadget);
 err1:
 	if (ret != -EISNAM)
 		dev_err(&udc->dev, "failed to start %s: %d\n",
