@@ -113,31 +113,27 @@ static struct kvm_ffa_buffers *ffa_get_buffers(struct pkvm_hyp_vcpu *hyp_vcpu)
 
 DECLARE_STATIC_KEY_FALSE(kvm_ffa_unmap_on_lend);
 
-static int ffa_host_store_handle(u64 ffa_handle, bool is_lend)
+static struct ffa_handle *ffa_host_alloc_handle(void)
 {
 	u32 i;
-	struct ffa_handle *free_handle = NULL;
+	struct ffa_handle *handle;
 
-	if (!static_branch_unlikely(&kvm_ffa_unmap_on_lend))
-		return 0;
-
-	if (spm_free_handle >= spm_handles &&
-	    spm_free_handle < (spm_handles + num_spm_handles)) {
-		free_handle = spm_free_handle;
-	} else {
-		for (i = 0; i < num_spm_handles; i++)
-			if (spm_handles[i].handle == FFA_INVALID_SPM_HANDLE)
-				break;
-
-		if (i == num_spm_handles)
-			return -ENOSPC;
-
-		free_handle = &spm_handles[i];
+	if (spm_free_handle) {
+		WARN_ON(spm_free_handle < spm_handles ||
+			spm_free_handle >= (spm_handles + num_spm_handles));
+		handle = spm_free_handle;
+		spm_free_handle = NULL;
+		return handle;
 	}
 
-	free_handle->handle = ffa_handle;
-	free_handle->is_lend = is_lend;
-	return 0;
+	for (i = 0; i < num_spm_handles; i++)
+		if (spm_handles[i].handle == FFA_INVALID_SPM_HANDLE)
+			break;
+
+	if (i == num_spm_handles)
+		return NULL;
+
+	return &spm_handles[i];
 }
 
 static struct ffa_handle *ffa_host_get_handle(u64 ffa_handle)
@@ -726,7 +722,7 @@ static int ffa_guest_share_ranges(struct ffa_mem_region_addr_range *ranges,
 	struct ffa_mem_region_addr_range *buf = out_region->constituents;
 	int i, j, ret;
 	u32 mem_region_idx = 0;
-	u64 ipa, pa;
+	u64 ipa, pa, offset;
 
 	for (i = 0; i < nranges; i++) {
 		range = &ranges[i];
@@ -736,7 +732,12 @@ static int ffa_guest_share_ranges(struct ffa_mem_region_addr_range *ranges,
 				goto unshare;
 			}
 
-			ipa = range->address + PAGE_SIZE * j;
+			if (check_mul_overflow(j, PAGE_SIZE, &offset) ||
+			    check_add_overflow(range->address, offset, &ipa)) {
+				ret = -EINVAL;
+				goto unshare;
+			}
+
 			ret = __pkvm_guest_share_ffa_page(vcpu, ipa, &pa);
 			if (ret)
 				goto unshare;
@@ -902,6 +903,7 @@ static int __do_ffa_mem_xfer(const u64 func_id,
 	struct ffa_mem_transfer *transfer = NULL;
 	u64 ffa_handle;
 	bool is_lend = func_id == FFA_FN64_MEM_LEND;
+	struct ffa_handle *handle = NULL;
 
 	if (addr_mbz || npages_mbz || fraglen > len ||
 	    fraglen > KVM_FFA_MBOX_NR_PAGES * PAGE_SIZE) {
@@ -1002,6 +1004,14 @@ static int __do_ffa_mem_xfer(const u64 func_id,
 	if (ret)
 		goto out_unlock;
 
+	if (!hyp_vcpu && static_branch_unlikely(&kvm_ffa_unmap_on_lend)) {
+		handle = ffa_host_alloc_handle();
+		if (!handle) {
+			ret = -ENOSPC;
+			goto out_unlock;
+		}
+	}
+
 	ffa_mem_xfer(res, func_id, len, fraglen);
 	if (fraglen != len) {
 		if (res->a0 != FFA_MEM_FRAG_RX)
@@ -1020,10 +1030,9 @@ static int __do_ffa_mem_xfer(const u64 func_id,
 	if (hyp_vcpu && transfer) {
 		transfer->ffa_handle = ffa_handle;
 		list_add(&transfer->node, &ffa_buf->xfer_list);
-	} else if (!hyp_vcpu) {
-		ret = ffa_host_store_handle(ffa_handle, is_lend);
-		if (ret)
-			goto err_unshare;
+	} else if (handle) {
+		handle->handle = ffa_handle;
+		handle->is_lend = is_lend;
 	}
 	hyp_spin_unlock(&kvm_ffa_hyp_lock);
 	return 0;
