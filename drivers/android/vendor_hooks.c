@@ -84,7 +84,7 @@
 #include <trace/hooks/rcu.h>
 #include <trace/hooks/dwc3.h>
 #include <trace/hooks/typec.h>
-
+#include <trace/hooks/sound.h>
 /*
  * Export tracepoints that act as a bare tracehook (ie: have no trace event
  * associated with them) to allow external modules to probe them.
@@ -726,3 +726,4 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_cma_release_bypass);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_cma_alloc_end);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_typec_tcpm_log);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_pci_pm_verify_state);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_snd_pcm_check_no_buffer);
