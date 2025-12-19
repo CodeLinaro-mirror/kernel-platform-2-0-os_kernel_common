@@ -511,7 +511,7 @@ struct snd_pcm_substream {
 #ifdef CONFIG_SND_PCM_XRUN_DEBUG
 	unsigned int xrun_counter; /* number of times xrun happens */
 #endif /* CONFIG_SND_PCM_XRUN_DEBUG */
-
+        unsigned int hw_no_buffer: 1; /* substream may not have a buffer */
 	ANDROID_KABI_RESERVE(1);
 };
 

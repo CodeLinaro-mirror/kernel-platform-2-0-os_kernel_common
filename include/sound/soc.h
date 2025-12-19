@@ -37,6 +37,10 @@ struct platform_device;
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
 
+/* DAI Link Host Mode Support */
+#define SND_SOC_DAI_LINK_NO_HOST               0x1
+#define SND_SOC_DAI_LINK_OPT_HOST              0x2
+
 /*
  * Convenience kcontrol builders
  */
@@ -837,7 +841,11 @@ struct snd_soc_dai_link {
 #ifdef CONFIG_SND_SOC_TOPOLOGY
 	struct snd_soc_dobj dobj; /* For topology */
 #endif
-
+       	/*
+         * This DAI can support no host IO (no pcm data is
+         * copied to from host)
+         */
+        unsigned int no_host_mode:2;
 	ANDROID_KABI_RESERVE(1);
 };
 

@@ -3010,6 +3010,7 @@ int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
 {
 	struct snd_soc_component *component;
 	struct snd_pcm *pcm;
+        struct snd_pcm_str *stream;
 	int ret = 0, playback = 0, capture = 0;
 	int i;
 
@@ -3044,6 +3045,17 @@ int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
 		goto out;
 	}
 
+       	/* setup any hostless PCMs - i.e. no host IO is performed */
+	if (rtd->dai_link->no_host_mode) {
+		if (pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream) {
+			stream = &pcm->streams[SNDRV_PCM_STREAM_PLAYBACK];
+			stream->substream->hw_no_buffer = 1;
+		}
+		if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream) {
+			stream = &pcm->streams[SNDRV_PCM_STREAM_CAPTURE];
+			stream->substream->hw_no_buffer = 1;
+		}
+	}
 	/* ASoC PCM operations */
 	if (rtd->dai_link->dynamic) {
 		rtd->ops.open		= dpcm_fe_dai_open;
