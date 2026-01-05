@@ -7249,6 +7249,7 @@
       <elf-symbol name='v4l2_ctrl_new_std' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x82976b81'/>
       <elf-symbol name='v4l2_ctrl_new_std_menu' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x23502199'/>
       <elf-symbol name='v4l2_ctrl_new_std_menu_items' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x66970720'/>
+      <elf-symbol name='v4l2_ctrl_notify' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xb7bd5fb1'/>
       <elf-symbol name='v4l2_ctrl_poll' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xd6e0d794'/>
       <elf-symbol name='v4l2_ctrl_query_fill' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x89e3897d'/>
       <elf-symbol name='v4l2_ctrl_radio_filter' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x1060897e'/>
@@ -7257,6 +7258,7 @@
       <elf-symbol name='v4l2_ctrl_subdev_log_status' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xffd3b550'/>
       <elf-symbol name='v4l2_ctrl_subdev_subscribe_event' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xac49377a'/>
       <elf-symbol name='v4l2_ctrl_subscribe_event' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x318fc60c'/>
+      <elf-symbol name='v4l2_device_disconnect' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x79ba889f'/>
       <elf-symbol name='v4l2_device_register' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xfcb065f8'/>
       <elf-symbol name='v4l2_device_register_subdev' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x32907b2d'/>
       <elf-symbol name='v4l2_device_set_name' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x828a67dc'/>
@@ -8563,6 +8565,7 @@
       <elf-symbol name='usb_hid_driver' size='96' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x911b00a6'/>
       <elf-symbol name='uuid_null' size='16' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x6dcf857f'/>
       <elf-symbol name='v4l2_subdev_call_wrappers' size='64' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x5968a6d1'/>
+      <elf-symbol name='v4l2_type_names' size='120' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x123959a1'/>
       <elf-symbol name='vabits_actual' size='8' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xc56a41e6'/>
       <elf-symbol name='vb2_common_vm_ops' size='152' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0xb74b3c21'/>
       <elf-symbol name='vb2_dma_contig_memops' size='120' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes' crc='0x57693bed'/>
@@ -30771,6 +30774,9 @@
           <var-decl name='flags' type-id='19c2251e' visibility='default' filepath='include/linux/kprobes.h' line='94' column='1'/>
         </data-member>
       </class-decl>
+      <array-type-def dimensions='1' type-id='80f4b756' size-in-bits='960' id='35f5fc88'>
+        <subrange length='15' type-id='7ff19f0f' id='8484ba73'/>
+      </array-type-def>
       <array-type-def dimensions='1' type-id='80f4b756' size-in-bits='576' id='35f7ccb5'>
         <subrange length='9' type-id='7ff19f0f' id='12e4273c'/>
       </array-type-def>
@@ -170852,6 +170858,12 @@
         <parameter type-id='13956559' name='qmenu' filepath='drivers/media/v4l2-core/v4l2-ctrls-core.c' line='1471' column='1'/>
         <return type-id='4b8b2cf3'/>
       </function-decl>
+      <function-decl name='v4l2_ctrl_notify' mangled-name='v4l2_ctrl_notify' filepath='drivers/media/v4l2-core/v4l2-ctrls-core.c' line='791' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='v4l2_ctrl_notify'>
+        <parameter type-id='4b8b2cf3' name='ctrl' filepath='drivers/media/v4l2-core/v4l2-ctrls-core.c' line='791' column='1'/>
+        <parameter type-id='7ec3cb1e' name='notify' filepath='drivers/media/v4l2-core/v4l2-ctrls-core.c' line='791' column='1'/>
+        <parameter type-id='eaa32e2f' name='priv' filepath='drivers/media/v4l2-core/v4l2-ctrls-core.c' line='791' column='1'/>
+        <return type-id='48b5725f'/>
+      </function-decl>
       <function-decl name='v4l2_ctrl_poll' mangled-name='v4l2_ctrl_poll' filepath='drivers/media/v4l2-core/v4l2-ctrls-api.c' line='1221' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='v4l2_ctrl_poll'>
         <parameter type-id='77e79a4b' name='file' filepath='drivers/media/v4l2-core/v4l2-ctrls-api.c' line='1221' column='1'/>
         <parameter type-id='f0acc909' name='wait' filepath='drivers/media/v4l2-core/v4l2-ctrls-api.c' line='1221' column='1'/>
@@ -170893,6 +170905,10 @@
         <parameter type-id='b7db9582' name='fh' filepath='drivers/media/v4l2-core/v4l2-ctrls-api.c' line='1200' column='1'/>
         <parameter type-id='d8c85275' name='sub' filepath='drivers/media/v4l2-core/v4l2-ctrls-api.c' line='1201' column='1'/>
         <return type-id='95e97e5e'/>
+      </function-decl>
+      <function-decl name='v4l2_device_disconnect' mangled-name='v4l2_device_disconnect' filepath='drivers/media/v4l2-core/v4l2-device.c' line='76' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='v4l2_device_disconnect'>
+        <parameter type-id='ddfb71fa' name='v4l2_dev' filepath='drivers/media/v4l2-core/v4l2-device.c' line='76' column='1'/>
+        <return type-id='48b5725f'/>
       </function-decl>
       <function-decl name='v4l2_device_register' mangled-name='v4l2_device_register' filepath='drivers/media/v4l2-core/v4l2-device.c' line='17' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='v4l2_device_register'>
         <parameter type-id='fa0b179b' name='dev' filepath='drivers/media/v4l2-core/v4l2-device.c' line='17' column='1'/>
@@ -171331,6 +171347,7 @@
         <parameter type-id='52009e4b' name='ev' filepath='drivers/media/v4l2-core/v4l2-subdev.c' line='942' column='1'/>
         <return type-id='48b5725f'/>
       </function-decl>
+      <var-decl name='v4l2_type_names' type-id='35f5fc88' mangled-name='v4l2_type_names' visibility='default' filepath='drivers/media/v4l2-core/v4l2-ioctl.c' line='179' column='1' elf-symbol-id='v4l2_type_names'/>
       <function-decl name='v4l2_valid_dv_timings' mangled-name='v4l2_valid_dv_timings' filepath='drivers/media/v4l2-core/v4l2-dv-timings.c' line='140' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='v4l2_valid_dv_timings'>
         <parameter type-id='4e30d787' name='t' filepath='drivers/media/v4l2-core/v4l2-dv-timings.c' line='140' column='1'/>
         <parameter type-id='5b555a0e' name='dvcap' filepath='drivers/media/v4l2-core/v4l2-dv-timings.c' line='141' column='1'/>
@@ -173325,7 +173342,6 @@
     </abi-instr>
   </abi-corpus>
 </abi-corpus-group>
-
 <!--
      libabigail: abidw: 2.1.0SOONG BUILD NUMBER PLACEHOLDER
 -->
