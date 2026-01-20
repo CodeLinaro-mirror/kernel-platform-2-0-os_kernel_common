@@ -38,7 +38,7 @@ endif
 
 ifdef CONFIG_64BIT
 ld-emul			= $(64bit-emul)
-cflags-y		+= -mabi=lp64s -mcmodel=normal
+cflags-y		+= -mabi=lp64s
 endif
 
 cflags-y			+= -pipe -msoft-float

@@ -2977,7 +2977,6 @@ static int relocate_one_page(struct inode *inode, struct file_ra_state *ra,
 	int ret;
 
 	ASSERT(page_index <= last_index);
-again:
 	page = find_lock_page(inode->i_mapping, page_index);
 	if (!page) {
 		page_cache_sync_readahead(inode->i_mapping, ra, NULL,
@@ -2998,11 +2997,6 @@ again:
 		if (!PageUptodate(page)) {
 			ret = -EIO;
 			goto release_page;
-		}
-		if (page->mapping != inode->i_mapping) {
-			unlock_page(page);
-			put_page(page);
-			goto again;
 		}
 	}
 

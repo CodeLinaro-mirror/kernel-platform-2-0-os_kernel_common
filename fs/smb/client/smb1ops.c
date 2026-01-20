@@ -426,6 +426,13 @@ cifs_negotiate(const unsigned int xid,
 {
 	int rc;
 	rc = CIFSSMBNegotiate(xid, ses, server);
+	if (rc == -EAGAIN) {
+		/* retry only once on 1st time connection */
+		set_credits(server, 1);
+		rc = CIFSSMBNegotiate(xid, ses, server);
+		if (rc == -EAGAIN)
+			rc = -EHOSTDOWN;
+	}
 	return rc;
 }
 

@@ -274,10 +274,8 @@ static void mctp_flow_prepare_output(struct sk_buff *skb, struct mctp_dev *dev)
 
 	key = flow->key;
 
-	if (key->dev) {
-		WARN_ON(key->dev != dev);
+	if (WARN_ON(key->dev && key->dev != dev))
 		return;
-	}
 
 	mctp_dev_set_key(dev, key);
 }

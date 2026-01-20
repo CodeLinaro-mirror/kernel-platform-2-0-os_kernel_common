@@ -174,9 +174,6 @@ static void mpi3mr_print_event_data(struct mpi3mr_ioc *mrioc,
 	char *desc = NULL;
 	u16 event;
 
-	if (!(mrioc->logging_level & MPI3_DEBUG_EVENT))
-		return;
-
 	event = event_reply->event;
 
 	switch (event) {

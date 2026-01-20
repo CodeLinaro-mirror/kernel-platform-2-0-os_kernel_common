@@ -345,8 +345,7 @@ static void htb_add_to_wait_tree(struct htb_sched *q,
  */
 static inline void htb_next_rb_node(struct rb_node **n)
 {
-	if (*n)
-		*n = rb_next(*n);
+	*n = rb_next(*n);
 }
 
 /**
@@ -607,8 +606,8 @@ static inline void htb_activate(struct htb_sched *q, struct htb_class *cl)
  */
 static inline void htb_deactivate(struct htb_sched *q, struct htb_class *cl)
 {
-	if (!cl->prio_activity)
-		return;
+	WARN_ON(!cl->prio_activity);
+
 	htb_deactivate_prios(q, cl);
 	cl->prio_activity = 0;
 }
@@ -1492,6 +1491,8 @@ static void htb_qlen_notify(struct Qdisc *sch, unsigned long arg)
 {
 	struct htb_class *cl = (struct htb_class *)arg;
 
+	if (!cl->prio_activity)
+		return;
 	htb_deactivate(qdisc_priv(sch), cl);
 }
 
@@ -1746,7 +1747,8 @@ static int htb_delete(struct Qdisc *sch, unsigned long arg,
 	if (cl->parent)
 		cl->parent->children--;
 
-	htb_deactivate(q, cl);
+	if (cl->prio_activity)
+		htb_deactivate(q, cl);
 
 	if (cl->cmode != HTB_CAN_SEND)
 		htb_safe_rb_erase(&cl->pq_node,
@@ -1962,7 +1964,8 @@ static int htb_change_class(struct Qdisc *sch, u32 classid,
 			/* turn parent into inner node */
 			qdisc_purge_queue(parent->leaf.q);
 			parent_qdisc = parent->leaf.q;
-			htb_deactivate(q, parent);
+			if (parent->prio_activity)
+				htb_deactivate(q, parent);
 
 			/* remove from evt list because of level change */
 			if (parent->cmode != HTB_CAN_SEND) {

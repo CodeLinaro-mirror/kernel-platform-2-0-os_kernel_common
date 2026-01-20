@@ -44,7 +44,7 @@ struct ad7266_state {
 	 */
 	struct {
 		__be16 sample[2];
-		aligned_s64 timestamp;
+		s64 timestamp;
 	} data __aligned(IIO_DMA_MINALIGN);
 };
 

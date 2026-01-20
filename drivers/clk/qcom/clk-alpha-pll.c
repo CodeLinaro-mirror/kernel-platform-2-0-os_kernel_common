@@ -561,19 +561,14 @@ clk_alpha_pll_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	struct clk_alpha_pll *pll = to_clk_alpha_pll(hw);
 	u32 alpha_width = pll_alpha_width(pll);
 
-	if (regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l))
-		return 0;
+	regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l);
 
-	if (regmap_read(pll->clkr.regmap, PLL_USER_CTL(pll), &ctl))
-		return 0;
-
+	regmap_read(pll->clkr.regmap, PLL_USER_CTL(pll), &ctl);
 	if (ctl & PLL_ALPHA_EN) {
-		if (regmap_read(pll->clkr.regmap, PLL_ALPHA_VAL(pll), &low))
-			return 0;
+		regmap_read(pll->clkr.regmap, PLL_ALPHA_VAL(pll), &low);
 		if (alpha_width > 32) {
-			if (regmap_read(pll->clkr.regmap, PLL_ALPHA_VAL_U(pll),
-					&high))
-				return 0;
+			regmap_read(pll->clkr.regmap, PLL_ALPHA_VAL_U(pll),
+				    &high);
 			a = (u64)high << 32 | low;
 		} else {
 			a = low & GENMASK(alpha_width - 1, 0);
@@ -765,11 +760,8 @@ alpha_pll_huayra_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	struct clk_alpha_pll *pll = to_clk_alpha_pll(hw);
 	u32 l, alpha = 0, ctl, alpha_m, alpha_n;
 
-	if (regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l))
-		return 0;
-
-	if (regmap_read(pll->clkr.regmap, PLL_USER_CTL(pll), &ctl))
-		return 0;
+	regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l);
+	regmap_read(pll->clkr.regmap, PLL_USER_CTL(pll), &ctl);
 
 	if (ctl & PLL_ALPHA_EN) {
 		regmap_read(pll->clkr.regmap, PLL_ALPHA_VAL(pll), &alpha);
@@ -963,11 +955,8 @@ clk_trion_pll_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	struct clk_alpha_pll *pll = to_clk_alpha_pll(hw);
 	u32 l, frac, alpha_width = pll_alpha_width(pll);
 
-	if (regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l))
-		return 0;
-
-	if (regmap_read(pll->clkr.regmap, PLL_ALPHA_VAL(pll), &frac))
-		return 0;
+	regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l);
+	regmap_read(pll->clkr.regmap, PLL_ALPHA_VAL(pll), &frac);
 
 	return alpha_pll_calc_rate(parent_rate, l, frac, alpha_width);
 }
@@ -1025,8 +1014,7 @@ clk_alpha_pll_postdiv_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	struct clk_alpha_pll_postdiv *pll = to_clk_alpha_pll_postdiv(hw);
 	u32 ctl;
 
-	if (regmap_read(pll->clkr.regmap, PLL_USER_CTL(pll), &ctl))
-		return 0;
+	regmap_read(pll->clkr.regmap, PLL_USER_CTL(pll), &ctl);
 
 	ctl >>= PLL_POST_DIV_SHIFT;
 	ctl &= PLL_POST_DIV_MASK(pll);
@@ -1242,11 +1230,8 @@ static unsigned long alpha_pll_fabia_recalc_rate(struct clk_hw *hw,
 	struct clk_alpha_pll *pll = to_clk_alpha_pll(hw);
 	u32 l, frac, alpha_width = pll_alpha_width(pll);
 
-	if (regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l))
-		return 0;
-
-	if (regmap_read(pll->clkr.regmap, PLL_FRAC(pll), &frac))
-		return 0;
+	regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l);
+	regmap_read(pll->clkr.regmap, PLL_FRAC(pll), &frac);
 
 	return alpha_pll_calc_rate(parent_rate, l, frac, alpha_width);
 }
@@ -1396,8 +1381,7 @@ clk_trion_pll_postdiv_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	struct regmap *regmap = pll->clkr.regmap;
 	u32 i, div = 1, val;
 
-	if (regmap_read(regmap, PLL_USER_CTL(pll), &val))
-		return 0;
+	regmap_read(regmap, PLL_USER_CTL(pll), &val);
 
 	val >>= pll->post_div_shift;
 	val &= PLL_POST_DIV_MASK(pll);
@@ -2270,12 +2254,9 @@ static unsigned long alpha_pll_lucid_evo_recalc_rate(struct clk_hw *hw,
 	struct regmap *regmap = pll->clkr.regmap;
 	u32 l, frac;
 
-	if (regmap_read(regmap, PLL_L_VAL(pll), &l))
-		return 0;
+	regmap_read(regmap, PLL_L_VAL(pll), &l);
 	l &= LUCID_EVO_PLL_L_VAL_MASK;
-
-	if (regmap_read(regmap, PLL_ALPHA_VAL(pll), &frac))
-		return 0;
+	regmap_read(regmap, PLL_ALPHA_VAL(pll), &frac);
 
 	return alpha_pll_calc_rate(parent_rate, l, frac, pll_alpha_width(pll));
 }
@@ -2350,8 +2331,7 @@ static unsigned long clk_rivian_evo_pll_recalc_rate(struct clk_hw *hw,
 	struct clk_alpha_pll *pll = to_clk_alpha_pll(hw);
 	u32 l;
 
-	if (regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l))
-		return 0;
+	regmap_read(pll->clkr.regmap, PLL_L_VAL(pll), &l);
 
 	return parent_rate * l;
 }
