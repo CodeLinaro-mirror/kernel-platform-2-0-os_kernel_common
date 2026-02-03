@@ -22,6 +22,8 @@
 #include <linux/stat.h>
 #include <linux/slab.h>
 #include <linux/xarray.h>
+#include <linux/memblock.h>
+#include <linux/kthread.h>
 
 #include <linux/atomic.h>
 #include <linux/uaccess.h>
@@ -458,6 +460,22 @@ static DEVICE_ATTR_RW(state);
 static DEVICE_ATTR_RO(phys_device);
 static DEVICE_ATTR_RO(removable);
 
+#ifdef CONFIG_MEMORY_HOTPLUG
+static ssize_t show_aligned_blocks_addr(struct device *dev,
+			struct device_attribute *attr, char *buf)
+{
+	return memblock_dump_aligned_blocks_addr(buf);
+}
+
+static ssize_t show_aligned_blocks_num(struct device *dev,
+			struct device_attribute *attr, char *buf)
+{
+	return memblock_dump_aligned_blocks_num(buf);
+}
+static DEVICE_ATTR(aligned_blocks_addr, 0444, show_aligned_blocks_addr, NULL);
+static DEVICE_ATTR(aligned_blocks_num, 0444, show_aligned_blocks_num, NULL);
+#endif
+
 /*
  * Show the memory block size (shared by all memory blocks).
  */
@@ -893,6 +911,11 @@ static struct attribute *memory_root_attrs[] = {
 
 	&dev_attr_block_size_bytes.attr,
 	&dev_attr_auto_online_blocks.attr,
+
+#ifdef CONFIG_MEMORY_HOTPLUG
+	&dev_attr_aligned_blocks_addr.attr,
+	&dev_attr_aligned_blocks_num.attr,
+#endif
 	NULL
 };
 
@@ -904,6 +927,47 @@ static const struct attribute_group *memory_root_attr_groups[] = {
 	&memory_root_attr_group,
 	NULL,
 };
+
+#ifdef CONFIG_MEMORY_HOTPLUG
+static int hotplug_memory_online_thread(void *args)
+{
+	int idx = 0;
+	int nid,ret=0;
+	u64 phys_addr;
+	unsigned long block_id;
+	struct memory_block *mem;
+	ret = lock_device_hotplug_sysfs();
+	if (ret)
+		return ret;
+	while (g_hotplug_aligned_blocks[idx] && idx < NUM_ALIGN_BLK) {
+		phys_addr = g_hotplug_aligned_blocks[idx];
+		if (phys_addr & (MIN_MEMORY_BLOCK_SIZE - 1))
+			goto out;
+		nid = memory_add_physaddr_to_nid(phys_addr);
+		ret = __add_memory(nid, phys_addr,
+				   MIN_MEMORY_BLOCK_SIZE,
+				   MHP_NONE);
+		block_id = pfn_to_block_id(PFN_DOWN(phys_addr));
+		mem = find_memory_block_by_id(block_id);
+		if (!mem)
+			continue;
+		if (mem->state == MEM_ONLINE) {
+			put_device(&mem->dev);
+			continue;
+		}
+		if (mem->online_type == MMOP_OFFLINE)
+			mem->online_type = MMOP_ONLINE;
+		ret = memory_block_change_state(mem, MEM_ONLINE, MEM_OFFLINE);
+		mem->online_type = MMOP_OFFLINE;
+		put_device(&mem->dev);
+		idx++;
+		cond_resched();
+	}
+out:
+	unlock_device_hotplug();
+	return ret;
+}
+#endif
 
 /*
  * Initialize the sysfs support for memory devices. At the time this function
@@ -936,6 +1000,17 @@ void __init memory_dev_init(void)
 			panic("%s() failed to add memory block: %d\n", __func__,
 			      ret);
 	}
+
+#ifdef CONFIG_MEMORY_HOTPLUG
+	struct task_struct *mem_probe_task;
+	mem_probe_task = kthread_create(hotplug_memory_online_thread, NULL, "hotplug-memory-online");
+	if (IS_ERR(mem_probe_task)) {
+		pr_err("Failed to create hotplug memory online thread.\n");
+	} else {
+		set_user_nice(mem_probe_task, +15);
+		wake_up_process(mem_probe_task);
+	}
+#endif
 }
 
 /**

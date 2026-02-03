@@ -133,6 +133,13 @@ void memblock_free(void *ptr, size_t size);
 void reset_node_managed_pages(pg_data_t *pgdat);
 void reset_all_zones_managed_pages(void);
 
+#ifdef CONFIG_MEMORY_HOTPLUG
+#define NUM_ALIGN_BLK 512
+extern phys_addr_t g_hotplug_aligned_blocks[];
+int memblock_dump_aligned_blocks_addr(char *buf);
+int memblock_dump_aligned_blocks_num(char *buf);
+#endif
+
 /* Low level functions */
 void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 		      struct memblock_type *type_a,
