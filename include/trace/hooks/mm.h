@@ -769,6 +769,9 @@ DECLARE_HOOK(android_vh_swap_writepage_end,
 	TP_PROTO(struct page *page, struct writeback_control *wbc,
 		unsigned long swap_writepage_start),
 	TP_ARGS(page, wbc, swap_writepage_start));
+DECLARE_RESTRICTED_HOOK(android_rvh_read_swap_cache_async_timeout,
+	TP_PROTO(size_t *count, bool *skip),
+	TP_ARGS(count, skip), 2);
 #endif /* _TRACE_HOOK_MM_H */
 
 /* This part must be outside protection */
