@@ -1109,6 +1109,8 @@ struct dwc3_scratchpad_array {
  *		    fifo resized.
  * @clear_stall_protocol: endpoint number that requires a delayed status phase.
  * @debug_root: root debugfs directory for this device to put its files in.
+ * @active_highbw_isoc: if true, high bandwidth isochronous endpoint is active.
+ * @ignore_statusirq: if true, ignore irq triggered for status stage.
  */
 struct dwc3 {
 	struct work_struct	drd_work;
@@ -1320,6 +1322,8 @@ struct dwc3 {
 	int			max_cfg_eps;
 	int			last_fifo_depth;
 	int			num_ep_resized;
+	bool			active_highbw_isoc;
+	bool			ignore_statusirq;
 
 	ANDROID_KABI_USE(1, struct{ u8 clear_stall_protocol; u8 padding1;
 				u8 padding2; u8 padding3; u8 padding4; u8 padding5;
