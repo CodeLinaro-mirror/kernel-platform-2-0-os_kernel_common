@@ -137,6 +137,7 @@
   __traceiter_android_vh_count_workingset_refault
   __traceiter_android_vh_do_anonymous_page
   __traceiter_android_vh_do_async_mmap_readahead
+  __traceiter_android_vh_do_fault_around
   __traceiter_android_vh_do_group_exit
   __traceiter_android_vh_do_new_mount_fc
   __traceiter_android_vh_do_swap_page
@@ -146,6 +147,7 @@
   __traceiter_android_vh_f2fs_ra_op_flags
   __traceiter_android_vh_fas_gpu_qos_update_tracer
   __traceiter_android_vh_filemap_fault_folio_locked
+  __traceiter_android_vh_filemap_fault_post_folio_locked
   __traceiter_android_vh_filemap_read_end
   __traceiter_android_vh_filemap_update_page
   __traceiter_android_vh_force_page_cache_ra
@@ -164,6 +166,7 @@
   __traceiter_android_vh_look_around_migrate_folio
   __traceiter_android_vh_lruvec_add_folio
   __traceiter_android_vh_lruvec_del_folio
+  __traceiter_android_vh_map_order0_folio
   __traceiter_android_vh_mempool_alloc_skip_wait
   __traceiter_android_vh_mm_customize_ac
   __traceiter_android_vh_mm_customize_file_is_tiny
@@ -290,6 +293,7 @@
   __tracepoint_android_vh_count_workingset_refault
   __tracepoint_android_vh_do_anonymous_page
   __tracepoint_android_vh_do_async_mmap_readahead
+  __tracepoint_android_vh_do_fault_around
   __tracepoint_android_vh_do_group_exit
   __tracepoint_android_vh_do_new_mount_fc
   __tracepoint_android_vh_do_swap_page
@@ -299,6 +303,7 @@
   __tracepoint_android_vh_f2fs_ra_op_flags
   __tracepoint_android_vh_fas_gpu_qos_update_tracer
   __tracepoint_android_vh_filemap_fault_folio_locked
+  __tracepoint_android_vh_filemap_fault_post_folio_locked
   __tracepoint_android_vh_filemap_read_end
   __tracepoint_android_vh_filemap_update_page
   __tracepoint_android_vh_force_page_cache_ra
@@ -316,6 +321,7 @@
   __tracepoint_android_vh_look_around_migrate_folio
   __tracepoint_android_vh_lruvec_add_folio
   __tracepoint_android_vh_lruvec_del_folio
+  __tracepoint_android_vh_map_order0_folio
   __tracepoint_android_vh_mempool_alloc_skip_wait
   __tracepoint_android_vh_mm_customize_ac
   __tracepoint_android_vh_mm_customize_file_is_tiny
