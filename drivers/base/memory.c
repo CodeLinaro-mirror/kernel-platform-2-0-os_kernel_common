@@ -947,19 +947,22 @@ static int hotplug_memory_online_thread(void *args)
 		ret = __add_memory(nid, phys_addr,
 				   MIN_MEMORY_BLOCK_SIZE,
 				   MHP_NONE);
+		if (ret)
+			goto next_block;
 		block_id = pfn_to_block_id(PFN_DOWN(phys_addr));
 		mem = find_memory_block_by_id(block_id);
 		if (!mem)
-			continue;
+			goto next_block;
 		if (mem->state == MEM_ONLINE) {
 			put_device(&mem->dev);
-			continue;
+			goto next_block;
 		}
 		if (mem->online_type == MMOP_OFFLINE)
 			mem->online_type = MMOP_ONLINE;
 		ret = memory_block_change_state(mem, MEM_ONLINE, MEM_OFFLINE);
 		mem->online_type = MMOP_OFFLINE;
 		put_device(&mem->dev);
+next_block:
 		idx++;
 		cond_resched();
 	}
@@ -967,6 +970,21 @@ out:
 	unlock_device_hotplug();
 	return ret;
 }
+
+static int __init online_hotplug_memory_init(void)
+{
+	struct task_struct *mem_probe_task;
+	mem_probe_task = kthread_create(hotplug_memory_online_thread, NULL, "hotplug-memory-online");
+	if (IS_ERR(mem_probe_task)) {
+		pr_err("Failed to create hotplug memory online thread.\n");
+	} else {
+		set_user_nice(mem_probe_task, +15);
+		wake_up_process(mem_probe_task);
+	}
+	return 0;
+}
+
+late_initcall(online_hotplug_memory_init);
 #endif
 
 /*
@@ -1000,17 +1018,6 @@ void __init memory_dev_init(void)
 			panic("%s() failed to add memory block: %d\n", __func__,
 			      ret);
 	}
-
-#ifdef CONFIG_MEMORY_HOTPLUG
-	struct task_struct *mem_probe_task;
-	mem_probe_task = kthread_create(hotplug_memory_online_thread, NULL, "hotplug-memory-online");
-	if (IS_ERR(mem_probe_task)) {
-		pr_err("Failed to create hotplug memory online thread.\n");
-	} else {
-		set_user_nice(mem_probe_task, +15);
-		wake_up_process(mem_probe_task);
-	}
-#endif
 }
 
 /**
