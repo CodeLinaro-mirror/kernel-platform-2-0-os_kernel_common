@@ -116,6 +116,8 @@
 
 #undef CREATE_TRACE_POINTS
 #include <trace/hooks/sched.h>
+#include <trace/hooks/dtask.h>
+#include <trace/hooks/mm.h>
 /*
  * Minimum number of threads to boot the kernel
  */
@@ -956,6 +958,7 @@ void __mmdrop(struct mm_struct *mm)
 	mm_destroy_cid(mm);
 	percpu_counter_destroy_many(mm->rss_stat, NR_MM_COUNTERS);
 
+	trace_android_vh_mm_free(mm);
 	free_mm(mm);
 }
 EXPORT_SYMBOL_GPL(__mmdrop);
@@ -1001,7 +1004,6 @@ void __put_task_struct(struct task_struct *tsk)
 	WARN_ON(refcount_read(&tsk->usage));
 	WARN_ON(tsk == current);
 
-	trace_android_vh_put_task(tsk);
 	put_dmabuf_info(tsk->dmabuf_info);
 	io_uring_free(tsk);
 	cgroup_free(tsk);
@@ -1174,6 +1176,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	setup_thread_stack(tsk, orig);
 	clear_user_return_notifier(tsk);
 	clear_tsk_need_resched(tsk);
+	trace_android_vh_clear_curr_lazy(tsk);
 	set_task_stack_end_magic(tsk);
 	clear_syscall_work_syscall_user_dispatch(tsk);
 
@@ -1233,7 +1236,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 #endif
 	android_init_vendor_data(tsk, 1);
 	android_init_oem_data(tsk, 1);
-
+	android_init_dynamic_vendor_data(tsk);
 	trace_android_vh_dup_task_struct(tsk, orig);
 	return tsk;
 
@@ -1348,6 +1351,7 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
 
 	mm->user_ns = get_user_ns(user_ns);
 	lru_gen_init_mm(mm);
+	trace_android_vh_mm_init(mm);
 	return mm;
 
 fail_pcpu:
@@ -2785,6 +2789,7 @@ __latent_entropy struct task_struct *copy_process(
 	uprobe_copy_process(p, clone_flags);
 	user_events_fork(p, clone_flags);
 
+	trace_android_vh_lock_task_fork(p);
 	copy_oom_score_adj(clone_flags, p);
 
 	return p;
