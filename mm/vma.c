@@ -4,6 +4,7 @@
  * VMA-specific functions.
  */
 
+#include <linux/dma-buf.h>
 #include <linux/pgsize_migration.h>
 
 #include "vma_internal.h"
@@ -331,8 +332,12 @@ void remove_vma(struct vm_area_struct *vma)
 {
 	might_sleep();
 	vma_close(vma);
-	if (vma->vm_file)
+	if (vma->vm_file) {
+		if (is_dma_buf_file(vma->vm_file))
+			dma_buf_unaccount_task(vma->vm_file->private_data,
+					       vma->vm_mm->dmabuf_info);
 		fput(vma->vm_file);
+	}
 	mpol_put(vma_policy(vma));
 	vm_area_free(vma);
 }
@@ -405,8 +410,16 @@ static int __split_vma(struct vma_iterator *vmi, struct vm_area_struct *vma,
 	if (err)
 		goto out_free_mpol;
 
-	if (new->vm_file)
+	if (new->vm_file) {
 		get_file(new->vm_file);
+		if (is_dma_buf_file(new->vm_file)) {
+			int acct_err = dma_buf_account_task(new->vm_file->private_data,
+							    new->vm_mm->dmabuf_info);
+
+			if (acct_err)
+				pr_err("failed to account dmabuf, err %d\n", acct_err);
+		}
+	}
 
 	if (new->vm_ops && new->vm_ops->open)
 		new->vm_ops->open(new);
@@ -1697,6 +1710,8 @@ struct vm_area_struct *copy_vma(struct vm_area_struct **vmap,
 		new_vma = vm_area_dup(vma);
 		if (!new_vma)
 			goto out;
+		/* Do not preserve padding flags on the new VMA */
+		vm_flags_clear(new_vma, VM_PAD_MASK);
 		vma_set_range(new_vma, addr, addr + len, pgoff);
 		if (vma_dup_policy(vma, new_vma))
 			goto out_free_vma;
