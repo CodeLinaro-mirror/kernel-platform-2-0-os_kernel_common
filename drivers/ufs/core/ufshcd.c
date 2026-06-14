@@ -10766,11 +10766,6 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 						UFS_SLEEP_PWR_MODE,
 						UIC_LINK_HIBERN8_STATE);
 
-	/* Must be initialized before ufshcd_hba_init() which calls
-	 * ufshcd_setup_clocks() -> ufshcd_pm_qos_update() -> mutex_lock()
-	 */
-	mutex_init(&to_hba_priv(hba)->pm_qos_mutex);
-
 	err = ufshcd_hba_init(hba);
 	if (err)
 		goto out_error;
@@ -10841,6 +10836,9 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	mutex_init(&hba->ee_ctrl_mutex);
 
 	mutex_init(&hba->wb_mutex);
+
+	/* Initialize mutex for PM QoS request synchronization */
+	mutex_init(&to_hba_priv(hba)->pm_qos_mutex);
 
 	init_rwsem(&hba->clk_scaling_lock);
 
