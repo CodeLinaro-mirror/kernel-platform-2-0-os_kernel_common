@@ -14,7 +14,6 @@ static ssize_t translate_addr_ops_get_pa(struct file *file, char __user *buf,
 {
 	char tmp[64] = {0, };
 	struct hvm *vm = file->private_data;
-	int wr_len;
 	u64 ipa, pa;
 	u64 ret;
 
@@ -26,11 +25,11 @@ static ssize_t translate_addr_ops_get_pa(struct file *file, char __user *buf,
 				vm->vm_id, ipa, 0);
 
 		if (ret == -ENOMEM) {
-			wr_len = snprintf(tmp, sizeof(tmp),
+			snprintf(tmp, sizeof(tmp),
 				"Invalid address 0x%llx: Outside of vm memory\n", ipa);
 			goto exit;
 		} else if (ret == -EFAULT) {
-			wr_len = snprintf(tmp, sizeof(tmp),
+			snprintf(tmp, sizeof(tmp),
 				"Invalid address 0x%llx: Not mapped\n", ipa);
 			goto exit;
 		}
@@ -42,16 +41,16 @@ static ssize_t translate_addr_ops_get_pa(struct file *file, char __user *buf,
 				vm->vm_id, ipa, 0);
 
 		if (ret == -EFAULT) {
-			wr_len = snprintf(tmp, sizeof(tmp),
+			snprintf(tmp, sizeof(tmp),
 				"Invalid address 0X%llx: Not mapped\n", ipa);
 			goto exit;
 		}
 
-		wr_len = snprintf(tmp, sizeof(tmp), "0x%llx -> 0x%llx: %s\n",
+		snprintf(tmp, sizeof(tmp), "0x%llx -> 0x%llx: %s\n",
 				ipa, pa, (ret ? "Shared w/ host" : "Protected"));
 
 exit:
-		if (copy_to_user(buf, tmp, wr_len))
+		if (copy_to_user(buf, tmp, sizeof(tmp)))
 			return -EFAULT;
 
 		*offset += sizeof(tmp);

@@ -429,10 +429,6 @@ use kernel::bindings::rb_process_layout;
 pub(crate) const PROCESS_LAYOUT: rb_process_layout = rb_process_layout {
     arc_offset: Arc::<Process>::DATA_OFFSET,
     task: offset_of!(Process, task),
-    __kabi_reserved_backport0: 0,
-    __kabi_reserved_backport1: 0,
-    __kabi_reserved_backport2: 0,
-    __kabi_reserved_backport3: 0,
 };
 
 /// A process using binder.
@@ -1418,12 +1414,7 @@ impl Process {
         // Clear delivered_deaths list.
         //
         // Scope ensures that MutexGuard is dropped while executing the body.
-        while let Some(delivered_death) = {
-            // Explicitly bind to avoid tail expression lifetime extension of the lockguard
-            // Can be removed when the kernel moves to edition 2024
-            let maybe_death = self.inner.lock().delivered_deaths.pop_front();
-            maybe_death
-        } {
+        while let Some(delivered_death) = { self.inner.lock().delivered_deaths.pop_front() } {
             drop(delivered_death);
         }
 

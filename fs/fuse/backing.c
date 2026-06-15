@@ -1045,10 +1045,14 @@ ssize_t fuse_backing_mmap(struct file *file, struct vm_area_struct *vma)
 	if (WARN_ON(file != vma->vm_file))
 		return -EIO;
 
-	vma_set_file(vma, backing_file);
+	vma->vm_file = get_file(backing_file);
+
 	ret = call_mmap(vma->vm_file, vma);
+
 	if (ret)
-		return ret;
+		fput(backing_file);
+	else
+		fput(file);
 
 	if (file->f_flags & O_NOATIME)
 		return ret;
