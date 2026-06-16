@@ -249,15 +249,9 @@ static int z_erofs_lz4_decompress_mem(struct z_erofs_lz4_decompress_ctx *ctx,
 	if (ret != rq->outputsize) {
 		erofs_err(rq->sb, "failed to decompress %d in[%u, %u] out[%u]",
 			  ret, rq->inputsize, inputmargin, rq->outputsize);
-
-		print_hex_dump(KERN_DEBUG, "[ in]: ", DUMP_PREFIX_OFFSET,
-			       16, 1, src + inputmargin, rq->inputsize, true);
-		print_hex_dump(KERN_DEBUG, "[out]: ", DUMP_PREFIX_OFFSET,
-			       16, 1, out, rq->outputsize, true);
-
 		if (ret >= 0)
 			memset(out + ret, 0, rq->outputsize - ret);
-		ret = -EIO;
+		ret = -EFSCORRUPTED;
 	} else {
 		ret = 0;
 	}
@@ -338,13 +332,11 @@ static int z_erofs_transform_plain(struct z_erofs_decompress_req *rq,
 		cur = min(cur, rq->outputsize);
 		if (cur && rq->out[0]) {
 			kin = kmap_local_page(rq->in[nrpages_in - 1]);
-			if (rq->out[0] == rq->in[nrpages_in - 1]) {
+			if (rq->out[0] == rq->in[nrpages_in - 1])
 				memmove(kin + rq->pageofs_out, kin + pi, cur);
-				flush_dcache_page(rq->out[0]);
-			} else {
+			else
 				memcpy_to_page(rq->out[0], rq->pageofs_out,
 					       kin + pi, cur);
-			}
 			kunmap_local(kin);
 		}
 		rq->outputsize -= cur;
@@ -363,14 +355,12 @@ static int z_erofs_transform_plain(struct z_erofs_decompress_req *rq,
 			po = (rq->pageofs_out + cur + pi) & ~PAGE_MASK;
 			DBG_BUGON(no >= nrpages_out);
 			cnt = min_t(unsigned int, insz - pi, PAGE_SIZE - po);
-			if (rq->out[no] == rq->in[ni]) {
+			if (rq->out[no] == rq->in[ni])
 				memmove(kin + po,
 					kin + rq->pageofs_in + pi, cnt);
-				flush_dcache_page(rq->out[no]);
-			} else if (rq->out[no]) {
+			else if (rq->out[no])
 				memcpy_to_page(rq->out[no], po,
 					       kin + rq->pageofs_in + pi, cnt);
-			}
 			pi += cnt;
 		} while (pi < insz);
 		kunmap_local(kin);
