@@ -913,7 +913,7 @@ int cec_transmit_msg_fh(struct cec_adapter *adap, struct cec_msg *msg,
 	 * Release the lock and wait, retake the lock afterwards.
 	 */
 	mutex_unlock(&adap->lock);
-	wait_for_completion_killable(&data->c);
+	wait_for_completion_killable_timeout(&data->c, 250);
 	cancel_delayed_work_sync(&data->work);
 	mutex_lock(&adap->lock);
 
