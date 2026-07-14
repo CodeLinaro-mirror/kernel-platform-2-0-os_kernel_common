@@ -327,6 +327,8 @@ static enum usb_device_speed dwc3_qcom_read_usb2_speed(struct dwc3_qcom *qcom, i
 	 * FIXME: Fix this layering violation.
 	 */
 	hcd = platform_get_drvdata(dwc->xhci);
+	if (!hcd)
+		return USB_SPEED_UNKNOWN;
 
 #ifdef CONFIG_USB
 	udev = usb_hub_find_child(hcd->self.root_hub, port_index + 1);
