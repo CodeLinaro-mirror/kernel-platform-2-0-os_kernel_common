@@ -449977,6 +449977,13 @@ elf_symbol {
   full_name: "__cpuhp_state_remove_instance"
 }
 elf_symbol {
+  id: 0x63b95514
+  name: "__crc32c_le"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0x31a83776
+}
+elf_symbol {
   id: 0x857a0e42
   name: "__crypto_memneq"
   is_defined: true
@@ -544317,6 +544324,7 @@ interface {
   symbol_id: 0xb96bbc49
   symbol_id: 0xafb7da0f
   symbol_id: 0x42e03bd1
+  symbol_id: 0x63b95514
   symbol_id: 0x857a0e42
   symbol_id: 0xe889d441
   symbol_id: 0x5860ef21

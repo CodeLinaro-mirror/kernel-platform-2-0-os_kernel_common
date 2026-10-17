@@ -190,6 +190,7 @@
   __cpu_present_mask
   cpu_topology
   crc32_be
+  __crc32c_le
   crc32_le
   crc8
   crc8_populate_msb
@@ -229,6 +230,7 @@
   debugfs_create_u32
   debugfs_create_u8
   debugfs_create_x32
+  debugfs_lookup_and_remove
   debugfs_remove
   debugfs_rename
   default_llseek
@@ -283,6 +285,7 @@
   device_get_match_data
   device_get_next_child_node
   device_initialize
+  device_iommu_capable
   device_is_bound
   device_link_add
   device_link_del
