@@ -326,3 +326,6 @@ function symbol changed from 'int __traceiter_android_vh_handle_metadata_error(v
     parameter 10 of type 'unsigned int' was added
     parameter 11 of type 'unsigned int' was added
 
+type 'struct dw_pcie_rp' changed
+  member 'union { bool keep_rp_msi_en:1; unsigned char __kabi_ignored1; }' was added
+
