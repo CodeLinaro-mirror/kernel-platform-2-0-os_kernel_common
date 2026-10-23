@@ -681,7 +681,8 @@ static __initdata DECLARE_COMPLETION(kthreadd_done);
 static noinline void __ref __noreturn rest_init(void)
 {
 	struct kernel_clone_args init_args = {
-		.flags		= (CLONE_VM | CLONE_UNTRACED),
+		/* TODO(b/569148115): drop CLONE_FS once init is fixed */
+		.flags		= (CLONE_FS | CLONE_VM | CLONE_UNTRACED),
 		.fn		= kernel_init,
 		.fn_arg		= NULL,
 	};
